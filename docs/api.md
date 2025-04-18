@@ -15,136 +15,153 @@ Authorization: Bearer <token>
 ### Endpoints аутентификации
 
 #### POST /api/auth/login/
+
 Авторизация пользователя
 
 **Request:**
+
 ```json
 {
-    "username": "string",
-    "password": "string"
+  "username": "string",
+  "password": "string"
 }
 ```
 
 **Response:**
+
 ```json
 {
-    "access": "string",
-    "refresh": "string"
+  "access": "string",
+  "refresh": "string"
 }
 ```
 
 #### POST /api/auth/refresh/
+
 Обновление access токена
 
 **Request:**
+
 ```json
 {
-    "refresh": "string"
+  "refresh": "string"
 }
 ```
 
 **Response:**
+
 ```json
 {
-    "access": "string"
+  "access": "string"
 }
 ```
 
 ## Users API
 
 ### GET /api/users/
+
 Получение списка пользователей
 
 **Parameters:**
+
 - `role` (string, optional): Фильтрация по роли
 - `page` (integer, optional): Номер страницы
 - `page_size` (integer, optional): Количество записей на странице
 
 **Response:**
+
 ```json
 {
-    "count": 0,
-    "next": "string",
-    "previous": "string",
-    "results": [
-        {
-            "id": 0,
-            "username": "string",
-            "email": "string",
-            "first_name": "string",
-            "last_name": "string",
-            "role": "string"
-        }
-    ]
+  "count": 0,
+  "next": "string",
+  "previous": "string",
+  "results": [
+    {
+      "id": 0,
+      "username": "string",
+      "email": "string",
+      "first_name": "string",
+      "last_name": "string",
+      "role": "string"
+    }
+  ]
 }
 ```
 
 ### POST /api/users/
+
 Создание нового пользователя
 
 **Request:**
+
 ```json
 {
-    "username": "string",
-    "email": "string",
-    "password": "string",
-    "first_name": "string",
-    "last_name": "string",
-    "role": "string"
+  "username": "string",
+  "email": "string",
+  "password": "string",
+  "first_name": "string",
+  "last_name": "string",
+  "role": "string"
 }
 ```
 
 ## Onboarding API
 
 ### GET /api/onboarding/templates/
+
 Получение списка шаблонов онбординга
 
 **Parameters:**
+
 - `department` (string, optional): Фильтрация по отделу
 - `page` (integer, optional): Номер страницы
 - `page_size` (integer, optional): Количество записей на странице
 
 **Response:**
+
 ```json
 {
-    "count": 0,
-    "next": "string",
-    "previous": "string",
-    "results": [
-        {
-            "id": 0,
-            "name": "string",
-            "description": "string",
-            "department": "string",
-            "tasks": []
-        }
-    ]
+  "count": 0,
+  "next": "string",
+  "previous": "string",
+  "results": [
+    {
+      "id": 0,
+      "name": "string",
+      "description": "string",
+      "department": "string",
+      "tasks": []
+    }
+  ]
 }
 ```
 
 ### GET /api/onboarding/tasks/
+
 Получение списка задач онбординга
 
 **Parameters:**
+
 - `template` (integer, optional): ID шаблона
 - `status` (string, optional): Статус задачи
 - `page` (integer, optional): Номер страницы
 
 **Response:**
+
 ```json
 {
-    "count": 0,
-    "next": "string",
-    "previous": "string",
-    "results": [
-        {
-            "id": 0,
-            "title": "string",
-            "description": "string",
-            "due_date": "string",
-            "status": "string"
-        }
-    ]
+  "count": 0,
+  "next": "string",
+  "previous": "string",
+  "results": [
+    {
+      "id": 0,
+      "title": "string",
+      "description": "string",
+      "due_date": "string",
+      "status": "string"
+    }
+  ]
 }
 ```
 
@@ -167,11 +184,13 @@ Authorization: Bearer <token>
 ## Версионирование
 
 API версионируется через URL:
+
 - /api/v1/...
 - /api/v2/... (в разработке)
 
 ## Поддержка
 
 По вопросам работы API обращайтесь:
+
 - Email: api@onboardpro.com
 - Документация: https://docs.onboardpro.com/api

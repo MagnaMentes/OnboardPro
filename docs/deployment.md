@@ -3,6 +3,7 @@
 ## Локальная разработка
 
 ### Требования к окружению
+
 - Python 3.13+
 - Docker и Docker Compose
 - PostgreSQL 15
@@ -12,6 +13,7 @@
 ### Пошаговая установка
 
 1. **Подготовка окружения**
+
 ```bash
 # Клонирование репозитория
 git clone https://github.com/MagnaMentes/OnboardPro.git
@@ -29,6 +31,7 @@ pip install -r requirements.txt
 ```
 
 2. **Настройка базы данных**
+
 ```bash
 # Запуск PostgreSQL через Docker
 docker-compose up -d
@@ -38,7 +41,8 @@ python manage.py migrate
 ```
 
 3. **Настройка переменных окружения**
-Создайте файл `.env` в корневой директории:
+   Создайте файл `.env` в корневой директории:
+
 ```
 DEBUG=True
 SECRET_KEY=your-secret-key
@@ -49,9 +53,20 @@ DB_HOST=localhost
 DB_PORT=5433
 ```
 
+### Frontend Development
+```bash
+# Установка зависимостей
+cd frontend
+npm install
+
+# Запуск сборки Tailwind в режиме разработки
+npm run build
+```
+
 ## Производственное развертывание
 
 ### Требования к серверу
+
 - Ubuntu 22.04 LTS
 - 2+ CPU
 - 4+ GB RAM
@@ -62,12 +77,14 @@ DB_PORT=5433
 ### Настройка сервера
 
 1. **Установка системных зависимостей**
+
 ```bash
 sudo apt update
 sudo apt install -y python3-pip python3-venv docker.io docker-compose nginx
 ```
 
 2. **Настройка Nginx**
+
 ```nginx
 server {
     listen 80;
@@ -89,14 +106,51 @@ server {
 }
 ```
 
+### Production Build
+```bash
+# Сборка frontend
+cd frontend
+npm install
+NODE_ENV=production npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify
+```
+
+### Nginx Configuration for Frontend
+
+```nginx
+server {
+    listen 80;
+    server_name onboardpro.com;
+
+    # Frontend static files
+    location / {
+        root /var/www/onboardpro/frontend/src;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Compiled CSS
+    location /dist/ {
+        alias /var/www/onboardpro/frontend/dist/;
+    }
+
+    # Backend proxy
+    location /api/ {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
 3. **Настройка SSL с Certbot**
+
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d onboardpro.com
 ```
 
 4. **Настройка Gunicorn**
-Создайте systemd сервис `/etc/systemd/system/onboardpro.service`:
+   Создайте systemd сервис `/etc/systemd/system/onboardpro.service`:
+
 ```ini
 [Unit]
 Description=OnboardPro Gunicorn daemon
@@ -115,6 +169,7 @@ WantedBy=multi-user.target
 ### Развертывание обновлений
 
 1. **Автоматизация развертывания**
+
 ```bash
 #!/bin/bash
 # deploy.sh
@@ -137,6 +192,7 @@ sudo systemctl restart nginx
 ```
 
 2. **Мониторинг**
+
 - Настройка Prometheus для метрик
 - Grafana для визуализации
 - Sentry для отслеживания ошибок
@@ -144,6 +200,7 @@ sudo systemctl restart nginx
 ### Резервное копирование
 
 1. **База данных**
+
 ```bash
 #!/bin/bash
 # backup.sh
@@ -162,6 +219,7 @@ find "$BACKUP_DIR" -name "db_*.sql.gz" -mtime +30 -delete
 ```
 
 2. **Медиафайлы**
+
 ```bash
 #!/bin/bash
 # backup_media.sh
@@ -179,6 +237,7 @@ find "$BACKUP_DIR" -name "media_*.tar.gz" -mtime +30 -delete
 ## Безопасность
 
 1. **Файрвол (UFW)**
+
 ```bash
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
@@ -186,12 +245,14 @@ sudo ufw enable
 ```
 
 2. **Настройка fail2ban**
+
 ```bash
 sudo apt install fail2ban
 sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 ```
 
 3. **Регулярные обновления**
+
 ```bash
 # Автоматические обновления безопасности
 sudo apt install unattended-upgrades
@@ -201,11 +262,13 @@ sudo dpkg-reconfigure -plow unattended-upgrades
 ## Масштабирование
 
 1. **Горизонтальное масштабирование**
+
 - Настройка нескольких серверов приложений
 - Балансировка нагрузки через Nginx
 - Redis для кеширования и сессий
 
 2. **Вертикальное масштабирование**
+
 - Увеличение ресурсов сервера
 - Оптимизация настроек PostgreSQL
 - Настройка пулов соединений
@@ -213,11 +276,13 @@ sudo dpkg-reconfigure -plow unattended-upgrades
 ## Поддержка
 
 ### Контакты технической поддержки
+
 - Email: support@onboardpro.com
 - Телефон: +7 (XXX) XXX-XX-XX
 - Время работы: 24/7
 
 ### Полезные ресурсы
+
 - Документация: https://docs.onboardpro.com
 - API Reference: https://api.onboardpro.com/docs
 - GitHub: https://github.com/MagnaMentes/OnboardPro

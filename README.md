@@ -16,20 +16,34 @@ OnboardPro - это современное веб-приложение для а
 
 ### Frontend
 - HTML5
-- TailwindCSS
+- TailwindCSS 3.3
 - JavaScript
+- Node.js и npm
 
 ## Структура проекта
 
 ```
 OnboardPro/
-├── backend/              # Django backend
-│   ├── manage.py        # Django management script
-│   ├── requirements.txt # Python dependencies
-│   └── onboardpro/      # Main Django project
-├── frontend/            # Frontend assets
-├── docs/               # Project documentation
-└── docker-compose.yml  # Docker configuration
+├── backend/                # Django backend
+│   ├── manage.py          # Django management script
+│   ├── requirements.txt   # Python dependencies
+│   └── onboardpro/        # Main Django project
+│       ├── settings.py    # Project settings
+│       ├── urls.py        # URL routing
+│       └── wsgi.py        # WSGI configuration
+├── frontend/              # Frontend assets
+│   ├── src/              # Source files
+│   │   ├── index.html    # Main HTML template
+│   │   └── input.css     # TailwindCSS entry point
+│   ├── dist/             # Compiled assets
+│   │   └── output.css    # Compiled TailwindCSS
+│   ├── package.json      # Node.js dependencies
+│   └── tailwind.config.js # TailwindCSS configuration
+├── docs/                 # Project documentation
+│   ├── api.md           # API documentation
+│   ├── architecture.md  # Architecture overview
+│   └── deployment.md    # Deployment guide
+└── docker-compose.yml   # Docker configuration
 ```
 
 ## Установка и запуск
@@ -69,17 +83,26 @@ cd backend
 python manage.py migrate
 ```
 
+5. Настройка frontend:
+```bash
+cd frontend
+npm install
+npm run build
+```
+
 ### Конфигурация
 
 Основные настройки находятся в:
 - `backend/onboardpro/settings.py` - настройки Django
 - `docker-compose.yml` - конфигурация PostgreSQL
+- `frontend/tailwind.config.js` - настройки TailwindCSS
 
 ### Разработка
 
 - Backend работает на http://localhost:8000
 - API документация доступна на http://localhost:8000/api/docs/
 - База данных PostgreSQL доступна на порту 5433
+- Frontend доступен через src/index.html
 
 ## Лицензия
 
