@@ -1,0 +1,1 @@
+OnboardPro — платформа для автоматизации онбординга на Django, PostgreSQL, HTML, TailWind CSS, JS.
