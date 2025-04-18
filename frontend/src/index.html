@@ -1,10 +1,11 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OnboardPro</title>
-    <link href="/static/dist/output.css" rel="stylesheet" />
+    <link href="{% static 'output.css' %}" rel="stylesheet" />
   </head>
   <body class="bg-gray-100">
     <header class="bg-blue-600 text-white p-4">
@@ -14,12 +15,40 @@
       <h2 class="text-xl">Welcome to OnboardPro</h2>
       <p class="mt-2">Placeholder for dashboard.</p>
     </main>
+    <script src="{% static 'login.js' %}"></script>
     <script>
       // Проверка аутентификации
-      const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/login";
+      function checkAuth() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          window.location.href = '/login';
+          return;
+        }
+        
+        // Verify token validity with backend
+        fetch('/api/verify-token', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        .then(response => {
+          if (!response.ok) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refresh');
+            window.location.href = '/login';
+          }
+        })
+        .catch(error => {
+          console.error('Token verification failed:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh');
+          window.location.href = '/login';
+        });
       }
+
+      // Run auth check immediately and set up periodic checks
+      checkAuth();
+      setInterval(checkAuth, 60000); // Check every minute
     </script>
   </body>
 </html>

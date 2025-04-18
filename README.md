@@ -1,93 +1,152 @@
 # OnboardPro
 
-OnboardPro — платформа для автоматизации онбординга на Django, PostgreSQL, HTML, TailWind CSS, JS.
+OnboardPro — современное веб-приложение, разработанное для автоматизации и оптимизации процесса онбординга сотрудников. Оно предоставляет комплексную платформу для HR-менеджеров, позволяющую создавать и управлять планами онбординга, а сотрудникам — отслеживать свой прогресс в выполнении различных задач онбординга.
 
-## Описание проекта
+## Возможности
 
-OnboardPro - это современное веб-приложение для автоматизации процесса онбординга новых сотрудников. Система помогает HR-специалистам и руководителям эффективно организовывать и контролировать процесс адаптации новых членов команды.
+- **Управление пользователями**
+  - Контроль доступа на основе ролей (Сотрудник, Менеджер, HR)
+  - Безопасная аутентификация с использованием JWT
+  - Управление профилями пользователей
+
+- **Планы онбординга**
+  - Создание и управление шаблонами онбординга
+  - Назначение задач для конкретных ролей
+  - Отслеживание прогресса выполнения
+  - Установка сроков и приоритетов
+
+- **Управление задачами**
+  - Создание и назначение задач
+  - Отслеживание статуса задач
+  - Установка сроков и напоминаний
+  - Мониторинг прогресса
+
+- **Современный интерфейс**
+  - Адаптивный дизайн
+  - Интуитивная навигация
+  - Обновления в реальном времени
+  - Компоненты Material Design
 
 ## Технологический стек
 
 ### Backend
-
-- Python 3.11
-- Django 5.2
+- Django 4.2
 - Django REST Framework
-- PostgreSQL 15
+- PostgreSQL
+- JWT Аутентификация
+- Celery
+- Redis
 
 ### Frontend
+- React 18
+- Material-UI
+- Redux Toolkit
+- React Router
+- Axios
 
-- HTML5
-- TailwindCSS 3.3
-- JavaScript
-- Node.js и npm
+## Предварительные требования
 
-## Ключевые функции
-
-- Кастомная модель пользователя с ролями (Employee, Manager, HR)
-- REST API с JWT аутентификацией
-- Управление отделами и ролями пользователей
-- Health check endpoints для мониторинга
-
-## Структура проекта
-
-```
-OnboardPro/
-├── backend/                # Django backend
-│   ├── core/              # Основное приложение
-│   │   ├── models.py      # Модели данных
-│   │   ├── views.py       # Представления
-│   │   └── migrations/    # Миграции базы данных
-│   ├── onboardpro/        # Настройки проекта
-│   ├── manage.py          # Django management script
-│   └── requirements.txt   # Python зависимости
-├── frontend/              # Frontend assets
-│   ├── src/              # Source files
-│   │   ├── index.html    # Main HTML template
-│   │   └── input.css     # TailwindCSS entry point
-│   ├── package.json      # Node.js зависимости
-│   └── tailwind.config.js # TailwindCSS конфигурация
-├── docs/                 # Проектная документация
-└── docker-compose.yml    # Docker конфигурация
-```
-
-## Установка и запуск
-
-### Предварительные требования
-
+- Python 3.11+
+- Node.js 18+
 - Docker и Docker Compose
-- Node.js и npm (для frontend)
+- PostgreSQL 15+
 
-### Установка
+## Установка
 
 1. Клонируйте репозиторий:
-
 ```bash
-git clone https://github.com/MagnaMentes/OnboardPro.git
-cd OnboardPro
+git clone https://github.com/yourusername/onboardpro.git
+cd onboardpro
 ```
 
-2. Запустите Docker контейнеры:
-
+2. Настройка backend:
 ```bash
-docker-compose up -d
+cd backend
+python -m venv venv
+source venv/bin/activate  # На Windows: .\venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-3. Установите frontend зависимости и соберите статику:
-
+3. Настройка frontend:
 ```bash
 cd frontend
 npm install
-npm run build
 ```
 
-### Разработка
+4. Настройка переменных окружения:
+   - Скопируйте `.env.example` в `.env` в обоих директориях (backend и frontend)
+   - Обновите переменные в соответствии с вашей конфигурацией
 
-- Backend API доступен на http://localhost:8000
-- API документация: http://localhost:8000/api/docs/
-- База данных PostgreSQL: порт 5432
-- Frontend: src/index.html
+## Разработка
+
+### Запуск с использованием Docker
+
+1. Сборка и запуск контейнеров:
+```bash
+docker-compose up --build
+```
+
+2. Доступ к приложению:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - Документация API: http://localhost:8000/api/docs/
+
+### Локальный запуск
+
+1. Запуск backend сервера:
+```bash
+cd backend
+python manage.py migrate
+python manage.py runserver
+```
+
+2. Запуск frontend сервера разработки:
+```bash
+cd frontend
+npm start
+```
+
+## Тестирование
+
+### Тесты Backend
+```bash
+cd backend
+python manage.py test
+```
+
+### Тесты Frontend
+```bash
+cd frontend
+npm test
+```
+
+## Документация API
+
+Подробная документация API доступна в файле [Документация API](docs/api.md).
+
+## Архитектура
+
+Архитектура системы и решения по дизайну документированы в файле [Документация по архитектуре](docs/architecture.md).
+
+## Участие в разработке
+
+1. Форкните репозиторий
+2. Создайте ветку для вашей функции (`git checkout -b feature/AmazingFeature`)
+3. Зафиксируйте ваши изменения (`git commit -m 'Добавлена новая функция'`)
+4. Отправьте изменения в ветку (`git push origin feature/AmazingFeature`)
+5. Откройте Pull Request
 
 ## Лицензия
 
-MIT License
+Этот проект лицензирован под лицензией MIT - подробности в файле [LICENSE](LICENSE).
+
+## Поддержка
+
+Для получения поддержки, пожалуйста, создайте issue в репозитории GitHub или свяжитесь с командой разработки.
+
+## Благодарности
+
+- Django REST Framework
+- React
+- Material-UI
+- Все контрибьюторы и поддерживающие проект

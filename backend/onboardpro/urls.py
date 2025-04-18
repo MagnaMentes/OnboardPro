@@ -20,25 +20,23 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
-from core.views import HealthCheck, TestHRView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from core.views import HealthCheck, TestHRView, VerifyTokenView
+from core.auth import EmailTokenObtainPairView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health', HealthCheck.as_view(), name='health'),
-    path('api/login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/login', EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/refresh', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/verify-token', VerifyTokenView.as_view(), name='verify_token'),
     path('api/test-hr', TestHRView.as_view(), name='test_hr'),
     path('', TemplateView.as_view(template_name='index.html')),
     path('login', TemplateView.as_view(template_name='login.html')),
-    re_path(r'^static/(?P<path>.*)$', serve,
-            {'document_root': settings.STATIC_ROOT}),
-    re_path(r'^dist/(?P<path>.*)$', serve,
-            {'document_root': settings.STATICFILES_DIRS[0]}),
-    re_path(r'^src/(?P<path>.*)$', serve,
-            {'document_root': settings.STATICFILES_DIRS[1]}),
 ]
 
+# Добавляем маршруты для статических файлов
 if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL,
-                          document_root=settings.STATIC_ROOT)
+    urlpatterns += [
+        re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
+    ]

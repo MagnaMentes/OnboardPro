@@ -62,7 +62,7 @@ ROOT_URLCONF = 'onboardpro.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['/app/frontend/src'],
+        'DIRS': [BASE_DIR.parent / 'frontend' / 'src'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -70,6 +70,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.static',
             ],
         },
     },
@@ -83,12 +84,8 @@ WSGI_APPLICATION = 'onboardpro.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'onboardpro_db',
-        'USER': 'onboardpro',
-        'PASSWORD': 'securepassword',
-        'HOST': 'db',  # Имя сервиса из docker-compose.yml
-        'PORT': '5432',  # Порт внутри контейнера
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -129,12 +126,22 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STATICFILES_DIRS = [
-    '/app/frontend/dist',
-    '/app/frontend/src',
+    BASE_DIR / 'static',
+    '/frontend/dist',
+    '/frontend/src',
 ]
 
+# Настройки для Whitenoise
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_ROOT = None
+WHITENOISE_INDEX_FILE = True
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Настройки MIME-типов для статических файлов
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -148,6 +155,18 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ]
 }
+
+# JWT settings
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
+
+# Authentication settings
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
@@ -175,3 +194,10 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# Role choices for the application
+ROLE_CHOICES = (
+    ('employee', 'Employee'),
+    ('manager', 'Manager'),
+    ('hr', 'HR'),
+)

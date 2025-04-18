@@ -1,8 +1,8 @@
-# API Documentation
+# Документация API
 
-## Base URL
+## Базовый URL
 
-- Local development: `http://localhost:8000`
+- Локальная разработка: `http://localhost:8000`
 
 ## Общая информация
 
@@ -27,7 +27,7 @@ Authorization: Bearer <token>
 
 ### Endpoints аутентификации
 
-#### POST /api/login
+#### POST /api/auth/login/
 
 Авторизация пользователя и получение JWT токенов
 
@@ -49,7 +49,7 @@ Authorization: Bearer <token>
 }
 ```
 
-#### POST /api/refresh
+#### POST /api/auth/refresh/
 
 Обновление access токена
 
@@ -152,15 +152,21 @@ Authorization: Bearer <access_token>
 }
 ```
 
-## Onboarding API
+## Onboarding Plans API
 
-### GET /api/onboarding/templates/
+### GET /api/onboarding/plans/
 
-Получение списка шаблонов онбординга
+Получение списка планов онбординга
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
 
 **Parameters:**
 
-- `department` (string, optional): Фильтрация по отделу
+- `role` (string, optional): Фильтрация по роли
 - `page` (integer, optional): Номер страницы
 - `page_size` (integer, optional): Количество записей на странице
 
@@ -174,23 +180,51 @@ Authorization: Bearer <access_token>
   "results": [
     {
       "id": 0,
-      "name": "string",
-      "description": "string",
-      "department": "string",
-      "tasks": []
+      "role": "string",
+      "title": "string",
+      "created_at": "string"
     }
   ]
 }
 ```
 
-### GET /api/onboarding/tasks/
+### POST /api/onboarding/plans/
 
-Получение списка задач онбординга
+Создание нового плана онбординга (требуется роль HR)
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Request:**
+
+```json
+{
+  "role": "string",
+  "title": "string"
+}
+```
+
+## Tasks API
+
+### GET /api/tasks/
+
+Получение списка задач
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
 
 **Parameters:**
 
-- `template` (integer, optional): ID шаблона
-- `status` (string, optional): Статус задачи
+- `plan` (integer, optional): ID плана онбординга
+- `user` (integer, optional): ID пользователя
+- `priority` (string, optional): Приоритет задачи (low, medium, high)
+- `status` (string, optional): Статус задачи (pending, in_progress, completed)
 - `page` (integer, optional): Номер страницы
 
 **Response:**
@@ -203,30 +237,73 @@ Authorization: Bearer <access_token>
   "results": [
     {
       "id": 0,
+      "plan": 0,
+      "user": 0,
       "title": "string",
       "description": "string",
-      "due_date": "string",
-      "status": "string"
+      "priority": "string",
+      "deadline": "string",
+      "status": "string",
+      "created_at": "string"
     }
   ]
 }
 ```
 
-## Endpoints
+### POST /api/tasks/
 
-### Health Check
+Создание новой задачи (требуется роль HR или Manager)
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Request:**
+
+```json
+{
+  "plan": 0,
+  "user": 0,
+  "title": "string",
+  "description": "string",
+  "priority": "string",
+  "deadline": "string"
+}
+```
+
+### PATCH /api/tasks/{id}/
+
+Обновление статуса задачи
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Request:**
+
+```json
+{
+  "status": "string"
+}
+```
+
+## Health Check
+
+### GET /api/health
 
 Проверка работоспособности API.
 
-- **URL**: `/api/health`
-- **Method**: `GET`
-- **Success Response**:
-  - **Code**: 200
-  - **Content**: `{"status": "OK"}`
-- **Example**:
-  ```bash
-  curl http://localhost:8000/api/health
-  ```
+**Response:**
+
+```json
+{
+  "status": "OK"
+}
+```
 
 ## Коды ответов
 
@@ -248,8 +325,8 @@ Authorization: Bearer <access_token>
 
 API версионируется через URL:
 
-- /api/v1/...
-- /api/v2/... (в разработке)
+- Текущая версия: v1
+- Формат URL: `/api/v1/...`
 
 ## Поддержка
 
