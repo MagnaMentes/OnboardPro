@@ -10,7 +10,7 @@ OnboardPro - это современное веб-приложение для а
 
 ### Backend
 
-- Python 3.13
+- Python 3.11
 - Django 5.2
 - Django REST Framework
 - PostgreSQL 15
@@ -22,37 +22,39 @@ OnboardPro - это современное веб-приложение для а
 - JavaScript
 - Node.js и npm
 
+## Ключевые функции
+
+- Кастомная модель пользователя с ролями (Employee, Manager, HR)
+- REST API с JWT аутентификацией
+- Управление отделами и ролями пользователей
+- Health check endpoints для мониторинга
+
 ## Структура проекта
 
 ```
 OnboardPro/
 ├── backend/                # Django backend
+│   ├── core/              # Основное приложение
+│   │   ├── models.py      # Модели данных
+│   │   ├── views.py       # Представления
+│   │   └── migrations/    # Миграции базы данных
+│   ├── onboardpro/        # Настройки проекта
 │   ├── manage.py          # Django management script
-│   ├── requirements.txt   # Python dependencies
-│   └── onboardpro/        # Main Django project
-│       ├── settings.py    # Project settings
-│       ├── urls.py        # URL routing
-│       └── wsgi.py        # WSGI configuration
+│   └── requirements.txt   # Python зависимости
 ├── frontend/              # Frontend assets
 │   ├── src/              # Source files
 │   │   ├── index.html    # Main HTML template
 │   │   └── input.css     # TailwindCSS entry point
-│   ├── dist/             # Compiled assets
-│   │   └── output.css    # Compiled TailwindCSS
-│   ├── package.json      # Node.js dependencies
-│   └── tailwind.config.js # TailwindCSS configuration
-├── docs/                 # Project documentation
-│   ├── api.md           # API documentation
-│   ├── architecture.md  # Architecture overview
-│   └── deployment.md    # Deployment guide
-└── docker-compose.yml   # Docker configuration
+│   ├── package.json      # Node.js зависимости
+│   └── tailwind.config.js # TailwindCSS конфигурация
+├── docs/                 # Проектная документация
+└── docker-compose.yml    # Docker конфигурация
 ```
 
 ## Установка и запуск
 
 ### Предварительные требования
 
-- Python 3.13+
 - Docker и Docker Compose
 - Node.js и npm (для frontend)
 
@@ -65,31 +67,13 @@ git clone https://github.com/MagnaMentes/OnboardPro.git
 cd OnboardPro
 ```
 
-2. Настройка backend:
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Для Linux/Mac
-# или
-.\venv\Scripts\activate  # Для Windows
-pip install -r requirements.txt
-```
-
-3. Запуск базы данных:
+2. Запустите Docker контейнеры:
 
 ```bash
 docker-compose up -d
 ```
 
-4. Применение миграций:
-
-```bash
-cd backend
-python manage.py migrate
-```
-
-5. Настройка frontend:
+3. Установите frontend зависимости и соберите статику:
 
 ```bash
 cd frontend
@@ -97,20 +81,12 @@ npm install
 npm run build
 ```
 
-### Конфигурация
-
-Основные настройки находятся в:
-
-- `backend/onboardpro/settings.py` - настройки Django
-- `docker-compose.yml` - конфигурация PostgreSQL
-- `frontend/tailwind.config.js` - настройки TailwindCSS
-
 ### Разработка
 
-- Backend работает на http://localhost:8000
-- API документация доступна на http://localhost:8000/api/docs/
-- База данных PostgreSQL доступна на порту 5433
-- Frontend доступен через src/index.html
+- Backend API доступен на http://localhost:8000
+- API документация: http://localhost:8000/api/docs/
+- База данных PostgreSQL: порт 5432
+- Frontend: src/index.html
 
 ## Лицензия
 
