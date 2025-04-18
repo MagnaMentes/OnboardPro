@@ -8,19 +8,28 @@
 
 API построено с использованием Django REST Framework и следует принципам REST. Все запросы к API должны быть выполнены по HTTPS.
 
-## Аутентификация
+## Аутентификация и Авторизация
 
-API использует JWT (JSON Web Tokens) для аутентификации. Токен должен быть передан в заголовке Authorization:
+API использует JWT (JSON Web Tokens) для аутентификации и систему ролей для авторизации.
+Токен должен быть передан в заголовке Authorization:
 
 ```
 Authorization: Bearer <token>
 ```
 
+### Роли пользователей
+
+Система поддерживает следующие роли:
+
+- employee: Обычный сотрудник
+- manager: Менеджер
+- hr: HR специалист
+
 ### Endpoints аутентификации
 
-#### POST /api/auth/login/
+#### POST /api/login
 
-Авторизация пользователя
+Авторизация пользователя и получение JWT токенов
 
 **Request:**
 
@@ -40,7 +49,7 @@ Authorization: Bearer <token>
 }
 ```
 
-#### POST /api/auth/refresh/
+#### POST /api/refresh
 
 Обновление access токена
 
@@ -60,11 +69,37 @@ Authorization: Bearer <token>
 }
 ```
 
+### Тестовые endpoints
+
+#### GET /api/test-hr
+
+Тестовый эндпоинт, доступный только для пользователей с ролью HR
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+
+```json
+{
+  "message": "Accessible only to HR"
+}
+```
+
 ## Users API
 
 ### GET /api/users/
 
 Получение списка пользователей
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
 
 **Parameters:**
 
@@ -86,7 +121,8 @@ Authorization: Bearer <token>
       "email": "string",
       "first_name": "string",
       "last_name": "string",
-      "role": "string"
+      "role": "string",
+      "department": "string"
     }
   ]
 }
@@ -94,7 +130,13 @@ Authorization: Bearer <token>
 
 ### POST /api/users/
 
-Создание нового пользователя
+Создание нового пользователя (требуется роль HR)
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
 
 **Request:**
 
@@ -105,7 +147,8 @@ Authorization: Bearer <token>
   "password": "string",
   "first_name": "string",
   "last_name": "string",
-  "role": "string"
+  "role": "string",
+  "department": "string"
 }
 ```
 
@@ -191,7 +234,7 @@ Authorization: Bearer <token>
 - 201: Успешное создание
 - 400: Некорректный запрос
 - 401: Не авторизован
-- 403: Доступ запрещен
+- 403: Доступ запрещен (неверная роль)
 - 404: Не найдено
 - 500: Внутренняя ошибка сервера
 

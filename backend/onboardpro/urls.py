@@ -16,9 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from core.views import HealthCheck
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from core.views import HealthCheck, TestHRView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health', HealthCheck.as_view(), name='health'),
+    path('api/login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/refresh', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/test-hr', TestHRView.as_view(), name='test_hr'),
 ]
