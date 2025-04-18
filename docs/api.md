@@ -146,6 +146,7 @@
   - `plan_id`: Фильтрация по ID плана
   - `status`: Фильтрация по статусу (pending, in_progress, completed)
   - `assigned_to`: Фильтрация по ID назначенного пользователя
+  - `team`: Фильтрация по команде (для менеджеров)
 - **Ответ**:
   ```json
   [
@@ -190,6 +191,34 @@
   }
   ```
 - **Ответ**: Обновленный объект задачи
+
+### Получение задач команды (для менеджеров)
+- **URL**: `/api/onboarding/tasks/team/`
+- **Метод**: `GET`
+- **Описание**: Получение списка задач для всех сотрудников в команде менеджера
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Параметры запроса**:
+  - `status`: Фильтрация по статусу (pending, in_progress, completed)
+  - `plan_id`: Фильтрация по ID плана
+- **Ответ**:
+  ```json
+  [
+    {
+      "id": 1,
+      "title": "Заполнить профиль",
+      "description": "Заполнить информацию в профиле",
+      "status": "pending",
+      "due_date": "2024-03-20",
+      "assigned_to": {
+        "id": 1,
+        "first_name": "Иван",
+        "last_name": "Иванов",
+        "email": "ivan@example.com"
+      },
+      "plan": 1
+    }
+  ]
+  ```
 
 ## Проверка работоспособности
 
@@ -289,6 +318,24 @@ Authorization: Bearer <access_token>
 ```json
 {
   "message": "Доступно только для HR"
+}
+```
+
+#### GET /api/test-manager
+
+Тестовый эндпоинт, доступный только для пользователей с ролью Manager
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+
+```json
+{
+  "message": "Доступно только для Manager"
 }
 ```
 
