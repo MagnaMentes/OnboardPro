@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: onboardpro
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: onboardpro_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:
