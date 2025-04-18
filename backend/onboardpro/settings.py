@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-=mnb=35r(j_m*b33#hys%ph)#f9p_jobv*w^wkt1iuf)ml2@18
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -79,8 +80,8 @@ DATABASES = {
         'NAME': 'onboardpro_db',
         'USER': 'onboardpro',
         'PASSWORD': 'securepassword',
-        'HOST': 'localhost',
-        'PORT': '5433',
+        'HOST': 'db',  # Имя сервиса из docker-compose.yml
+        'PORT': '5432',  # Порт внутри контейнера
     }
 }
 

@@ -1,5 +1,9 @@
 # API Documentation
 
+## Base URL
+
+- Local development: `http://localhost:8000`
+
 ## Общая информация
 
 API построено с использованием Django REST Framework и следует принципам REST. Все запросы к API должны быть выполнены по HTTPS.
@@ -164,6 +168,22 @@ Authorization: Bearer <token>
   ]
 }
 ```
+
+## Endpoints
+
+### Health Check
+
+Проверка работоспособности API.
+
+- **URL**: `/api/health`
+- **Method**: `GET`
+- **Success Response**:
+  - **Code**: 200
+  - **Content**: `{"status": "OK"}`
+- **Example**:
+  ```bash
+  curl http://localhost:8000/api/health
+  ```
 
 ## Коды ответов
 

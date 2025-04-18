@@ -9,12 +9,14 @@ OnboardPro - это современное веб-приложение для а
 ## Технологический стек
 
 ### Backend
+
 - Python 3.13
 - Django 5.2
 - Django REST Framework
 - PostgreSQL 15
 
 ### Frontend
+
 - HTML5
 - TailwindCSS 3.3
 - JavaScript
@@ -57,12 +59,14 @@ OnboardPro/
 ### Установка
 
 1. Клонируйте репозиторий:
+
 ```bash
 git clone https://github.com/MagnaMentes/OnboardPro.git
 cd OnboardPro
 ```
 
 2. Настройка backend:
+
 ```bash
 cd backend
 python -m venv venv
@@ -73,17 +77,20 @@ pip install -r requirements.txt
 ```
 
 3. Запуск базы данных:
+
 ```bash
 docker-compose up -d
 ```
 
 4. Применение миграций:
+
 ```bash
 cd backend
 python manage.py migrate
 ```
 
 5. Настройка frontend:
+
 ```bash
 cd frontend
 npm install
@@ -93,6 +100,7 @@ npm run build
 ### Конфигурация
 
 Основные настройки находятся в:
+
 - `backend/onboardpro/settings.py` - настройки Django
 - `docker-compose.yml` - конфигурация PostgreSQL
 - `frontend/tailwind.config.js` - настройки TailwindCSS

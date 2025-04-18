@@ -1,135 +1,64 @@
-# Архитектура OnboardPro
+# Архитектура проекта OnboardPro
 
 ## Общий обзор
 
-OnboardPro построен на основе трехслойной архитектуры:
+OnboardPro - это платформа для автоматизации процесса онбординга новых сотрудников. Проект построен на микросервисной архитектуре с использованием современных технологий.
 
-1. **Presentation Layer (Frontend)**
+## Технический стек
 
-   - HTML5 для структуры
-   - TailwindCSS для стилизации
-   - JavaScript для интерактивности
-   - Взаимодействие с backend через REST API
+### Backend
 
-2. **Application Layer (Backend)**
+- Python 3.11
+- Django 4.2+
+- Django REST Framework
+- PostgreSQL 15
+- Docker & Docker Compose
 
-   - Django REST Framework для API
-   - Django для бизнес-логики
-   - Аутентификация и авторизация
-   - Валидация данных
+### Frontend (планируется)
 
-3. **Data Layer**
-   - PostgreSQL для хранения данных
-   - Django ORM для работы с данными
+- React
+- TailwindCSS
+- TypeScript
 
-## Компоненты системы
+## Структура проекта
 
-### Frontend (TailwindCSS + JavaScript)
+```
+onboardpro/
+├── backend/              # Django backend
+│   ├── core/            # Основное приложение
+│   ├── onboardpro/      # Настройки проекта
+│   └── manage.py        # Django CLI
+├── frontend/            # React frontend (в разработке)
+├── docs/               # Документация
+└── docker-compose.yml  # Docker композиция
+```
 
-#### Структура frontend
-1. **Основные компоненты**
-   - `src/index.html` - главная страница приложения
-   - `src/input.css` - основной файл стилей
-   - `dist/output.css` - скомпилированные стили TailwindCSS
+## База данных
 
-2. **Стилизация**
-   - TailwindCSS для утилитарного CSS
-   - Компонентный подход к стилизации
-   - Адаптивный дизайн
+- PostgreSQL используется как основная база данных
+- Подключение настроено через Docker Compose
+- Миграции управляются через Django ORM
 
-3. **Интерактивность**
-   - Vanilla JavaScript
-   - Взаимодействие с REST API
-   - Управление состоянием UI
+## API
 
-4. **Сборка и оптимизация**
-   - npm для управления зависимостями
-   - TailwindCSS CLI для сборки стилей
-   - Оптимизация для production
-
-### Backend (Django)
-
-#### Core Apps
-
-1. **Users**
-
-   - Управление пользователями
-   - Роли и разрешения
-   - Профили сотрудников
-
-2. **Onboarding**
-
-   - Шаблоны онбординга
-   - Задачи и чек-листы
-   - Прогресс онбординга
-
-3. **Notifications**
-   - Email уведомления
-   - Система оповещений
-   - Напоминания
-
-### Database Schema
-
-#### Users
-
-- User
-- Role
-- Permission
-- Profile
-
-#### Onboarding
-
-- OnboardingTemplate
-- OnboardingTask
-- TaskStatus
-- Progress
-
-#### Notifications
-
-- Notification
-- EmailTemplate
-- NotificationSettings
-
-## API Endpoints
-
-### Authentication
-
-- POST /api/auth/login/
-- POST /api/auth/logout/
-- POST /api/auth/refresh/
-
-### Users
-
-- GET /api/users/
-- POST /api/users/
-- GET /api/users/{id}/
-- PUT /api/users/{id}/
-- DELETE /api/users/{id}/
-
-### Onboarding
-
-- GET /api/onboarding/templates/
-- POST /api/onboarding/templates/
-- GET /api/onboarding/tasks/
-- POST /api/onboarding/tasks/
-- PUT /api/onboarding/tasks/{id}/status/
+- RESTful архитектура
+- Документация доступна в `/docs/api.md`
+- Health check endpoint для мониторинга
 
 ## Безопасность
 
-1. **Аутентификация**
+- CORS настройки (планируется)
+- JWT аутентификация (планируется)
+- Rate limiting (планируется)
 
-   - JWT токены
-   - Secure HTTP-only cookies
-   - Refresh tokens
+## Масштабирование
 
-2. **Авторизация**
+- Контейнеризация через Docker
+- Легкое горизонтальное масштабирование
+- Stateless архитектура
 
-   - Role-based access control
-   - Object-level permissions
-   - API endpoints protection
+## Мониторинг (планируется)
 
-3. **Защита данных**
-   - HTTPS
-   - CSRF protection
-   - XSS prevention
-   - SQL injection prevention
+- Prometheus для метрик
+- Grafana для визуализации
+- Sentry для отслеживания ошибок
