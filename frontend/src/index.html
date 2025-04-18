@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -14,5 +14,12 @@
       <h2 class="text-xl">Welcome to OnboardPro</h2>
       <p class="mt-2">Placeholder for dashboard.</p>
     </main>
+    <script>
+      // Проверка аутентификации
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "/login";
+      }
+    </script>
   </body>
 </html>

@@ -15,9 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.urls import path, re_path
+from django.views.generic import TemplateView
+from django.conf import settings
+from django.conf.urls.static import static
+from django.views.static import serve
 from core.views import HealthCheck, TestHRView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,4 +29,16 @@ urlpatterns = [
     path('api/login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/test-hr', TestHRView.as_view(), name='test_hr'),
+    path('', TemplateView.as_view(template_name='index.html')),
+    path('login', TemplateView.as_view(template_name='login.html')),
+    re_path(r'^static/(?P<path>.*)$', serve,
+            {'document_root': settings.STATIC_ROOT}),
+    re_path(r'^dist/(?P<path>.*)$', serve,
+            {'document_root': settings.STATICFILES_DIRS[0]}),
+    re_path(r'^src/(?P<path>.*)$', serve,
+            {'document_root': settings.STATICFILES_DIRS[1]}),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL,
+                          document_root=settings.STATIC_ROOT)
