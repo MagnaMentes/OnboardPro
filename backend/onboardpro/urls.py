@@ -39,6 +39,8 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('', TemplateView.as_view(template_name='index.html')),
     path('login', TemplateView.as_view(template_name='login.html')),
+    path('dashboard', TemplateView.as_view(template_name='dashboard.html')),
+    path('manager-dashboard', TemplateView.as_view(template_name='manager_dashboard.html')),
 ]
 
 # Добавляем маршруты для статических файлов
