@@ -1,5 +1,252 @@
 # Документация API
 
+## Аутентификация
+
+### Вход
+- **URL**: `/api/auth/login/`
+- **Метод**: `POST`
+- **Описание**: Аутентификация пользователя и получение JWT токена
+- **Тело запроса**:
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "password123"
+  }
+  ```
+- **Ответ**:
+  ```json
+  {
+    "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+  }
+  ```
+
+### Обновление токена
+- **URL**: `/api/auth/refresh/`
+- **Метод**: `POST`
+- **Описание**: Получение нового access токена с помощью refresh токена
+- **Тело запроса**:
+  ```json
+  {
+    "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+  }
+  ```
+- **Ответ**:
+  ```json
+  {
+    "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+  }
+  ```
+
+## Пользователи
+
+### Получение текущего пользователя
+- **URL**: `/api/users/me/`
+- **Метод**: `GET`
+- **Описание**: Получение профиля текущего пользователя
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Ответ**:
+  ```json
+  {
+    "id": 1,
+    "email": "user@example.com",
+    "first_name": "Иван",
+    "last_name": "Иванов",
+    "role": "employee"
+  }
+  ```
+
+### Обновление текущего пользователя
+- **URL**: `/api/users/me/`
+- **Метод**: `PATCH`
+- **Описание**: Обновление профиля текущего пользователя
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Тело запроса**:
+  ```json
+  {
+    "first_name": "Иван",
+    "last_name": "Иванов"
+  }
+  ```
+- **Ответ**: Обновленный объект пользователя
+
+## Планы онбординга
+
+### Список планов
+- **URL**: `/api/onboarding/plans/`
+- **Метод**: `GET`
+- **Описание**: Получение списка планов онбординга
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Ответ**:
+  ```json
+  [
+    {
+      "id": 1,
+      "title": "Онбординг нового сотрудника",
+      "description": "Стандартный план онбординга для новых сотрудников",
+      "duration_days": 30,
+      "tasks": [...]
+    }
+  ]
+  ```
+
+### Создание плана
+- **URL**: `/api/onboarding/plans/`
+- **Метод**: `POST`
+- **Описание**: Создание нового плана онбординга
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Тело запроса**:
+  ```json
+  {
+    "title": "Онбординг нового сотрудника",
+    "description": "Стандартный план онбординга для новых сотрудников",
+    "duration_days": 30,
+    "tasks": [
+      {
+        "title": "Заполнить профиль",
+        "description": "Заполнить информацию в профиле",
+        "due_date": "2024-03-20",
+        "assigned_to": 1
+      }
+    ]
+  }
+  ```
+- **Ответ**: Созданный объект плана
+
+### Получение деталей плана
+- **URL**: `/api/onboarding/plans/{id}/`
+- **Метод**: `GET`
+- **Описание**: Получение подробной информации о конкретном плане
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Ответ**: Объект плана с задачами
+
+### Обновление плана
+- **URL**: `/api/onboarding/plans/{id}/`
+- **Метод**: `PATCH`
+- **Описание**: Обновление существующего плана
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Тело запроса**: Поля плана для обновления
+- **Ответ**: Обновленный объект плана
+
+### Удаление плана
+- **URL**: `/api/onboarding/plans/{id}/`
+- **Метод**: `DELETE`
+- **Описание**: Удаление плана
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Ответ**: 204 No Content
+
+## Задачи
+
+### Список задач
+- **URL**: `/api/onboarding/tasks/`
+- **Метод**: `GET`
+- **Описание**: Получение списка задач
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Параметры запроса**:
+  - `plan_id`: Фильтрация по ID плана
+  - `status`: Фильтрация по статусу (pending, in_progress, completed)
+  - `assigned_to`: Фильтрация по ID назначенного пользователя
+- **Ответ**:
+  ```json
+  [
+    {
+      "id": 1,
+      "title": "Заполнить профиль",
+      "description": "Заполнить информацию в профиле",
+      "status": "pending",
+      "due_date": "2024-03-20",
+      "assigned_to": 1,
+      "plan": 1
+    }
+  ]
+  ```
+
+### Создание задачи
+- **URL**: `/api/onboarding/tasks/`
+- **Метод**: `POST`
+- **Описание**: Создание новой задачи
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Тело запроса**:
+  ```json
+  {
+    "title": "Заполнить профиль",
+    "description": "Заполнить информацию в профиле",
+    "due_date": "2024-03-20",
+    "assigned_to": 1,
+    "plan": 1
+  }
+  ```
+- **Ответ**: Созданный объект задачи
+
+### Обновление статуса задачи
+- **URL**: `/api/onboarding/tasks/{id}/status/`
+- **Метод**: `PATCH`
+- **Описание**: Обновление статуса задачи
+- **Заголовки**: `Authorization: Bearer <token>`
+- **Тело запроса**:
+  ```json
+  {
+    "status": "completed"
+  }
+  ```
+- **Ответ**: Обновленный объект задачи
+
+## Проверка работоспособности
+
+### Проверка работоспособности API
+- **URL**: `/api/health/`
+- **Метод**: `GET`
+- **Описание**: Проверка работоспособности API
+- **Ответ**:
+  ```json
+  {
+    "status": "healthy",
+    "version": "1.0.0"
+  }
+  ```
+
+## Ошибки
+
+Все эндпоинты могут возвращать следующие ошибки:
+
+### 400 Bad Request
+```json
+{
+  "error": "Некорректные входные данные",
+  "details": {
+    "field": ["сообщение об ошибке"]
+  }
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "error": "Не предоставлены учетные данные аутентификации"
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "error": "У вас нет прав для выполнения этого действия"
+}
+```
+
+### 404 Not Found
+```json
+{
+  "error": "Ресурс не найден"
+}
+```
+
+### 500 Internal Server Error
+```json
+{
+  "error": "Внутренняя ошибка сервера"
+}
+```
+
 ## Базовый URL
 
 - Локальная разработка: `http://localhost:8000`
@@ -25,50 +272,6 @@ Authorization: Bearer <token>
 - manager: Менеджер
 - hr: HR специалист
 
-### Endpoints аутентификации
-
-#### POST /api/auth/login/
-
-Авторизация пользователя и получение JWT токенов
-
-**Request:**
-
-```json
-{
-  "username": "string",
-  "password": "string"
-}
-```
-
-**Response:**
-
-```json
-{
-  "access": "string",
-  "refresh": "string"
-}
-```
-
-#### POST /api/auth/refresh/
-
-Обновление access токена
-
-**Request:**
-
-```json
-{
-  "refresh": "string"
-}
-```
-
-**Response:**
-
-```json
-{
-  "access": "string"
-}
-```
-
 ### Тестовые endpoints
 
 #### GET /api/test-hr
@@ -85,7 +288,7 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "message": "Accessible only to HR"
+  "message": "Доступно только для HR"
 }
 ```
 
@@ -154,7 +357,7 @@ Authorization: Bearer <access_token>
 
 ## Onboarding Plans API
 
-### GET /api/onboarding/plans/
+### GET /api/plans/
 
 Получение списка планов онбординга
 
@@ -182,13 +385,24 @@ Authorization: Bearer <access_token>
       "id": 0,
       "role": "string",
       "title": "string",
-      "created_at": "string"
+      "tasks": [
+        {
+          "id": 0,
+          "plan": 0,
+          "user": 0,
+          "title": "string",
+          "description": "string",
+          "priority": "string",
+          "deadline": "string",
+          "status": "string"
+        }
+      ]
     }
   ]
 }
 ```
 
-### POST /api/onboarding/plans/
+### POST /api/plans/
 
 Создание нового плана онбординга (требуется роль HR)
 
@@ -205,6 +419,67 @@ Authorization: Bearer <access_token>
   "role": "string",
   "title": "string"
 }
+```
+
+### GET /api/plans/{id}/
+
+Получение детальной информации о плане онбординга
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+
+```json
+{
+  "id": 0,
+  "role": "string",
+  "title": "string",
+  "tasks": [
+    {
+      "id": 0,
+      "plan": 0,
+      "user": 0,
+      "title": "string",
+      "description": "string",
+      "priority": "string",
+      "deadline": "string",
+      "status": "string"
+    }
+  ]
+}
+```
+
+### PUT /api/plans/{id}/
+
+Обновление плана онбординга (требуется роль HR)
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Request:**
+
+```json
+{
+  "role": "string",
+  "title": "string"
+}
+```
+
+### DELETE /api/plans/{id}/
+
+Удаление плана онбординга (требуется роль HR)
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
 ```
 
 ## Tasks API
@@ -273,6 +548,55 @@ Authorization: Bearer <access_token>
 }
 ```
 
+### GET /api/tasks/{id}/
+
+Получение детальной информации о задаче
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+
+```json
+{
+  "id": 0,
+  "plan": 0,
+  "user": 0,
+  "title": "string",
+  "description": "string",
+  "priority": "string",
+  "deadline": "string",
+  "status": "string",
+  "created_at": "string"
+}
+```
+
+### PUT /api/tasks/{id}/
+
+Обновление задачи (требуется роль HR или Manager)
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Request:**
+
+```json
+{
+  "plan": 0,
+  "user": 0,
+  "title": "string",
+  "description": "string",
+  "priority": "string",
+  "deadline": "string"
+}
+```
+
 ### PATCH /api/tasks/{id}/
 
 Обновление статуса задачи
@@ -289,6 +613,16 @@ Authorization: Bearer <access_token>
 {
   "status": "string"
 }
+```
+
+### DELETE /api/tasks/{id}/
+
+Удаление задачи (требуется роль HR или Manager)
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
 ```
 
 ## Health Check
