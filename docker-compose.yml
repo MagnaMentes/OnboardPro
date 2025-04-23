@@ -19,6 +19,22 @@ services:
       timeout: 10s
       retries: 3
 
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: pytest tests/test_api.py -v --full-trace -vv
+    volumes:
+      - ./backend:/app
+    environment:
+      - PYTHONPATH=/app
+      - TESTING=true
+      - DATABASE_URL=sqlite:///test.db
+      - SECRET_KEY=test_secret_key
+      - TELEGRAM_BOT_TOKEN=test_token
+      - GOOGLE_CREDENTIALS_PATH=test_path
+      - WORKABLE_API_KEY=test_key
+
   frontend:
     image: nginx:alpine
     ports:

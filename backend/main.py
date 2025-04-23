@@ -7,7 +7,7 @@ from sqlalchemy.sql.expression import distinct
 import models
 import auth
 from database import engine, get_db
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional, List
 from integrations import send_telegram_notification, create_calendar_event, import_workable_employees, handle_telegram_webhook, sync_calendar_task_status, sync_workable_candidate
@@ -41,13 +41,12 @@ class PlanCreate(BaseModel):
 
 
 class PlanResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     role: str
     title: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class TaskCreate(BaseModel):
@@ -60,6 +59,8 @@ class TaskCreate(BaseModel):
 
 
 class TaskResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     plan_id: int
     user_id: int
@@ -70,9 +71,6 @@ class TaskResponse(BaseModel):
     status: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class FeedbackCreate(BaseModel):
     recipient_id: int
@@ -81,6 +79,8 @@ class FeedbackCreate(BaseModel):
 
 
 class FeedbackResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     sender_id: int
     recipient_id: int
@@ -88,18 +88,14 @@ class FeedbackResponse(BaseModel):
     message: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     email: str
     role: str
     department: Optional[str]
-
-    class Config:
-        from_attributes = True
 
 
 class TelegramConnect(BaseModel):
@@ -117,14 +113,13 @@ class AnalyticsCreate(BaseModel):
 
 
 class AnalyticsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: int
     metric: str
     value: float
     recorded_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class PasswordUpdate(BaseModel):
@@ -186,7 +181,7 @@ async def create_plan(
 ):
     if current_user.role != "hr":
         raise HTTPException(status_code=403, detail="Only HR can create plans")
-    db_plan = models.OnboardingPlan(**plan.dict())
+    db_plan = models.OnboardingPlan(**plan.model_dump())
     db.add(db_plan)
     db.commit()
     db.refresh(db_plan)
@@ -212,7 +207,7 @@ async def create_task(
             status_code=403,
             detail="Only HR or managers can create tasks"
         )
-    db_task = models.Task(**task.dict())
+    db_task = models.Task(**task.model_dump())
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -425,7 +420,7 @@ async def sync_task_to_calendar(
 async def sync_workable_candidate(
     candidate_id: str,
     current_user: models.User = Depends(auth.get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(auth.get_db)
 ):
     """Синхронизация кандидата из Workable"""
     if current_user.role != "admin" and current_user.role != "hr":
@@ -442,7 +437,7 @@ async def create_analytics(
     if current_user.role != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can record analytics")
-    db_analytics = models.Analytics(**data.dict())
+    db_analytics = models.Analytics(**data.model_dump())
     db.add(db_analytics)
     db.commit()
     db.refresh(db_analytics)

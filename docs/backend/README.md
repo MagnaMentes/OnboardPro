@@ -7,6 +7,8 @@
 - 🎲 SQLite
 - 🔑 Python-Jose (JWT)
 - 🔒 Passlib (Хеширование паролей)
+- 🐳 Docker
+- ✅ Pytest
 
 ## 📁 Структура проекта
 
@@ -17,10 +19,35 @@ backend/
 ├── 🔐 auth.py           # Аутентификация и авторизация
 ├── 🗄️ database.py       # Настройки базы данных
 ├── 🚀 main.py           # Основные эндпоинты API
-└── 📋 requirements.txt  # Зависимости
+├── 🔗 integrations.py   # Интеграции с внешними сервисами
+├── 📋 requirements.txt  # Зависимости
+└── 📝 tests/           # Тесты
+    ├── __init__.py
+    ├── config.py       # Конфигурация тестов
+    └── test_api.py     # Тесты API
 ```
 
-## ⚙️ Настройка окружения
+## ⚙️ Запуск через Docker
+
+1. 🐳 Сборка и запуск контейнеров:
+
+```bash
+docker-compose up --build
+```
+
+2. 🔄 Перезапуск только backend:
+
+```bash
+docker-compose restart backend
+```
+
+3. ✅ Запуск тестов:
+
+```bash
+docker-compose up backend-test
+```
+
+## ⚙️ Локальная настройка окружения
 
 1. 🏗 Создание виртуального окружения:
 
@@ -53,9 +80,41 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-    role = Column(String, default="employee")
+    role = Column(String, default="employee")  # employee, manager, hr
     department = Column(String, nullable=True)
+    telegram_id = Column(String, nullable=True)
 ```
+
+## 🧪 Тестирование
+
+### 🚀 Запуск тестов
+
+В Docker:
+
+```bash
+docker-compose up backend-test
+```
+
+Локально:
+
+```bash
+pytest tests/test_api.py -v
+```
+
+### 📝 Структура тестов
+
+- ✅ Тесты аутентификации
+- 👥 Тесты работы с пользователями
+- 📋 Тесты планов онбординга
+- ✍️ Тесты задач и отзывов
+- 📊 Тесты аналитики
+
+### 🔧 Конфигурация тестов
+
+- 🗃 Отдельная тестовая база данных (SQLite)
+- 🔄 Автоматическая очистка данных между тестами
+- 🔐 Фикстуры для создания тестовых пользователей
+- 📝 Использование FastAPI TestClient
 
 ## 🔐 Аутентификация
 
@@ -122,5 +181,5 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 1. 🐘 Миграция на PostgreSQL
 2. ⚡️ Добавление кеширования (Redis)
 3. 🔄 Внедрение асинхронных задач (Celery)
-4. 📊 Улучшение логирования
-5. ✅ Добавление тестов
+4. 📊 Улучшение логирования и мониторинга
+5. 🔐 Двухфакторная аутентификация
