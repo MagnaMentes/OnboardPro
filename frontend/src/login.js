@@ -13,7 +13,19 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     const data = await response.json();
     if (response.ok) {
       localStorage.setItem("token", data.access_token);
-      window.location.href = "/src/dashboard.html";
+
+      // Получаем информацию о пользователе чтобы определить его роль
+      const userResponse = await fetch("http://localhost:8000/users/me", {
+        headers: { Authorization: `Bearer ${data.access_token}` },
+      });
+      const userData = await userResponse.json();
+
+      // Перенаправляем в зависимости от роли
+      if (userData.role === "hr" || userData.role === "manager") {
+        window.location.href = "/src/manager_dashboard.html";
+      } else {
+        window.location.href = "/src/dashboard.html";
+      }
     } else {
       alert("Ошибка входа: " + data.detail);
     }

@@ -23,6 +23,7 @@ backend/
 ## ⚙️ Настройка окружения
 
 1. 🏗 Создание виртуального окружения:
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # Linux/macOS
@@ -31,6 +32,7 @@ backend/
    ```
 
 2. 📦 Установка зависимостей:
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -64,15 +66,18 @@ class User(Base):
 ## 🔌 API Endpoints
 
 ### 🔑 POST /login
+
 - 🔓 Аутентификация пользователя
 - 🎫 Возвращает JWT токен
 
 ### 👤 POST /users
+
 - 📝 Создание нового пользователя
 - 🔒 Хеширование пароля
 - ✅ Базовая валидация данных
 
 ### 👥 GET /users/me
+
 - 📱 Получение информации о текущем пользователе
 - 🔐 Требует JWT токен
 
@@ -85,13 +90,15 @@ class User(Base):
 ## 🌐 CORS
 
 Настроен CORS middleware:
-- 🌍 Разрешены все источники (*)
+
+- 🌍 Разрешены все источники (\*)
 - 🔒 Поддержка credentials
 - 📡 Все стандартные методы
 
 ## 🚀 Запуск
 
 Для разработки:
+
 ```bash
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -99,6 +106,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ## 📚 Тестирование API
 
 Документация API доступна по адресам:
+
 - 📖 /docs (Swagger UI)
 - 📑 /redoc (ReDoc)
 
