@@ -3,8 +3,8 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from .database import SessionLocal
-from .models import User
+from database import SessionLocal
+from models import User
 from dotenv import load_dotenv
 import os
 

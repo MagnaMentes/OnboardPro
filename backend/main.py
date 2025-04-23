@@ -2,8 +2,9 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from . import models, auth
-from .database import engine
+import models
+import auth
+from database import engine
 from pydantic import BaseModel
 
 app = FastAPI()
