@@ -1,23 +1,28 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
+from sqlalchemy.sql.expression import distinct
 import models
 import auth
-from database import engine
+from database import engine, get_db
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
+from integrations import send_telegram_notification, create_calendar_event, import_workable_employees, handle_telegram_webhook, sync_calendar_task_status, sync_workable_candidate
 
 app = FastAPI()
 
-# Настройка CORS
+# Настройка CORS с явным указанием разрешенных источников
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    # Разрешаем запросы с фронтенд сервера
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 models.Base.metadata.create_all(bind=engine)
@@ -69,6 +74,63 @@ class TaskResponse(BaseModel):
         from_attributes = True
 
 
+class FeedbackCreate(BaseModel):
+    recipient_id: int
+    task_id: Optional[int] = None
+    message: str
+
+
+class FeedbackResponse(BaseModel):
+    id: int
+    sender_id: int
+    recipient_id: int
+    task_id: Optional[int]
+    message: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    role: str
+    department: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class TelegramConnect(BaseModel):
+    telegram_id: str
+
+
+class CalendarEvent(BaseModel):
+    task_id: int
+
+
+class AnalyticsCreate(BaseModel):
+    user_id: int
+    metric: str
+    value: float
+
+
+class AnalyticsResponse(BaseModel):
+    id: int
+    user_id: int
+    metric: str
+    value: float
+    recorded_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class PasswordUpdate(BaseModel):
+    password: str
+
+
 @app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(auth.get_db)):
     user = db.query(models.User).filter(
@@ -93,6 +155,27 @@ async def create_user(user: UserCreate, db: Session = Depends(auth.get_db)):
 @app.get("/users/me")
 async def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
     return {"email": current_user.email, "role": current_user.role}
+
+
+@app.put("/users/{user_id}/password")
+async def update_user_password(
+    user_id: int,
+    password_data: PasswordUpdate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Only HR can update passwords")
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=404, detail="User not found")
+
+    user.password = auth.pwd_context.hash(password_data.password)
+    db.commit()
+    return {"message": "Password updated successfully"}
 
 
 @app.post("/plans", response_model=PlanResponse)
@@ -167,3 +250,253 @@ async def update_task_status(
     db.commit()
     db.refresh(task)
     return task
+
+
+@app.delete("/tasks/{task_id}")
+async def delete_task(
+    task_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """Удаление задачи"""
+    if current_user.role not in ["hr", "manager"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only HR or managers can delete tasks"
+        )
+
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found"
+        )
+
+    db.delete(task)
+    db.commit()
+    return {"message": "Task deleted successfully"}
+
+
+@app.post("/feedback", response_model=FeedbackResponse)
+async def create_feedback(
+    feedback: FeedbackCreate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    db_feedback = models.Feedback(
+        sender_id=current_user.id,
+        recipient_id=feedback.recipient_id,
+        task_id=feedback.task_id,
+        message=feedback.message
+    )
+    db.add(db_feedback)
+    db.commit()
+    db.refresh(db_feedback)
+    return db_feedback
+
+
+@app.get("/feedback", response_model=List[FeedbackResponse])
+async def get_feedback(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    if current_user.role == "employee":
+        return db.query(models.Feedback).filter(
+            models.Feedback.recipient_id == current_user.id
+        ).all()
+    return db.query(models.Feedback).all()
+
+
+@app.get("/users", response_model=List[UserResponse])
+async def get_users(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    if current_user.role not in ["manager", "hr"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only managers or HR can view profiles"
+        )
+    return db.query(models.User).all()
+
+
+@app.get("/users/{user_id}", response_model=UserResponse)
+async def get_user(
+    user_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден"
+        )
+    return user
+
+
+@app.delete("/users/all")
+async def delete_all_users(db: Session = Depends(auth.get_db)):
+    db.query(models.User).delete()
+    db.commit()
+    return {"message": "All users deleted successfully"}
+
+
+@app.post("/integrations/telegram")
+async def connect_telegram(
+    data: TelegramConnect,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    current_user.telegram_id = data.telegram_id
+    db.commit()
+    return {"message": "Telegram connected"}
+
+
+@app.post("/integrations/calendar")
+async def create_calendar(
+    data: CalendarEvent,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Only HR can create calendar events")
+    create_calendar_event(current_user.id, data.task_id, db)
+    return {"message": "Calendar event created"}
+
+
+@app.post("/integrations/workable")
+async def import_workable(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Only HR can import employees")
+    candidates = import_workable_employees()
+
+    for candidate in candidates:
+        email = candidate.get("email")
+        if email and not db.query(models.User).filter(models.User.email == email).first():
+            db_user = models.User(
+                email=email,
+                password=auth.pwd_context.hash("default123"),
+                role="employee",
+                department=candidate.get("department", "N/A")
+            )
+            db.add(db_user)
+
+    db.commit()
+    return {"message": "Employees imported"}
+
+
+@app.post("/notifications/telegram")
+async def notify_telegram(
+    user_id: int,
+    message: str,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Only HR can send notifications")
+    await send_telegram_notification(user_id, message, db)
+    return {"message": "Notification sent"}
+
+
+@app.post("/webhook/telegram")
+async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
+    """Обработка вебхуков от Telegram бота"""
+    return await handle_telegram_webhook(request, db)
+
+
+@app.post("/api/tasks/{task_id}/sync-calendar")
+async def sync_task_to_calendar(
+    task_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Синхронизация задачи с Google Calendar"""
+    return sync_calendar_task_status(task_id, db)
+
+
+@app.post("/api/workable/sync/{candidate_id}")
+async def sync_workable_candidate(
+    candidate_id: str,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Синхронизация кандидата из Workable"""
+    if current_user.role != "admin" and current_user.role != "hr":
+        raise HTTPException(status_code=403, detail="Недостаточно прав")
+    return sync_workable_candidate(candidate_id, db)
+
+
+@app.post("/analytics", response_model=AnalyticsResponse)
+async def create_analytics(
+    data: AnalyticsCreate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Only HR can record analytics")
+    db_analytics = models.Analytics(**data.dict())
+    db.add(db_analytics)
+    db.commit()
+    db.refresh(db_analytics)
+    return db_analytics
+
+
+@app.get("/analytics", response_model=List[AnalyticsResponse])
+async def get_analytics(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Only HR can view analytics")
+    return db.query(models.Analytics).all()
+
+
+@app.get("/analytics/summary")
+async def get_analytics_summary(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """Получение сводной аналитики для HR-дашборда"""
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Only HR can view analytics")
+
+    # Общая статистика по задачам
+    total_tasks = db.query(models.Task).count()
+    completed_tasks = db.query(models.Task).filter(
+        models.Task.status == "completed"
+    ).count()
+    completion_rate = completed_tasks / total_tasks if total_tasks > 0 else 0
+
+    # Статистика по отзывам
+    total_feedback = db.query(models.Feedback).count()
+    avg_feedback_per_user = db.query(
+        func.count(models.Feedback.id) /
+        func.count(distinct(models.Feedback.recipient_id))
+    ).scalar() or 0
+
+    return {
+        "task_stats": {
+            "total": total_tasks,
+            "completed": completed_tasks,
+            "completion_rate": completion_rate
+        },
+        "feedback_stats": {
+            "total": total_feedback,
+            "avg_per_user": avg_feedback_per_user
+        }
+    }
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}

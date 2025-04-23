@@ -7,7 +7,6 @@
 Аутентификация пользователя и получение JWT токена.
 
 **📨 Запрос:**
-
 ```json
 {
   "username": "user@example.com",
@@ -16,7 +15,6 @@
 ```
 
 **📩 Ответ:**
-
 ```json
 {
   "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
@@ -24,12 +22,13 @@
 }
 ```
 
+## 👥 Пользователи
+
 ### 👤 POST /users
 
 Создание нового пользователя.
 
 **📨 Запрос:**
-
 ```json
 {
   "email": "user@example.com",
@@ -39,33 +38,17 @@
 }
 ```
 
-**📩 Ответ:**
+### 👥 GET /users
 
-```json
-{
-  "email": "user@example.com",
-  "role": "employee"
-}
-```
+Получение списка пользователей (для HR и менеджеров).
 
-### 👥 GET /users/me
+### 👤 GET /users/me
 
 Получение информации о текущем пользователе.
 
-**📋 Заголовки:**
+### 🔒 PUT /users/{user_id}/password
 
-```
-Authorization: Bearer <token>
-```
-
-**📩 Ответ:**
-
-```json
-{
-  "email": "user@example.com",
-  "role": "employee"
-}
-```
+Обновление пароля пользователя (только для HR).
 
 ## 📋 Планы онбординга
 
@@ -81,36 +64,9 @@ Authorization: Bearer <token>
 }
 ```
 
-**📩 Ответ:**
-```json
-{
-  "id": 1,
-  "role": "employee",
-  "title": "План онбординга разработчика",
-  "created_at": "2025-04-23T10:00:00Z"
-}
-```
-
 ### 📋 GET /plans
 
 Получение списка всех планов онбординга.
-
-**📋 Заголовки:**
-```
-Authorization: Bearer <token>
-```
-
-**📩 Ответ:**
-```json
-[
-  {
-    "id": 1,
-    "role": "employee",
-    "title": "План онбординга разработчика",
-    "created_at": "2025-04-23T10:00:00Z"
-  }
-]
-```
 
 ## 📝 Задачи
 
@@ -130,88 +86,109 @@ Authorization: Bearer <token>
 }
 ```
 
-**📩 Ответ:**
-```json
-{
-  "id": 1,
-  "plan_id": 1,
-  "user_id": 2,
-  "title": "Изучить документацию",
-  "description": "Ознакомиться с документацией проекта",
-  "priority": "high",
-  "deadline": "2025-05-01T00:00:00Z",
-  "status": "pending",
-  "created_at": "2025-04-23T10:00:00Z"
-}
-```
-
 ### 📋 GET /tasks
 
-Получение списка задач. Для сотрудников возвращает только их задачи, для HR и менеджеров - все задачи.
-
-**📋 Заголовки:**
-```
-Authorization: Bearer <token>
-```
-
-**📩 Ответ:**
-```json
-[
-  {
-    "id": 1,
-    "plan_id": 1,
-    "user_id": 2,
-    "title": "Изучить документацию",
-    "description": "Ознакомиться с документацией проекта",
-    "priority": "high",
-    "deadline": "2025-05-01T00:00:00Z",
-    "status": "pending",
-    "created_at": "2025-04-23T10:00:00Z"
-  }
-]
-```
+Получение списка задач (фильтруется по роли пользователя).
 
 ### 🔄 PUT /tasks/{task_id}/status
 
 Обновление статуса задачи.
 
-**📋 Параметры запроса:**
-- status: Новый статус задачи (pending, in_progress, completed)
+### ❌ DELETE /tasks/{task_id}
 
-**📋 Заголовки:**
+Удаление задачи (только для HR и менеджеров).
+
+## 💬 Отзывы
+
+### ✍️ POST /feedback
+
+Создание нового отзыва.
+
+**📨 Запрос:**
+```json
+{
+  "recipient_id": 2,
+  "task_id": 1,
+  "message": "Отличная работа!"
+}
 ```
-Authorization: Bearer <token>
+
+### 📑 GET /feedback
+
+Получение списка отзывов.
+
+## 🤖 Интеграции
+
+### 📱 POST /integrations/telegram
+
+Подключение Telegram для уведомлений.
+
+**📨 Запрос:**
+```json
+{
+  "telegram_id": "12345678"
+}
 ```
+
+### 📅 POST /integrations/calendar
+
+Создание события в Google Calendar.
+
+**📨 Запрос:**
+```json
+{
+  "task_id": 1
+}
+```
+
+### 👥 POST /integrations/workable
+
+Импорт сотрудников из Workable (только для HR).
+
+## 📊 Аналитика
+
+### 📈 GET /analytics/summary
+
+Получение сводной аналитики для HR-дашборда.
 
 **📩 Ответ:**
 ```json
 {
-  "id": 1,
-  "plan_id": 1,
-  "user_id": 2,
-  "title": "Изучить документацию",
-  "description": "Ознакомиться с документацией проекта",
-  "priority": "high",
-  "deadline": "2025-05-01T00:00:00Z",
-  "status": "in_progress",
-  "created_at": "2025-04-23T10:00:00Z"
+  "task_stats": {
+    "total": 100,
+    "completed": 75,
+    "completion_rate": 0.75
+  },
+  "feedback_stats": {
+    "total": 50,
+    "avg_per_user": 2.5
+  }
 }
 ```
 
-## 📊 Коды ответов
+### 📊 POST /analytics
 
-- ✅ 200: Успешный запрос
-- ⚠️ 401: Ошибка аутентификации
-- 🚫 403: Недостаточно прав
-- ❌ 422: Ошибка валидации данных
-- 💥 500: Внутренняя ошибка сервера
+Создание записи аналитики (только для HR).
 
-## 🌐 CORS
+### 📈 GET /analytics
 
-API поддерживает CORS для всех источников (\*) и следующие методы:
+Получение всех записей аналитики (только для HR).
 
-- 📥 GET
-- 📤 POST
-- 🔄 PUT
-- 🗑️ DELETE
-- 🔍 OPTIONS
+## 🔄 Webhook
+
+### 🤖 POST /webhook/telegram
+
+Обработка webhook'ов от Telegram бота.
+
+## 🔍 Мониторинг
+
+### ❤️ GET /health
+
+Проверка работоспособности API.
+
+**📩 Ответ:**
+```json
+{
+  "status": "healthy"
+}
+```

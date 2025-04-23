@@ -1,14 +1,14 @@
 // Функция для выхода из системы
 function logout() {
   localStorage.removeItem("token");
-  window.location.href = "/src/login.html";
+  window.location.href = "/login.html";
 }
 
 // Функция для проверки токена
 async function checkToken() {
   const token = localStorage.getItem("token");
   if (!token) {
-    window.location.href = "/src/login.html";
+    window.location.href = "/login.html";
     return null;
   }
   return token;
@@ -17,7 +17,7 @@ async function checkToken() {
 // Функция для получения данных пользователя
 async function fetchUserData(token) {
   try {
-    const response = await fetch("http://localhost:8000/users/me", {
+    const response = await fetch("/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -29,7 +29,7 @@ async function fetchUserData(token) {
   } catch (error) {
     console.error("Ошибка:", error);
     localStorage.removeItem("token");
-    window.location.href = "/src/login.html";
+    window.location.href = "/login.html";
     return null;
   }
 }
@@ -41,16 +41,21 @@ function renderNavigation(user) {
 
   // Базовые ссылки для всех пользователей
   const links = [
-    { href: "/src/dashboard.html", text: "Мои задачи" },
-    { href: "/src/feedback.html", text: "Обратная связь" },
+    { href: "/dashboard.html", text: "Мои задачи" },
+    { href: "/feedback.html", text: "Обратная связь" },
   ];
 
   // Дополнительные ссылки для manager и hr
   if (user.role === "hr" || user.role === "manager") {
     links.push(
-      { href: "/src/manager_dashboard.html", text: "Управление задачами" },
-      { href: "/src/profiles.html", text: "Профили" }
+      { href: "/manager_dashboard.html", text: "Управление задачами" },
+      { href: "/profiles.html", text: "Профили" }
     );
+  }
+
+  // Специальные ссылки только для HR
+  if (user.role === "hr") {
+    links.push({ href: "/hr_dashboard.html", text: "HR Dashboard" });
   }
 
   // Добавляем кнопку выхода

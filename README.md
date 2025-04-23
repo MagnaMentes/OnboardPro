@@ -7,6 +7,8 @@
 - 🏗 **Бэкенд**: FastAPI, SQLite, SQLAlchemy
 - 🎨 **Фронтенд**: HTML, TailwindCSS, JavaScript
 - 🔐 **Аутентификация**: JWT
+- 🐳 **Контейнеризация**: Docker, docker-compose
+- 🤖 **Интеграции**: Telegram, Google Calendar, Workable
 
 ## ✨ Возможности
 
@@ -18,10 +20,31 @@
 - 🎯 Приоритизация задач (высокий, средний, низкий)
 - 📊 Фильтрация задач по статусу и приоритету
 - 👀 Разные представления для сотрудников и менеджеров
+- 📈 HR-дашборд с аналитикой и метриками
+- 🔄 Интеграция с внешними сервисами
+  - 📱 Уведомления через Telegram
+  - 📅 Синхронизация с Google Calendar
+  - 👥 Импорт сотрудников из Workable
 
 ## 🛠 Установка
 
-### 🔧 Бэкенд
+### 🐳 Запуск через Docker
+
+```bash
+# Клонируем репозиторий
+git clone https://github.com/MagnaMentes/OnboardPro.git
+cd OnboardPro
+
+# Создаем файл .env с необходимыми переменными
+cp backend/.env.example backend/.env
+
+# Запускаем контейнеры
+docker-compose up -d
+```
+
+### 🔧 Локальная установка (для разработки)
+
+#### Бэкенд
 
 ```bash
 cd backend
@@ -37,9 +60,12 @@ pip install -r requirements.txt
 ```
 DATABASE_URL=sqlite:///onboardpro.db
 SECRET_KEY=your-secret-key
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+GOOGLE_CREDENTIALS_PATH=/path/to/credentials.json
+WORKABLE_API_KEY=your-workable-api-key
 ```
 
-### 🎯 Фронтенд
+#### Фронтенд
 
 ```bash
 cd frontend
@@ -49,7 +75,20 @@ npm run build
 
 ## 🚀 Запуск
 
-### 🔧 Бэкенд
+### 🐳 Docker (рекомендуется)
+
+```bash
+docker-compose up -d
+```
+
+Приложение будет доступно:
+- Фронтенд: http://localhost:3000
+- API: http://localhost:8000
+- Swagger UI: http://localhost:8000/docs
+
+### 🔧 Локальный запуск (для разработки)
+
+#### Бэкенд
 
 ```bash
 cd backend
@@ -59,39 +98,37 @@ venv\Scripts\activate  # для Windows
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 🎯 Фронтенд
+#### Фронтенд
 
 ```bash
 cd frontend
 npm run watch
 ```
 
-## 🔌 API Endpoints
-
-- 🔑 POST `/login` - Аутентификация пользователя
-- 👤 POST `/users` - Создание нового пользователя
-- 👥 GET `/users/me` - Получение информации о текущем пользователе
-- 📝 POST `/plans` - Создание плана онбординга (HR)
-- 📋 GET `/plans` - Получение списка планов
-- ✨ POST `/tasks` - Создание новой задачи (HR, manager)
-- 📊 GET `/tasks` - Получение списка задач
-- 🔄 PUT `/tasks/{id}/status` - Обновление статуса задачи
-
 ## 📁 Структура проекта
 
 ```
 .
-├── 🔧 backend/               # FastAPI бэкенд
-│   ├── models.py         # Модели данных
-│   ├── auth.py          # Аутентификация
-│   ├── database.py      # Настройки БД
-│   └── main.py          # Основной API
-├── 🎨 frontend/             # Фронтенд
-│   ├── src/             # Исходный код
-│   │   ├── layouts/     # Шаблоны
-│   │   └── input.css    # Стили
-│   └── dist/            # Скомпилированные файлы
-└── 📚 docs/                # Документация
+├── 🐳 docker-compose.yml    # Docker конфигурация
+├── 🔧 backend/             # FastAPI бэкенд
+│   ├── Dockerfile        # Сборка бэкенд-контейнера
+│   ├── main.py          # Основной API
+│   ├── models.py        # Модели данных
+│   ├── auth.py         # Аутентификация
+│   ├── database.py     # Настройки БД
+│   └── integrations.py # Внешние интеграции
+├── 🎨 frontend/           # Фронтенд
+│   ├── nginx/          # Nginx конфигурация
+│   ├── src/           # Исходный код
+│   │   ├── layouts/   # Шаблоны
+│   │   └── input.css  # Стили
+│   └── dist/          # Скомпилированные файлы
+└── 📚 docs/              # Документация
+    ├── api/           # API документация
+    ├── frontend/      # Фронтенд документация
+    ├── backend/       # Бэкенд документация
+    ├── deployment/    # Инструкции по развертыванию
+    └── security/      # Документация по безопасности
 ```
 
 ## 💻 Разработка
@@ -101,12 +138,14 @@ npm run watch
 - 🐍 Python 3.8+
 - 📦 Node.js 14+
 - 🔧 npm 6+
+- 🐳 Docker & docker-compose (для запуска через контейнеры)
 
 ### 📝 Рекомендации по разработке
 
 1. 🔧 Используйте виртуальное окружение Python
 2. 🔄 Следите за обновлениями зависимостей
 3. ✨ Соблюдайте стиль кода проекта
+4. 🐳 Тестируйте изменения в Docker-окружении
 
 ## 👥 Авторы
 

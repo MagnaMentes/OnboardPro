@@ -3,7 +3,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   try {
-    const response = await fetch("http://localhost:8000/login", {
+    const response = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `username=${encodeURIComponent(
@@ -15,16 +15,18 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
       localStorage.setItem("token", data.access_token);
 
       // Получаем информацию о пользователе чтобы определить его роль
-      const userResponse = await fetch("http://localhost:8000/users/me", {
+      const userResponse = await fetch("/api/users/me", {
         headers: { Authorization: `Bearer ${data.access_token}` },
       });
       const userData = await userResponse.json();
 
       // Перенаправляем в зависимости от роли
-      if (userData.role === "hr" || userData.role === "manager") {
-        window.location.href = "/src/manager_dashboard.html";
+      if (userData.role === "hr") {
+        window.location.href = "/hr_dashboard.html";
+      } else if (userData.role === "manager") {
+        window.location.href = "/manager_dashboard.html";
       } else {
-        window.location.href = "/src/dashboard.html";
+        window.location.href = "/dashboard.html";
       }
     } else {
       alert("Ошибка входа: " + data.detail);
