@@ -1,0 +1,16 @@
+{
+  "name": "onboardpro-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for OnboardPro",
+  "main": "index.js",
+  "scripts": {
+    "build": "tailwindcss -i ./src/input.css -o ./dist/output.css",
+    "watch": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.3.0"
+  }
+}
