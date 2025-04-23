@@ -1,3 +1,9 @@
+// Функция для выхода из системы
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "/src/login.html";
+}
+
 // Функция для проверки токена
 async function checkToken() {
   const token = localStorage.getItem("token");
@@ -47,10 +53,21 @@ function renderNavigation(user) {
     );
   }
 
+  // Добавляем кнопку выхода
+  const logoutButton = `
+    <button 
+      onclick="logout()" 
+      class="px-3 py-2 hover:bg-blue-700 rounded transition-colors text-white ml-4"
+    >
+      Выход
+    </button>
+  `;
+
   // Отрисовка навигации
-  navLinks.innerHTML = links
-    .map(
-      (link) => `
+  navLinks.innerHTML =
+    links
+      .map(
+        (link) => `
         <a 
             href="${link.href}" 
             class="px-3 py-2 hover:bg-blue-700 rounded transition-colors ${
@@ -60,8 +77,8 @@ function renderNavigation(user) {
             ${link.text}
         </a>
     `
-    )
-    .join("");
+      )
+      .join("") + logoutButton;
 }
 
 // Основная функция инициализации навигации
