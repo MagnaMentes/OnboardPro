@@ -1,9 +1,6 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "/src/login.html";
-    return;
-  }
+document.addEventListener("DOMContentLoaded", async () => {
+  const user = await initNavigation();
+  if (!user) return;
 
   let tasks = [];
   const statusFilter = document.getElementById("status-filter");
@@ -12,14 +9,16 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchTasks() {
     try {
       const response = await fetch("http://localhost:8000/tasks", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       if (!response.ok) throw new Error("Ошибка загрузки задач");
       tasks = await response.json();
       renderTasks();
     } catch (error) {
       console.error("Ошибка:", error);
-      alert("Не удалось загрузить задачи: " + error.message);
+      const container = document.getElementById("tasks-container");
+      container.innerHTML =
+        '<p class="text-red-500 text-center col-span-3">Не удалось загрузить задачи</p>';
     }
   }
 
@@ -34,6 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
         priorityValue === "all" || task.priority === priorityValue;
       return statusMatch && priorityMatch;
     });
+
+    if (filteredTasks.length === 0) {
+      container.innerHTML =
+        '<p class="text-gray-500 text-center col-span-3">Нет задач для отображения</p>';
+      return;
+    }
 
     container.innerHTML = filteredTasks
       .map(
@@ -123,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           method: "PUT",
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );

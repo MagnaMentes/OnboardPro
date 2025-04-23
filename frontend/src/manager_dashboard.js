@@ -1,11 +1,14 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "/src/login.html";
+document.addEventListener("DOMContentLoaded", async () => {
+  const user = await initNavigation();
+  if (!user) return;
+
+  // Проверка прав доступа
+  if (user.role === "employee") {
+    window.location.href = "/src/dashboard.html";
     return;
   }
 
-  let currentUser = null;
+  let currentUser = user;
   let plans = [];
   let tasks = [];
 
@@ -18,27 +21,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusFilter = document.getElementById("status-filter");
   const priorityFilter = document.getElementById("priority-filter");
 
-  // Получение информации о текущем пользователе
-  async function getCurrentUser() {
-    try {
-      const response = await fetch("http://localhost:8000/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      currentUser = await response.json();
-      if (currentUser.role !== "hr") {
-        createPlanBtn.style.display = "none";
-      }
-    } catch (error) {
-      console.error("Ошибка:", error);
-      window.location.href = "/src/login.html";
-    }
+  // Если не HR, скрываем кнопку создания плана
+  if (currentUser.role !== "hr") {
+    createPlanBtn.style.display = "none";
   }
 
   // Получение списка планов
   async function fetchPlans() {
     try {
       const response = await fetch("http://localhost:8000/plans", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       plans = await response.json();
       renderPlans();
@@ -53,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchTasks() {
     try {
       const response = await fetch("http://localhost:8000/tasks", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       tasks = await response.json();
       renderTasks();
@@ -66,6 +58,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Отображение планов
   function renderPlans() {
     const container = document.getElementById("plans-container");
+    if (plans.length === 0) {
+      container.innerHTML =
+        '<p class="text-gray-500 text-center">Нет доступных планов</p>';
+      return;
+    }
+
     container.innerHTML = plans
       .map(
         (plan) => `
@@ -102,6 +100,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return statusMatch && priorityMatch;
     });
 
+    if (filteredTasks.length === 0) {
+      container.innerHTML =
+        '<p class="text-gray-500 text-center">Нет задач для отображения</p>';
+      return;
+    }
+
     container.innerHTML = filteredTasks
       .map(
         (task) => `
@@ -122,11 +126,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         <p class="text-gray-500">План: ${getPlanTitle(
                           task.plan_id
                         )}</p>
-                        <p class="text-gray-500">
-                            Срок: ${new Date(task.deadline).toLocaleDateString(
-                              "ru-RU"
-                            )}
-                        </p>
+                        <p class="text-gray-500">Срок: ${new Date(
+                          task.deadline
+                        ).toLocaleDateString("ru-RU")}</p>
                     </div>
                     <select
                         class="px-2 py-1 text-sm border rounded ${getStatusClass(
@@ -160,9 +162,44 @@ document.addEventListener("DOMContentLoaded", () => {
   // Обновление выпадающего списка планов
   function updatePlanSelect() {
     const planSelect = document.getElementById("plan-select");
-    planSelect.innerHTML = plans
-      .map((plan) => `<option value="${plan.id}">${plan.title}</option>`)
-      .join("");
+    planSelect.innerHTML = `
+            <option value="" disabled selected>Выберите план</option>
+            ${plans
+              .map(
+                (plan) => `
+                <option value="${plan.id}">${plan.title}</option>
+            `
+              )
+              .join("")}
+        `;
+
+    // Также обновляем список пользователей
+    fetchUsers();
+  }
+
+  // Загрузка списка пользователей
+  async function fetchUsers() {
+    try {
+      const response = await fetch("http://localhost:8000/users", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const users = await response.json();
+      const userSelect = document.getElementById("user-select");
+      userSelect.innerHTML = `
+                <option value="" disabled selected>Выберите сотрудника</option>
+                ${users
+                  .filter((u) => u.role === "employee")
+                  .map(
+                    (u) => `
+                        <option value="${u.id}">${u.email}</option>
+                    `
+                  )
+                  .join("")}
+            `;
+    } catch (error) {
+      console.error("Ошибка:", error);
+      alert("Не удалось загрузить список пользователей: " + error.message);
+    }
   }
 
   // Вспомогательные функции для стилей и текстов
@@ -230,12 +267,15 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("new-plan-form")
     .addEventListener("submit", async (e) => {
       e.preventDefault();
+      const submitButton = e.target.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+
       try {
         const response = await fetch("http://localhost:8000/plans", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({
             title: document.getElementById("plan-title").value,
@@ -243,6 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }),
         });
         if (!response.ok) throw new Error("Ошибка создания плана");
+
         const newPlan = await response.json();
         plans.push(newPlan);
         renderPlans();
@@ -252,6 +293,8 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (error) {
         console.error("Ошибка:", error);
         alert("Не удалось создать план: " + error.message);
+      } finally {
+        submitButton.disabled = false;
       }
     });
 
@@ -259,12 +302,15 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("new-task-form")
     .addEventListener("submit", async (e) => {
       e.preventDefault();
+      const submitButton = e.target.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+
       try {
         const response = await fetch("http://localhost:8000/tasks", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({
             plan_id: parseInt(document.getElementById("plan-select").value),
@@ -277,6 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }),
         });
         if (!response.ok) throw new Error("Ошибка создания задачи");
+
         const newTask = await response.json();
         tasks.push(newTask);
         renderTasks();
@@ -285,6 +332,8 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (error) {
         console.error("Ошибка:", error);
         alert("Не удалось создать задачу: " + error.message);
+      } finally {
+        submitButton.disabled = false;
       }
     });
 
@@ -296,7 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           method: "PUT",
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
@@ -318,7 +367,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Инициализация
-  getCurrentUser();
   fetchPlans();
   fetchTasks();
 });

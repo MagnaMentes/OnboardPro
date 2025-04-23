@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OnboardPro - {{ title }}</title>
+    <title>OnboardPro</title>
     <link href="/dist/output.css" rel="stylesheet" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
@@ -15,55 +15,77 @@
       <div class="container mx-auto flex justify-between items-center">
         <h1 class="text-2xl font-bold">OnboardPro</h1>
         <nav class="space-x-2" id="nav-links">
-          <!-- Навигация будет добавлена через JavaScript в зависимости от роли -->
+          <!-- Навигация добавляется через JavaScript -->
         </nav>
       </div>
     </header>
-    <main class="container mx-auto p-4 md:p-6">{{ content }}</main>
+
+    <main class="container mx-auto p-4 md:p-6">
+      <div id="content">
+        <!-- Контент будет добавлен через JavaScript -->
+      </div>
+    </main>
+
     <footer class="bg-gray-800 text-white p-4 mt-8">
       <div class="container mx-auto text-center">
         <p>© 2025 magna_mentes. Все права защищены.</p>
       </div>
     </footer>
+
     <script>
-      // Управление навигацией в зависимости от роли пользователя
-      document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener("DOMContentLoaded", async () => {
         const token = localStorage.getItem("token");
         if (!token) {
           window.location.href = "/src/login.html";
           return;
         }
 
-        // Получаем информацию о пользователе
-        fetch("http://localhost:8000/users/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((response) => response.json())
-          .then((user) => {
-            const navLinks = document.getElementById("nav-links");
-            const links = [{ href: "/src/dashboard.html", text: "Мои задачи" }];
+        try {
+          const response = await fetch("http://localhost:8000/users/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
-            if (user.role === "hr" || user.role === "manager") {
-              links.push({
+          if (!response.ok) {
+            throw new Error("Unauthorized");
+          }
+
+          const user = await response.json();
+          const navLinks = document.getElementById("nav-links");
+
+          // Базовые ссылки для всех пользователей
+          const links = [
+            { href: "/src/dashboard.html", text: "Мои задачи" },
+            { href: "/src/feedback.html", text: "Обратная связь" },
+          ];
+
+          // Дополнительные ссылки для manager и hr
+          if (user.role === "hr" || user.role === "manager") {
+            links.push(
+              {
                 href: "/src/manager_dashboard.html",
                 text: "Управление задачами",
-              });
-            }
+              },
+              { href: "/src/profiles.html", text: "Профили" }
+            );
+          }
 
-            navLinks.innerHTML = links
-              .map(
-                (link) => `
-              <a href="${link.href}" 
-                 class="px-3 py-2 hover:bg-blue-700 rounded inline-block">
-                ${link.text}
-              </a>
-            `
-              )
-              .join("");
-          })
-          .catch(() => {
-            window.location.href = "/src/login.html";
-          });
+          // Отрисовка навигации
+          navLinks.innerHTML = links
+            .map(
+              (link) =>
+                `<a href="${link.href}" 
+                    class="px-3 py-2 hover:bg-blue-700 rounded transition-colors ${
+                      window.location.pathname === link.href
+                        ? "bg-blue-700"
+                        : ""
+                    }"
+                >${link.text}</a>`
+            )
+            .join("");
+        } catch (error) {
+          console.error("Ошибка:", error);
+          window.location.href = "/src/login.html";
+        }
       });
     </script>
   </body>
