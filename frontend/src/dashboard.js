@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   window.updateTaskStatus = async function (taskId, newStatus) {
     try {
       const response = await fetch(
-        `http://localhost:8001/tasks/${taskId}/status?status=${newStatus}`,
+        `http://localhost:8000/tasks/${taskId}/status?status=${newStatus}`,
         {
           method: "PUT",
           headers: {

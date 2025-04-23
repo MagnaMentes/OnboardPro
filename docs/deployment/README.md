@@ -12,17 +12,20 @@
 ### 🔧 Настройка окружения
 
 1. **Клонируйте репозиторий:**
+
 ```bash
 git clone https://github.com/MagnaMentes/OnboardPro.git
 cd OnboardPro
 ```
 
 2. **Настройте переменные окружения:**
+
 ```bash
 cp backend/.env.example backend/.env
 ```
 
 Отредактируйте `.env` файл:
+
 ```
 DATABASE_URL=sqlite:///onboardpro.db
 SECRET_KEY=your-secure-secret-key
@@ -32,17 +35,20 @@ WORKABLE_API_KEY=your-workable-api-key
 ```
 
 3. **Подготовьте Google Calendar интеграцию:**
+
 - Скопируйте файл credentials.json в директорию backend/
 - Добавьте путь к файлу в .env: GOOGLE_CREDENTIALS_PATH=/app/credentials.json
 
 ### 🚀 Запуск
 
 1. **Запустите контейнеры:**
+
 ```bash
 docker-compose up -d
 ```
 
 2. **Проверьте работоспособность:**
+
 - Фронтенд: http://localhost:3000
 - API: http://localhost:8000
 - Swagger UI: http://localhost:8000/docs
@@ -50,11 +56,13 @@ docker-compose up -d
 ### 📊 Мониторинг
 
 - **Логи контейнеров:**
+
 ```bash
 docker-compose logs -f
 ```
 
 - **Статус контейнеров:**
+
 ```bash
 docker-compose ps
 ```
@@ -62,11 +70,13 @@ docker-compose ps
 ### 🔄 Обновление
 
 1. **Получите последние изменения:**
+
 ```bash
 git pull origin main
 ```
 
 2. **Пересоберите контейнеры:**
+
 ```bash
 docker-compose up -d --build
 ```
@@ -83,6 +93,7 @@ docker-compose up -d --build
 ### 🔧 Настройка бэкенда
 
 1. **Создайте виртуальное окружение:**
+
 ```bash
 cd backend
 python -m venv venv
@@ -92,22 +103,25 @@ venv\Scripts\activate     # Windows
 ```
 
 2. **Установите зависимости:**
+
 ```bash
 pip install -r requirements.txt
 ```
 
 3. **Настройте переменные окружения:**
-Создайте и отредактируйте `.env` файл как описано выше.
+   Создайте и отредактируйте `.env` файл как описано выше.
 
 ### 🎨 Настройка фронтенда
 
 1. **Установите зависимости:**
+
 ```bash
 cd frontend
 npm install
 ```
 
 2. **Скомпилируйте стили:**
+
 ```bash
 npm run build
 ```
@@ -115,12 +129,14 @@ npm run build
 ### 🚀 Запуск для разработки
 
 1. **Запустите бэкенд:**
+
 ```bash
 cd backend
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 2. **Запустите фронтенд в режиме разработки:**
+
 ```bash
 cd frontend
 npm run watch
@@ -133,6 +149,7 @@ npm run watch
 1. **Получите SSL сертификаты** (например, через Let's Encrypt)
 
 2. **Обновите nginx конфигурацию:**
+
 ```nginx
 server {
     listen 443 ssl;
@@ -140,12 +157,13 @@ server {
 
     ssl_certificate     /etc/nginx/ssl/cert.pem;
     ssl_certificate_key /etc/nginx/ssl/key.pem;
-    
+
     # ... остальные настройки ...
 }
 ```
 
 3. **Обновите docker-compose.yml:**
+
 ```yaml
 services:
   frontend:
@@ -160,6 +178,7 @@ services:
 ### 📦 Бэкапы
 
 1. **База данных:**
+
 ```bash
 # Создание бэкапа
 docker-compose exec backend sqlite3 onboardpro.db ".backup '/backups/backup.db'"
@@ -169,6 +188,7 @@ docker-compose exec backend sqlite3 onboardpro.db ".restore '/backups/backup.db'
 ```
 
 2. **Логи:**
+
 ```bash
 # Архивация логов
 tar -czf logs_backup.tar.gz logs/
@@ -177,6 +197,7 @@ tar -czf logs_backup.tar.gz logs/
 ### 🔍 Мониторинг здоровья
 
 Проверка статуса API:
+
 ```bash
 curl http://localhost:8000/health
 ```
@@ -184,6 +205,7 @@ curl http://localhost:8000/health
 ### 🔄 Ротация логов
 
 Настройте logrotate для управления логами:
+
 ```
 /var/log/onboardpro/*.log {
     daily
@@ -199,17 +221,20 @@ curl http://localhost:8000/health
 ## 🚨 Устранение неполадок
 
 ### 🔍 Проверка статуса сервисов
+
 ```bash
 docker-compose ps
 docker-compose logs -f [service_name]
 ```
 
 ### 🔄 Перезапуск сервисов
+
 ```bash
 docker-compose restart [service_name]
 ```
 
 ### 🧹 Очистка
+
 ```bash
 # Удаление неиспользуемых ресурсов
 docker-compose down

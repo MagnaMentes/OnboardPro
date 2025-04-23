@@ -82,6 +82,7 @@ docker-compose up -d
 ```
 
 Приложение будет доступно:
+
 - Фронтенд: http://localhost:3000
 - API: http://localhost:8000
 - Swagger UI: http://localhost:8000/docs
