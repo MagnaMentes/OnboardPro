@@ -1,86 +1,79 @@
-# API Документация OnboardPro
+# 🚀 API Документация OnboardPro
 
-## Аутентификация
+## 🔐 Аутентификация
 
-### POST /login
+### 🔑 POST /login
 
 Аутентификация пользователя и получение JWT токена.
 
-**Запрос:**
-
+**📨 Запрос:**
 ```json
 {
-  "username": "user@example.com",
-  "password": "password123"
+    "username": "user@example.com",
+    "password": "password123"
 }
 ```
 
-**Ответ:**
-
+**📩 Ответ:**
 ```json
 {
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "token_type": "bearer"
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "token_type": "bearer"
 }
 ```
 
-### POST /users
+### 👤 POST /users
 
 Создание нового пользователя.
 
-**Запрос:**
-
+**📨 Запрос:**
 ```json
 {
-  "email": "user@example.com",
-  "password": "password123",
-  "role": "employee",
-  "department": "IT"
+    "email": "user@example.com",
+    "password": "password123",
+    "role": "employee",
+    "department": "IT"
 }
 ```
 
-**Ответ:**
-
+**📩 Ответ:**
 ```json
 {
-  "email": "user@example.com",
-  "role": "employee"
+    "email": "user@example.com",
+    "role": "employee"
 }
 ```
 
-### GET /users/me
+### 👥 GET /users/me
 
 Получение информации о текущем пользователе.
 
-**Заголовки:**
-
+**📋 Заголовки:**
 ```
 Authorization: Bearer <token>
 ```
 
-**Ответ:**
-
+**📩 Ответ:**
 ```json
 {
-  "email": "user@example.com",
-  "role": "employee"
+    "email": "user@example.com",
+    "role": "employee"
 }
 ```
 
-## Коды ответов
+## 📊 Коды ответов
 
-- 200: Успешный запрос
-- 401: Ошибка аутентификации
-- 403: Недостаточно прав
-- 422: Ошибка валидации данных
-- 500: Внутренняя ошибка сервера
+- ✅ 200: Успешный запрос
+- ⚠️ 401: Ошибка аутентификации
+- 🚫 403: Недостаточно прав
+- ❌ 422: Ошибка валидации данных
+- 💥 500: Внутренняя ошибка сервера
 
-## CORS
+## 🌐 CORS
 
-API поддерживает CORS для всех источников (\*) и следующие методы:
-
-- GET
-- POST
-- PUT
-- DELETE
-- OPTIONS
+API поддерживает CORS для всех источников (*) и следующие методы:
+- 📥 GET
+- 📤 POST
+- 🔄 PUT
+- 🗑️ DELETE
+- 🔍 OPTIONS
