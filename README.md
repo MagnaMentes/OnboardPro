@@ -2,6 +2,8 @@
 
 ![OnboardPro Logo](docs/images/logo.png)
 
+[English](#overview) | [Русский](#обзор)
+
 ## Overview
 
 OnboardPro is a modern web application designed to optimize the employee onboarding process. It provides tools for HR managers, department heads, and employees to manage tasks, provide feedback, and track progress.
@@ -71,7 +73,8 @@ OnboardPro is a modern web application designed to optimize the employee onboard
 - [Technical Documentation (English)](docs/technical_documentation.md)
 - [Technical Documentation (Russian)](docs/technical_documentation_ru.md)
 - [Architecture](docs/architecture.md)
-- [Developer Log](docs/developer_log.md)
+- [Developer Log (English)](docs/developer_log.md)
+- [Developer Log (Russian)](docs/developer_log_ru.md)
 
 ## Project Structure
 
