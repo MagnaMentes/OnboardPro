@@ -1,6 +1,6 @@
 # 🚀 OnboardPro
 
-![OnboardPro Логотип](docs/images/logo.png)
+![OnboardPro Логотип](docs/images/onboardpro_logo.png)
 
 ## Обзор
 
