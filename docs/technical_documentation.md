@@ -18,24 +18,31 @@ OnboardPro follows a modern web application architecture:
 - **Frontend**: React with Tailwind CSS and Heroicons
 - **Infrastructure**: Docker and docker-compose for containerization
 - **Authentication**: JWT-based authentication system
+- **External Integrations**: Telegram Bot, Google Calendar, Workable API
 
 ## Development Environment
 
 ### Prerequisites
 - Docker and Docker Compose
-- Node.js (v16+) and npm
-- Python 3.9+
+- Node.js (v18+) and npm
+- Python 3.11+
 
 ### Setup Instructions
 1. Clone the repository
-2. Run `docker-compose up -d` to start the containers
-3. Access the application at http://localhost:3000
-4. Run `./frontend/validate_setup.sh` to verify the setup
+2. Create a `.env` file with required environment variables
+3. Run `docker-compose up -d` to start the containers
+4. Access the application at http://localhost:3000
 
 ### Environment Variables
-- `DATABASE_URL`: SQLite database path
-- `SECRET_KEY`: JWT secret key
-- `FRONTEND_URL`: Frontend application URL
+Required environment variables:
+- `DATABASE_URL`: SQLite database path (default: sqlite:///onboardpro.db)
+- `SECRET_KEY`: JWT secret key for authentication
+- `TELEGRAM_BOT_TOKEN`: Telegram Bot API token
+- `GOOGLE_CREDENTIALS_PATH`: Path to Google API credentials file
+- `WORKABLE_API_KEY`: Workable API key for recruitment integration
+
+Frontend environment variables:
+- `REACT_APP_API_URL`: Backend API URL (default: http://localhost:8000)
 
 ## Backend API
 
@@ -56,6 +63,12 @@ OnboardPro follows a modern web application architecture:
 - `PUT /tasks/{id}`: Update task
 - `DELETE /tasks/{id}`: Delete task
 
+### Plan Management
+- `GET /plans`: List adaptation plans
+- `POST /plans`: Create new plan
+- `PUT /plans/{id}`: Update plan
+- `DELETE /plans/{id}`: Delete plan
+
 ### Feedback
 - `GET /feedback`: List feedback
 - `POST /feedback`: Create feedback
@@ -68,6 +81,7 @@ OnboardPro follows a modern web application architecture:
 - `App.js`: Main application component
 - `components/`: Reusable UI components
 - `pages/`: Page components
+  - `ManagerDashboard.js`: Manager interface for task and plan management
 - `context/`: React context providers
 - `hooks/`: Custom React hooks
 - `utils/`: Utility functions
@@ -80,6 +94,7 @@ OnboardPro follows a modern web application architecture:
 ### State Management
 - React Context API for global state
 - Local component state for UI elements
+- Form state management with controlled components
 
 ## Database Schema
 
@@ -96,10 +111,19 @@ OnboardPro follows a modern web application architecture:
 - `id`: Primary key
 - `title`: Task title
 - `description`: Task description
-- `assigned_to`: User ID (foreign key)
-- `assigned_by`: User ID (foreign key)
+- `user_id`: Assigned user ID (foreign key)
+- `plan_id`: Plan ID (foreign key)
+- `priority`: Task priority (low, medium, high)
 - `status`: Task status
-- `due_date`: Due date
+- `deadline`: Due date
+- `created_at`: Creation timestamp
+- `updated_at`: Update timestamp
+
+### Plans Table
+- `id`: Primary key
+- `title`: Plan title
+- `description`: Plan description
+- `role`: Target role (employee, manager)
 - `created_at`: Creation timestamp
 - `updated_at`: Update timestamp
 
@@ -114,9 +138,21 @@ OnboardPro follows a modern web application architecture:
 ## Deployment
 
 ### Docker Deployment
-1. Build the Docker images: `docker-compose build`
-2. Start the containers: `docker-compose up -d`
-3. Access the application at http://localhost:3000
+1. Create `.env` file with required environment variables
+2. Build the Docker images: `docker-compose build`
+3. Start the containers: `docker-compose up -d`
+4. Access the application at http://localhost:3000
+
+### Container Configuration
+- Backend container:
+  - Health check endpoint: `/health`
+  - Automatic restart policy: `unless-stopped`
+  - Volume mounts for development
+- Frontend container:
+  - Development server on port 3000
+  - Automatic restart policy: `unless-stopped`
+  - Volume mounts for development
+  - Node modules volume for performance
 
 ### Production Deployment
 1. Set up a production server
@@ -142,10 +178,12 @@ OnboardPro follows a modern web application architecture:
 - Rate limiting
 - Request validation
 - Error handling
+- Environment variable protection
 
 ## Troubleshooting
 
 ### Common Issues
+- **Environment Variables**: Ensure all required variables are set in `.env`
 - **Database Connection**: Check DATABASE_URL environment variable
 - **Authentication**: Verify JWT secret key
 - **Frontend Build**: Check npm dependencies
@@ -154,7 +192,6 @@ OnboardPro follows a modern web application architecture:
 ### Logs
 - Backend logs: `docker-compose logs backend`
 - Frontend logs: `docker-compose logs frontend`
-- Database logs: `docker-compose logs db`
 
 ### Support
 For technical support, contact the development team at support@onboardpro.com 

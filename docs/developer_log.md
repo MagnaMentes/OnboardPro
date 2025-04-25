@@ -1,15 +1,24 @@
-## Developer Log
+# Developer Log
 
-- 2025-04-24: Проверено окружение для спринтов 1–5.5, запущены контейнеры
-- 2025-04-24: Проверены бэкенд-эндпоинты и модели для спринтов 1–5.5
-- 2025-04-24: Проверен React-фронтенд для спринтов 1–5.5
-- 2025-04-24: Проверена функциональность UI для спринтов 1–5.5
-- 2025-04-24: Проверена документация и архитектура для спринтов 1–5.5
-- 2025-04-24: Составлен отчёт sprints_1_5.5_validation_report.md
-- 2025-04-24: Выполнен validate_setup.sh
-- 2025-04-24: Удалён старый фронтенд, создан React-проект
-- 2025-04-24: Добавлен/проверен эндпоинт /users/me с полем department
-- 2025-04-24: Пересобран React-фронтенд
-- 2025-04-24: Проверена функциональность UI, сделаны скриншоты
-- 2025-04-24: Обновлена документация и архитектура
-- 2025-04-24: Создан отчёт sprint_5.5_report.md
+## 2024-04-25
+- Fixed undefined variables in ManagerDashboard.js
+- Improved Docker configuration:
+  - Added health checks for backend
+  - Added restart policies
+  - Improved volume mounts
+  - Added environment variable configuration
+- Updated documentation:
+  - Added new environment variables
+  - Updated deployment instructions
+  - Added container configuration details
+  - Updated API documentation
+- Improved frontend build process:
+  - Removed legacy peer dependencies
+  - Added proper build step in Dockerfile
+  - Fixed linter errors
+
+## 2024-04-24
+- Initial project setup
+- Basic Docker configuration
+- Frontend and backend structure
+- Basic documentation

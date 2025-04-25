@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   HomeIcon,
@@ -54,6 +54,7 @@ export default function Layout() {
   const [user, setUser] = useState(null);
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -66,6 +67,13 @@ export default function Layout() {
         .catch((err) => console.error("Error fetching user:", err));
     }
   }, []);
+
+  // Функция выхода
+  function handleLogout() {
+    localStorage.removeItem("token");
+    setUser(null);
+    navigate("/login");
+  }
 
   // Фильтрация навигационных элементов по роли пользователя
   const filteredNavItems = navItems.filter(
@@ -104,6 +112,35 @@ export default function Layout() {
                 <span className="nav-text">{item.name}</span>
               </Link>
             ))}
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="nav-link flex items-center ml-2"
+                title="Выйти"
+                type="button"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5 mr-1"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M18 12H9m0 0l3-3m-3 3l3 3"
+                  />
+                </svg>
+                <span className="nav-text">Выйти</span>
+              </button>
+            )}
           </nav>
 
           {/* Навигация для планшета (≥768px, <1280px) - только иконки */}
@@ -120,6 +157,42 @@ export default function Layout() {
                 <item.icon className="w-5 h-5" />
               </Link>
             ))}
+            {user && (
+              <button
+                onClick={handleLogout}
+                className={
+                  "nav-link flex items-center ml-2" +
+                  (location.pathname === "/logout" ? " active" : "")
+                }
+                title="Выйти"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5 mr-1"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M18 12H9m0 0l3-3m-3 3l3 3"
+                  />
+                </svg>
+                <span className="nav-text">Выйти</span>
+              </button>
+            )}
           </nav>
 
           {/* Кнопка бургер-меню для мобильных устройств (<768px) */}
@@ -164,6 +237,41 @@ export default function Layout() {
                 <span>{item.name}</span>
               </Link>
             ))}
+            {user && (
+              <button
+                onClick={() => {
+                  setIsBurgerOpen(false);
+                  handleLogout();
+                }}
+                className="nav-link flex items-center mt-2"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5 mr-1"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M18 12H9m0 0l3-3m-3 3l3 3"
+                  />
+                </svg>
+                <span>Выйти</span>
+              </button>
+            )}
           </div>
         </nav>
       </header>

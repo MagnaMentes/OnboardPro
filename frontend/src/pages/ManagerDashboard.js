@@ -15,6 +15,12 @@ export default function ManagerDashboard() {
     priority: "medium",
     deadline: new Date().toISOString().split("T")[0],
   });
+  const [newPlan, setNewPlan] = useState({
+    title: "",
+    description: "",
+    role: "employee",
+  });
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,6 +74,11 @@ export default function ManagerDashboard() {
     setNewTask((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handlePlanInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewPlan((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleTaskSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -108,6 +119,43 @@ export default function ManagerDashboard() {
       });
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const handlePlanSubmit = async (e) => {
+    e.preventDefault();
+    setIsCreatingPlan(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Не авторизован");
+      }
+
+      const response = await fetch("http://localhost:8000/plans", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newPlan),
+      });
+
+      if (!response.ok) {
+        throw new Error("Ошибка при создании плана");
+      }
+
+      const createdPlan = await response.json();
+      setPlans((prev) => [...prev, createdPlan]);
+      setNewPlan({
+        title: "",
+        description: "",
+        role: "employee",
+      });
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsCreatingPlan(false);
     }
   };
 
@@ -165,6 +213,76 @@ export default function ManagerDashboard() {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-blue-600">Панель менеджера</h2>
+      {/* Форма создания плана адаптации */}
+      <div className="bg-white p-5 rounded shadow-md">
+        <h3 className="text-lg font-medium text-gray-800 mb-4">
+          Создать новый план адаптации
+        </h3>
+        <form onSubmit={handlePlanSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label
+                htmlFor="plan_title"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Название плана
+              </label>
+              <input
+                id="plan_title"
+                name="title"
+                type="text"
+                value={newPlan.title}
+                onChange={handlePlanInputChange}
+                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="plan_role"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Роль
+              </label>
+              <select
+                id="plan_role"
+                name="role"
+                value={newPlan.role}
+                onChange={handlePlanInputChange}
+                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="employee">Сотрудник</option>
+                <option value="manager">Менеджер</option>
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label
+                htmlFor="plan_description"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Описание
+              </label>
+              <textarea
+                id="plan_description"
+                name="description"
+                value={newPlan.description}
+                onChange={handlePlanInputChange}
+                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                rows={2}
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isCreatingPlan}
+          >
+            {isCreatingPlan ? "Создание..." : "Создать план"}
+          </button>
+        </form>
+      </div>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">

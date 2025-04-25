@@ -33,7 +33,25 @@ export default function Login() {
       }
 
       localStorage.setItem("token", data.access_token);
-      navigate("/dashboard");
+
+      // Получаем информацию о пользователе, чтобы узнать его роль
+      const userResponse = await fetch("http://localhost:8000/users/me", {
+        headers: {
+          Authorization: `Bearer ${data.access_token}`,
+        },
+      });
+
+      const userData = await userResponse.json();
+
+      // Перенаправляем пользователя в зависимости от его роли
+      if (userData.role === "hr") {
+        navigate("/hr-dashboard");
+      } else if (userData.role === "manager") {
+        navigate("/manager-dashboard");
+      } else {
+        // По умолчанию для сотрудников
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
