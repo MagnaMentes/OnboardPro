@@ -4,22 +4,25 @@ import {
   DocumentTextIcon,
   ChatBubbleLeftRightIcon,
   CheckCircleIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 
 export default function HRDashboard() {
   const [analytics, setAnalytics] = useState(null);
+  const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
           throw new Error("Не авторизован");
         }
 
-        const response = await fetch(
+        // Получаем аналитику
+        const analyticsResponse = await fetch(
           "http://localhost:8000/analytics/summary",
           {
             headers: {
@@ -28,12 +31,26 @@ export default function HRDashboard() {
           }
         );
 
-        if (!response.ok) {
+        if (!analyticsResponse.ok) {
           throw new Error("Ошибка при загрузке аналитики");
         }
 
-        const data = await response.json();
-        setAnalytics(data);
+        const analyticsData = await analyticsResponse.json();
+        setAnalytics(analyticsData);
+
+        // Получаем задачи
+        const tasksResponse = await fetch("http://localhost:8000/tasks", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!tasksResponse.ok) {
+          throw new Error("Ошибка при загрузке задач");
+        }
+
+        const tasksData = await tasksResponse.json();
+        setTasks(tasksData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -41,7 +58,7 @@ export default function HRDashboard() {
       }
     };
 
-    fetchAnalytics();
+    fetchData();
   }, []);
 
   const StatCard = ({ title, value, icon, color }) => {
@@ -61,6 +78,15 @@ export default function HRDashboard() {
         </div>
       </div>
     );
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(date);
   };
 
   if (isLoading) {
@@ -90,6 +116,9 @@ export default function HRDashboard() {
     total: 0,
     avg_per_user: 0,
   };
+
+  // Фильтруем задачи в процессе выполнения
+  const inProgressTasks = tasks.filter(task => task.status === "in_progress");
 
   return (
     <div className="space-y-6">
@@ -149,6 +178,56 @@ export default function HRDashboard() {
             ></div>
           </div>
         </div>
+      </div>
+
+      {/* Задачи в процессе выполнения */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-lg font-medium text-gray-800 mb-4">
+          Задачи в процессе выполнения
+        </h3>
+        {inProgressTasks.length === 0 ? (
+          <p className="text-gray-500">Нет задач в процессе выполнения</p>
+        ) : (
+          <div className="space-y-4">
+            {inProgressTasks.map((task) => (
+              <div
+                key={task.id}
+                className="border rounded-lg p-4 hover:bg-gray-50"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-lg font-medium text-gray-800">
+                      {task.title}
+                    </h4>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {task.description}
+                    </p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          task.priority === "high"
+                            ? "bg-red-100 text-red-800"
+                            : task.priority === "medium"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {task.priority}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        Срок: {formatDate(task.deadline)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <ClockIcon className="w-5 h-5 text-blue-500 mr-2" />
+                    <span className="text-sm text-blue-600">В процессе</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md">
