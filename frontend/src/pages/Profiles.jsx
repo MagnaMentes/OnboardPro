@@ -44,7 +44,6 @@ const Profiles = () => {
           navigate("/dashboard");
         }
       } catch (err) {
-        console.error("Error fetching user data:", err);
         navigate("/login");
       }
     };
@@ -57,7 +56,6 @@ const Profiles = () => {
         setUsers(response.data);
         setLoading(false);
       } catch (err) {
-        console.error("Error fetching users:", err);
         setError("Failed to fetch users");
         setLoading(false);
       }
@@ -164,7 +162,6 @@ const Profiles = () => {
       setIsCreateModalOpen(false);
       toast.success("Пользователь успешно создан");
     } catch (err) {
-      console.error("Error creating user:", err);
       toast.error(
         err.response?.data?.message || "Ошибка при создании пользователя"
       );
@@ -188,7 +185,6 @@ const Profiles = () => {
       setIsEditModalOpen(false);
       toast.success("Данные пользователя обновлены");
     } catch (err) {
-      console.error("Error updating user:", err);
       toast.error(
         err.response?.data?.message || "Ошибка при обновлении пользователя"
       );
@@ -208,7 +204,6 @@ const Profiles = () => {
       setIsDeleteModalOpen(false);
       toast.success("Пользователь удален");
     } catch (err) {
-      console.error("Error deleting user:", err);
       toast.error(
         err.response?.data?.message || "Ошибка при удалении пользователя"
       );
@@ -239,7 +234,6 @@ const Profiles = () => {
           : "Пользователь заблокирован"
       );
     } catch (err) {
-      console.error("Error toggling user status:", err);
       toast.error("Ошибка при изменении статуса пользователя");
     }
   };
@@ -256,7 +250,6 @@ const Profiles = () => {
       );
       toast.success("Пароль пользователя сброшен и отправлен на его email");
     } catch (err) {
-      console.error("Error resetting password:", err);
       toast.error("Ошибка при сбросе пароля");
     }
   };

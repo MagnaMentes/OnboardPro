@@ -29,7 +29,6 @@ export default function Dashboard() {
         }
 
         const data = await response.json();
-        console.log("Полученные задачи:", data);
         setTasks(data);
       } catch (err) {
         setError(err.message);
@@ -67,22 +66,20 @@ export default function Dashboard() {
 
   const formatDate = (dateString) => {
     if (!dateString) return "Не указан";
-    
+
     try {
       const date = new Date(dateString);
-      
+
       if (isNaN(date.getTime())) {
-        console.warn("Некорректный формат даты:", dateString);
         return "Неверный формат даты";
       }
-      
+
       return new Intl.DateTimeFormat("ru-RU", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
       }).format(date);
     } catch (error) {
-      console.error("Ошибка при форматировании даты:", error, dateString);
       return "Ошибка формата даты";
     }
   };
@@ -94,14 +91,17 @@ export default function Dashboard() {
         throw new Error("Не авторизован");
       }
 
-      const response = await fetch(`http://localhost:8000/tasks/${taskId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/tasks/${taskId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Ошибка при обновлении статуса задачи");
@@ -113,7 +113,7 @@ export default function Dashboard() {
         )
       );
     } catch (error) {
-      console.error("Ошибка при обновлении статуса:", error);
+      setError("Ошибка при обновлении статуса задачи");
     }
   };
 
@@ -139,10 +139,19 @@ export default function Dashboard() {
       <h1 className="text-2xl font-bold mb-6">Панель управления</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tasks.map((task) => (
-          <div key={task.id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+          <div
+            key={task.id}
+            className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300"
+          >
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityClass(task.priority)}`}>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {task.title}
+              </h3>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityClass(
+                  task.priority
+                )}`}
+              >
                 {task.priority}
               </span>
             </div>

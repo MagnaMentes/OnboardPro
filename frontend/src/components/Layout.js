@@ -64,7 +64,10 @@ export default function Layout() {
       })
         .then((res) => res.json())
         .then((data) => setUser(data))
-        .catch((err) => console.error("Error fetching user:", err));
+        .catch((err) => {
+          // Удален вызов console.error, добавлена обработка ошибки
+          setUser(null);
+        });
     }
   }, []);
 

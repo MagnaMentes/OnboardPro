@@ -56,7 +56,6 @@ export default function Login() {
         navigate("/dashboard");
       }
     } catch (err) {
-      console.error("Error logging in:", err);
       setError("Ошибка авторизации. Проверьте логин и пароль.");
     } finally {
       setIsLoading(false);
