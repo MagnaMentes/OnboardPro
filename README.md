@@ -1,110 +1,10 @@
 # 🚀 OnboardPro
 
-![OnboardPro Logo](docs/images/logo.png)
+![OnboardPro Логотип](docs/images/logo.png)
 
-[English](#overview) | [Русский](#обзор)
+## Обзор
 
-## Overview
-
-OnboardPro is a modern web application designed to optimize the employee onboarding process. It provides tools for HR managers, department heads, and employees to manage tasks, provide feedback, and track progress.
-
-## Features
-
-- **Role-based access control**: HR, Manager, and Employee roles with appropriate permissions
-- **Task management**: Create, assign, and track onboarding tasks
-- **Feedback system**: Provide and receive feedback during the onboarding process
-- **Responsive design**: Works on desktop, tablet, and mobile devices
-- **Modern UI**: Built with React, Tailwind CSS, and Heroicons
-
-## Quick Start
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Node.js (v16+) and npm
-- Python 3.9+
-
-### Installation
-
-1. Clone the repository:
-
-   ```
-   git clone https://github.com/magna_mentes/OnboardPro.git
-   cd OnboardPro
-   ```
-
-2. Start the application:
-
-   ```
-   docker-compose up -d
-   ```
-
-3. Access the application at http://localhost:3000
-
-4. Log in with one of the following credentials:
-   - HR: test@onboardpro.com / test123
-   - Manager: manager@onboardpro.com / test123
-   - Employee: employee@onboardpro.com / test123
-
-### Development
-
-1. Install dependencies:
-
-   ```
-   cd frontend
-   npm install
-   ```
-
-2. Start the development server:
-
-   ```
-   npm start
-   ```
-
-3. Run the setup validation script:
-   ```
-   ./validate_setup.sh
-   ```
-
-## Documentation
-
-- [User Guide (English)](docs/user_guide_en.md)
-- [User Guide (Russian)](docs/user_guide_ru.md)
-- [Technical Documentation (English)](docs/technical_documentation.md)
-- [Technical Documentation (Russian)](docs/technical_documentation_ru.md)
-- [Architecture](docs/architecture.md)
-- [Developer Log (English)](docs/developer_log.md)
-- [Developer Log (Russian)](docs/developer_log_ru.md)
-
-## Project Structure
-
-```
-OnboardPro/
-├── backend/              # FastAPI backend
-│   ├── app/              # Application code
-│   ├── tests/            # Backend tests
-│   └── onboardpro.db     # SQLite database
-├── frontend/             # React frontend
-│   ├── public/           # Static files
-│   ├── src/              # Source code
-│   │   ├── components/   # React components
-│   │   ├── pages/        # Page components
-│   │   ├── context/      # React context
-│   │   ├── hooks/        # Custom hooks
-│   │   └── utils/        # Utility functions
-│   └── package.json      # Dependencies
-├── docs/                 # Documentation
-├── docker-compose.yml    # Docker configuration
-└── README.md             # This file
-```
-
-## License
-
-© 2025 magna_mentes. All rights reserved.
-
-## Support
-
-For technical support, contact the development team at support@onboardpro.com
+OnboardPro — это современное веб-приложение, разработанное для оптимизации процесса адаптации новых сотрудников. Оно предоставляет инструменты для HR-менеджеров, руководителей отделов и сотрудников для управления задачами, сбора обратной связи и отслеживания прогресса.
 
 ## ⚡️ Технологии
 
@@ -129,6 +29,56 @@ For technical support, contact the development team at support@onboardpro.com
   - 📱 Уведомления через Telegram
   - 📅 Синхронизация с Google Calendar
   - 👥 Импорт сотрудников из Workable
+
+## Быстрый старт
+
+### Предварительные требования
+
+- Docker и Docker Compose
+- Node.js (v16+) и npm
+- Python 3.9+
+
+### Установка
+
+1. Клонируйте репозиторий:
+
+   ```
+   git clone https://github.com/magna_mentes/OnboardPro.git
+   cd OnboardPro
+   ```
+
+2. Запустите приложение:
+
+   ```
+   docker-compose up -d
+   ```
+
+3. Откройте приложение по адресу http://localhost:3000
+
+4. Войдите, используя одни из следующих учетных данных:
+   - HR: test@onboardpro.com / test123
+   - Менеджер: manager@onboardpro.com / test123
+   - Сотрудник: employee@onboardpro.com / test123
+
+### Разработка
+
+1. Установите зависимости:
+
+   ```
+   cd frontend
+   npm install
+   ```
+
+2. Запустите сервер разработки:
+
+   ```
+   npm start
+   ```
+
+3. Запустите скрипт проверки настройки:
+   ```
+   ./validate_setup.sh
+   ```
 
 ## 🛠 Установка
 
@@ -210,7 +160,37 @@ cd frontend
 npm run watch
 ```
 
+## Документация
+
+- [Руководство пользователя (Русский)](docs/user_guide_ru.md)
+- [Руководство пользователя (Английский)](docs/user_guide_en.md)
+- [Техническая документация (Русский)](docs/technical_documentation_ru.md)
+- [Техническая документация (Английский)](docs/technical_documentation.md)
+- [Архитектура](docs/architecture.md)
+- [Журнал разработки (Русский)](docs/developer_log_ru.md)
+- [Журнал разработки (Английский)](docs/developer_log.md)
+
 ## 📁 Структура проекта
+
+```
+OnboardPro/
+├── backend/              # FastAPI бэкенд
+│   ├── app/              # Код приложения
+│   ├── tests/            # Тесты бэкенда
+│   └── onboardpro.db     # SQLite база данных
+├── frontend/             # React фронтенд
+│   ├── public/           # Статические файлы
+│   ├── src/              # Исходный код
+│   │   ├── components/   # React компоненты
+│   │   ├── pages/        # Компоненты страниц
+│   │   ├── context/      # React контекст
+│   │   ├── hooks/        # Пользовательские хуки
+│   │   └── utils/        # Служебные функции
+│   └── package.json      # Зависимости
+├── docs/                 # Документация
+├── docker-compose.yml    # Docker конфигурация
+└── README.md             # Этот файл
+```
 
 ```
 .
@@ -252,6 +232,10 @@ npm run watch
 3. ✨ Соблюдайте стиль кода проекта
 4. 🐳 Тестируйте изменения в Docker-окружении
 
-## 👥 Авторы
+## Лицензия
 
 © 2025 magna_mentes. Все права защищены.
+
+## Поддержка
+
+Для технической поддержки обращайтесь к команде разработки по адресу support@onboardpro.com
