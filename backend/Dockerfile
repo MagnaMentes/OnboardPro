@@ -13,9 +13,13 @@ COPY . .
 # Создаем директорию для тестов
 RUN mkdir -p /app/tests
 
+# Делаем скрипт запуска исполняемым
+RUN chmod +x /app/start.sh
+
 EXPOSE 8000
 
 # Запускаем тесты при сборке образа
 RUN pytest tests/test_api.py -v || true
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Используем скрипт start.sh для автоматического применения миграций перед запуском сервера
+CMD ["/app/start.sh"]

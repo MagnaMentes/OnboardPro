@@ -11,23 +11,27 @@ from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional, List
 from integrations import send_telegram_notification, create_calendar_event, import_workable_employees, handle_telegram_webhook, sync_calendar_task_status, sync_workable_candidate
+import secrets
+import string
 
 app = FastAPI()
 
 # Настройка CORS с явным указанием разрешенных источников
 app.add_middleware(
     CORSMiddleware,
-    # Разрешаем запросы с фронтенд сервера
-    allow_origins=["http://localhost:3000"],
+    # Разрешаем запросы с фронтенд сервера и из Docker-сети
+    allow_origins=["*"],  # В рабочем окружении лучше указать конкретные домены
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
 )
 
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -35,6 +39,12 @@ models.Base.metadata.create_all(bind=engine)
 class UserCreate(BaseModel):
     email: str
     password: str
+    role: str
+    department: str | None = None
+
+
+class UserUpdate(BaseModel):
+    email: str
     role: str
     department: str | None = None
 
@@ -100,6 +110,7 @@ class UserResponse(BaseModel):
     email: str
     role: str
     department: Optional[str]
+    disabled: bool = False
 
 
 class TelegramConnect(BaseModel):
@@ -130,12 +141,23 @@ class PasswordUpdate(BaseModel):
     password: str
 
 
+# Генерация случайного пароля
+def generate_password(length=10):
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for i in range(length))
+
+
 @app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(auth.get_db)):
     user = db.query(models.User).filter(
         models.User.email == form_data.username).first()
     if not user or not auth.verify_password(form_data.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Проверка, не заблокирован ли пользователь
+    if user.disabled:
+        raise HTTPException(status_code=403, detail="User is disabled")
+
     access_token = auth.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -175,6 +197,122 @@ async def update_user_password(
     user.password = auth.pwd_context.hash(password_data.password)
     db.commit()
     return {"message": "Password updated successfully"}
+
+
+@app.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(
+    user_id: int,
+    user_data: UserUpdate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """Обновление данных пользователя"""
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Только HR может изменять данные пользователей"
+        )
+
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    db_user.email = user_data.email
+    db_user.role = user_data.role
+    db_user.department = user_data.department
+
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+@app.delete("/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """Удаление пользователя"""
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Только HR может удалять пользователей"
+        )
+
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    # Проверяем, что пользователь не пытается удалить сам себя
+    if db_user.id == current_user.id:
+        raise HTTPException(
+            status_code=400, detail="Нельзя удалить собственный аккаунт"
+        )
+
+    db.delete(db_user)
+    db.commit()
+    return {"message": "Пользователь успешно удален"}
+
+
+@app.patch("/users/{user_id}/toggle-status")
+async def toggle_user_status(
+    user_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """Блокирование/разблокирование пользователя"""
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Только HR может блокировать/разблокировать пользователей"
+        )
+
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    # Проверяем, что пользователь не пытается заблокировать сам себя
+    if db_user.id == current_user.id:
+        raise HTTPException(
+            status_code=400, detail="Нельзя заблокировать собственный аккаунт"
+        )
+
+    # Инвертируем состояние
+    db_user.disabled = not db_user.disabled
+
+    db.commit()
+    db.refresh(db_user)
+
+    status_message = "заблокирован" if db_user.disabled else "разблокирован"
+    return {"message": f"Пользователь {db_user.email} {status_message}"}
+
+
+@app.post("/users/{user_id}/reset-password")
+async def reset_user_password(
+    user_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """Сброс пароля пользователя"""
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Только HR может сбрасывать пароли пользователей"
+        )
+
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    # Генерируем новый случайный пароль
+    new_password = generate_password()
+
+    # Хешируем и сохраняем новый пароль
+    db_user.password = auth.pwd_context.hash(new_password)
+    db.commit()
+
+    # В реальном приложении здесь нужно отправить новый пароль на email пользователя
+    # Но в демонстрационных целях просто возвращаем его
+    return {
+        "message": f"Пароль пользователя {db_user.email} сброшен",
+        "temp_password": new_password  # В продакшн-версии этого быть не должно!
+    }
 
 
 @app.post("/plans", response_model=PlanResponse)

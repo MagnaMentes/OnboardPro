@@ -8,6 +8,9 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Получаем базовый URL API из переменных окружения
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -18,7 +21,7 @@ export default function Login() {
       formData.append("username", email);
       formData.append("password", password);
 
-      const response = await fetch("http://localhost:8000/login", {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -35,7 +38,7 @@ export default function Login() {
       localStorage.setItem("token", data.access_token);
 
       // Получаем информацию о пользователе, чтобы узнать его роль
-      const userResponse = await fetch("http://localhost:8000/users/me", {
+      const userResponse = await fetch(`${API_BASE_URL}/users/me`, {
         headers: {
           Authorization: `Bearer ${data.access_token}`,
         },
@@ -53,7 +56,8 @@ export default function Login() {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.message);
+      console.error("Error logging in:", err);
+      setError("Ошибка авторизации. Проверьте логин и пароль.");
     } finally {
       setIsLoading(false);
     }

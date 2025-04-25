@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Устанавливаем необходимые пакеты
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Копируем файлы для тестирования
+COPY requirements.txt load_test.py ./
+
+# Устанавливаем зависимости
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir locust
+
+# Экспонируем порт для веб-интерфейса Locust
+EXPOSE 8089
+
+# Запускаем Locust с веб-интерфейсом
+CMD ["locust", "-f", "load_test.py", "--host=http://backend:8000", "--web-host=0.0.0.0"]

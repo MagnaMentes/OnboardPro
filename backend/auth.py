@@ -9,7 +9,13 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY")
+# Получаем SECRET_KEY из переменной окружения или используем значение по умолчанию
+SECRET_KEY = os.getenv("SECRET_KEY", "OnboardProSecretKey2025!MagnaMentes")
+
+if not SECRET_KEY:
+    print("WARNING: SECRET_KEY not set. Using insecure default key.")
+    SECRET_KEY = "OnboardProSecretKey2025!MagnaMentes"
+
 ALGORITHM = "HS256"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -47,4 +53,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    # Проверка, не заблокирован ли пользователь
+    if user.disabled:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User is disabled")
+
     return user

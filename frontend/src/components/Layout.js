@@ -59,7 +59,7 @@ export default function Layout() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      fetch("http://localhost:8000/users/me", {
+      fetch("/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())

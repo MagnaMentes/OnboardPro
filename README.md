@@ -8,10 +8,11 @@ OnboardPro — это современное веб-приложение, раз
 
 ## ⚡️ Технологии
 
-- 🏗 **Бэкенд**: FastAPI, SQLite, SQLAlchemy
+- 🏗 **Бэкенд**: FastAPI, SQLite, SQLAlchemy, Alembic для миграций
 - 🎨 **Фронтенд**: React, TailwindCSS с PostCSS 8, адаптивный дизайн
 - 🔐 **Аутентификация**: JWT
 - 🐳 **Контейнеризация**: Docker, docker-compose
+- 🧪 **Тестирование**: Pytest для бэкенда, нагрузочное тестирование
 - 🤖 **Интеграции**: Telegram, Google Calendar, Workable
 
 ## ✨ Возможности
@@ -35,8 +36,8 @@ OnboardPro — это современное веб-приложение, раз
 ### Предварительные требования
 
 - Docker и Docker Compose
-- Node.js (v16+) и npm
-- Python 3.9+
+- Node.js (v18+) и npm
+- Python 3.11+
 
 ### Установка
 
@@ -157,8 +158,29 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ```bash
 cd frontend
-npm run watch
+npm run start
 ```
+
+## 🧪 Тестирование
+
+### Модульное тестирование
+
+```bash
+cd backend
+pytest tests/test_api.py -v
+```
+
+### Нагрузочное тестирование
+
+```bash
+# Запуск нагрузочного тестирования
+./run_load_test.sh
+
+# Анализ результатов
+python backend/analyze_load_test.py
+```
+
+Подробнее о нагрузочном тестировании читайте в [load_testing_guide.md](load_testing_guide.md).
 
 ## Документация
 
@@ -169,60 +191,43 @@ npm run watch
 - [Архитектура](docs/architecture.md)
 - [Журнал разработки (Русский)](docs/developer_log_ru.md)
 - [Журнал разработки (Английский)](docs/developer_log.md)
+- [Отчет спринта 5.5](docs/sprint_5.5_report.md)
+- [Отчёт валидации спринтов 1-5.5](docs/sprints_1_5.5_validation_report.md)
 
 ## 📁 Структура проекта
 
 ```
 OnboardPro/
 ├── backend/              # FastAPI бэкенд
-│   ├── app/              # Код приложения
+│   ├── migrations/       # Миграции Alembic
 │   ├── tests/            # Тесты бэкенда
+│   ├── __init__.py       # Инициализация пакета
+│   ├── auth.py           # Аутентификация и авторизация
+│   ├── database.py       # Настройки базы данных
+│   ├── integrations.py   # Внешние интеграции
+│   ├── main.py           # Основной файл приложения
+│   ├── models.py         # Модели данных
 │   └── onboardpro.db     # SQLite база данных
 ├── frontend/             # React фронтенд
 │   ├── public/           # Статические файлы
 │   ├── src/              # Исходный код
 │   │   ├── components/   # React компоненты
-│   │   ├── pages/        # Компоненты страниц
-│   │   ├── context/      # React контекст
-│   │   ├── hooks/        # Пользовательские хуки
-│   │   └── utils/        # Служебные функции
+│   │   └── pages/        # Компоненты страниц
 │   └── package.json      # Зависимости
 ├── docs/                 # Документация
-├── docker-compose.yml    # Docker конфигурация
+├── logs/                 # Логи приложения
+├── docker-compose.yml    # Основная Docker конфигурация
+├── docker-compose.loadtest.yml # Конфигурация для нагрузочного тестирования
 └── README.md             # Этот файл
-```
-
-```
-.
-├── 🐳 docker-compose.yml    # Docker конфигурация
-├── 🔧 backend/             # FastAPI бэкенд
-│   ├── Dockerfile        # Сборка бэкенд-контейнера
-│   ├── main.py          # Основной API
-│   ├── models.py        # Модели данных
-│   ├── auth.py         # Аутентификация
-│   ├── database.py     # Настройки БД
-│   └── integrations.py # Внешние интеграции
-├── 🎨 frontend/           # Фронтенд
-│   ├── nginx/          # Nginx конфигурация
-│   ├── src/           # Исходный код
-│   │   ├── layouts/   # Шаблоны
-│   │   └── input.css  # Стили
-│   └── dist/          # Скомпилированные файлы
-└── 📚 docs/              # Документация
-    ├── api/           # API документация
-    ├── frontend/      # Фронтенд документация
-    ├── backend/       # Бэкенд документация
-    ├── deployment/    # Инструкции по развертыванию
-    └── security/      # Документация по безопасности
 ```
 
 ## 💻 Разработка
 
 ### ⚙️ Требования
 
-- 🐍 Python 3.8+
-- 📦 Node.js 14+
-- 🔧 npm 6+
+- 🐍 Python 3.11+
+- 📦 Node.js 18+
+- 🔧 npm 9+
 - 🐳 Docker & docker-compose (для запуска через контейнеры)
 
 ### 📝 Рекомендации по разработке
@@ -231,6 +236,7 @@ OnboardPro/
 2. 🔄 Следите за обновлениями зависимостей
 3. ✨ Соблюдайте стиль кода проекта
 4. 🐳 Тестируйте изменения в Docker-окружении
+5. 🧪 Пишите тесты для нового функционала
 
 ## Лицензия
 

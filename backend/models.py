@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -13,6 +13,8 @@ class User(Base):
     role = Column(String, default="employee")  # employee, manager, hr
     department = Column(String, nullable=True)
     telegram_id = Column(String, nullable=True)
+    # Флаг для блокировки пользователя
+    disabled = Column(Boolean, default=False)
 
     tasks = relationship("Task", back_populates="assignee")
     sent_feedback = relationship("Feedback",

@@ -4,37 +4,55 @@ from models import User, OnboardingPlan, Task, Feedback, Analytics
 from auth import pwd_context
 from database import SessionLocal
 
+
 def seed_database():
     db = SessionLocal()
     try:
         # Create test users
         users = [
             {
-                "email": "hr@onboardpro.com",
-                "password": pwd_context.hash("hr123"),
+                "email": "test@onboardpro.com",  # Исправлено с hr@onboardpro.com
+                "password": pwd_context.hash("test123"),  # Исправлено с hr123
                 "role": "hr",
                 "department": "HR"
             },
             {
                 "email": "manager@onboardpro.com",
-                "password": pwd_context.hash("manager123"),
+                # Исправлено с manager123
+                "password": pwd_context.hash("test123"),
                 "role": "manager",
                 "department": "Engineering"
             },
             {
                 "email": "employee@onboardpro.com",
-                "password": pwd_context.hash("employee123"),
+                # Исправлено с employee123
+                "password": pwd_context.hash("test123"),
                 "role": "employee",
                 "department": "Engineering"
             }
         ]
 
+        # Проверяем, существуют ли уже пользователи с такими email
+        for user_data in users:
+            existing_user = db.query(User).filter(
+                User.email == user_data["email"]).first()
+            if existing_user:
+                print(
+                    f"Пользователь с email {user_data['email']} уже существует, обновляем пароль")
+                existing_user.password = user_data["password"]
+            else:
+                print(f"Создаем нового пользователя: {user_data['email']}")
+                user = User(**user_data)
+                db.add(user)
+        db.commit()
+
+        # Получаем созданных пользователей для дальнейшего использования
         db_users = []
         for user_data in users:
-            user = User(**user_data)
-            db.add(user)
-            db_users.append(user)
-        db.commit()
+            user = db.query(User).filter(
+                User.email == user_data["email"]).first()
+            if user:
+                db_users.append(user)
 
         # Create onboarding plans
         plans = [
@@ -168,5 +186,6 @@ def seed_database():
     finally:
         db.close()
 
+
 if __name__ == "__main__":
-    seed_database() 
+    seed_database()
