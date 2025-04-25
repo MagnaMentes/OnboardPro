@@ -1,15 +1,22 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./src/**/*.{html,js}"],
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
+    screens: {
+      xs: "375px",
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1920px",
+    },
     extend: {
       colors: {
-        primary: "#1D4ED8",
-        secondary: "#6B7280",
-        accent: "#10B981",
-        background: "#F3F4F6",
-      },
-      fontFamily: {
-        sans: ["Inter", "sans-serif"],
+        blue: {
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+        },
       },
     },
   },

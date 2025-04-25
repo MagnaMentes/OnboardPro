@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Базовые стили */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f3f4f6;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+/* Компоненты с использованием @apply */
+@layer components {
+  /* Навигационные ссылки */
+  .nav-link {
+    @apply flex items-center px-3 py-2 rounded hover:bg-blue-700 transition-colors duration-200 text-sm;
+  }
+
+  .nav-link.active {
+    @apply bg-blue-700 font-semibold;
+  }
+
+  /* Контейнеры */
+  .container {
+    @apply w-full mx-auto px-4;
+  }
+
+  /* Кнопки */
+  .btn {
+    @apply px-4 py-2 rounded font-medium transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+  }
+
+  /* Карточки */
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6;
+  }
+}
+
+/* Адаптивные стили с использованием брейкпоинтов */
+
+/* Мобильный (375px) - базовые стили по умолчанию */
+.nav-text {
+  @apply hidden;
+}
+
+/* Стили для фиксированного футера и основного контента */
+body {
+  @apply overflow-x-hidden;
+}
+
+main {
+  @apply min-h-[calc(100vh-8rem)];
+}
+
+/* Кастомный скроллбар */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-blue-500 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-blue-600;
+}
+
+/* Планшет (768px) */
+@media (min-width: 768px) {
+  .nav-link {
+    @apply px-2 py-2;
+  }
+
+  .nav-link svg {
+    @apply w-5 h-5;
+  }
+}
+
+/* Десктоп (1280px) */
+@media (min-width: 1280px) {
+  .nav-link {
+    @apply px-3 py-2;
+  }
+
+  .nav-link svg {
+    @apply w-5 h-5 mr-2;
+  }
+
+  .nav-text {
+    @apply inline;
+  }
+}
+
+/* Сверхширокий экран (1920px) */
+@media (min-width: 1920px) {
+  .container {
+    @apply max-w-7xl;
+  }
+}

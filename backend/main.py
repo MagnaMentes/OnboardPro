@@ -25,6 +25,10 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+
 models.Base.metadata.create_all(bind=engine)
 
 
@@ -149,7 +153,7 @@ async def create_user(user: UserCreate, db: Session = Depends(auth.get_db)):
 
 @app.get("/users/me")
 async def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
-    return {"email": current_user.email, "role": current_user.role}
+    return {"email": current_user.email, "role": current_user.role, "department": current_user.department}
 
 
 @app.put("/users/{user_id}/password")
@@ -447,7 +451,7 @@ async def create_analytics(
 @app.get("/analytics", response_model=List[AnalyticsResponse])
 async def get_analytics(
     current_user: models.User = Depends(auth.get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(auth.get_db)
 ):
     if current_user.role != "hr":
         raise HTTPException(
