@@ -81,19 +81,32 @@ Frontend environment variables:
 - `App.js`: Main application component
 - `components/`: Reusable UI components
 - `pages/`: Page components
-  - `ManagerDashboard.js`: Manager interface for task and plan management
+  - `ManagerDashboard.jsx`: Manager interface with two main sections:
+    - Task Management: Create and manage tasks with modal forms
+    - Plan Management: Create and manage adaptation plans with modal forms
 - `context/`: React context providers
 - `hooks/`: Custom React hooks
 - `utils/`: Utility functions
 
-### Responsive Design
-- Desktop (≥1280px): Full navigation with icons and text
-- Tablet (≥768px, <1280px): Icons-only navigation
-- Mobile (<768px): Burger menu navigation
+### UI/UX Design
+- **Modal Windows**: Forms for creating tasks and plans are displayed in modal windows
+- **Section Organization**: Content is organized into logical sections with clear headers
+- **Responsive Design**:
+  - Desktop (≥1280px): Full navigation with icons and text
+  - Tablet (≥768px, <1280px): Icons-only navigation
+  - Mobile (<768px): Burger menu navigation
+- **Visual Hierarchy**:
+  - Clear section headers
+  - Consistent button styling
+  - Color-coded status indicators
+  - Intuitive table layouts
 
 ### State Management
 - React Context API for global state
-- Local component state for UI elements
+- Local component state for UI elements:
+  - Modal visibility states
+  - Form input states
+  - Loading and error states
 - Form state management with controlled components
 
 ## Database Schema

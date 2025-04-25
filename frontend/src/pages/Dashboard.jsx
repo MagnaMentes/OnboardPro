@@ -29,6 +29,7 @@ export default function Dashboard() {
         }
 
         const data = await response.json();
+        console.log("Полученные задачи:", data);
         setTasks(data);
       } catch (err) {
         setError(err.message);
@@ -65,12 +66,25 @@ export default function Dashboard() {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("ru-RU", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(date);
+    if (!dateString) return "Не указан";
+    
+    try {
+      const date = new Date(dateString);
+      
+      if (isNaN(date.getTime())) {
+        console.warn("Некорректный формат даты:", dateString);
+        return "Неверный формат даты";
+      }
+      
+      return new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(date);
+    } catch (error) {
+      console.error("Ошибка при форматировании даты:", error, dateString);
+      return "Ошибка формата даты";
+    }
   };
 
   const handleStatusChange = async (taskId, newStatus) => {
@@ -125,9 +139,21 @@ export default function Dashboard() {
       <h1 className="text-2xl font-bold mb-6">Панель управления</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tasks.map((task) => (
-          <div key={task.id} className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-2">{task.title}</h3>
+          <div key={task.id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityClass(task.priority)}`}>
+                {task.priority}
+              </span>
+            </div>
             <p className="text-gray-600 mb-4">{task.description}</p>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center text-gray-500">
+                <ClockIcon className="w-5 h-5 mr-2" />
+                <span>Срок: {formatDate(task.deadline)}</span>
+              </div>
+              {getStatusIcon(task.status)}
+            </div>
             <div className="flex items-center justify-between">
               <select
                 value={task.status}

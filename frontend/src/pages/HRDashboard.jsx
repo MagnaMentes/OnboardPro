@@ -61,15 +61,43 @@ export default function HRDashboard() {
     fetchData();
   }, []);
 
+  const COLOR_CLASSES = {
+    blue: {
+      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500',
+      iconBg: 'bg-blue-100 p-3 rounded-full mr-4',
+      iconColor: 'h-8 w-8 text-blue-500'
+    },
+    green: {
+      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500',
+      iconBg: 'bg-green-100 p-3 rounded-full mr-4',
+      iconColor: 'h-8 w-8 text-green-500'
+    },
+    yellow: {
+      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500',
+      iconBg: 'bg-yellow-100 p-3 rounded-full mr-4',
+      iconColor: 'h-8 w-8 text-yellow-500'
+    },
+    purple: {
+      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500',
+      iconBg: 'bg-purple-100 p-3 rounded-full mr-4',
+      iconColor: 'h-8 w-8 text-purple-500'
+    },
+    default: {
+      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-gray-500',
+      iconBg: 'bg-gray-100 p-3 rounded-full mr-4',
+      iconColor: 'h-8 w-8 text-gray-500'
+    }
+  };
+
   const StatCard = ({ title, value, icon, color }) => {
     const Icon = icon;
+    const classes = COLOR_CLASSES[color] || COLOR_CLASSES.default;
+
     return (
-      <div
-        className={`bg-white p-6 rounded-lg shadow-md border-l-4 border-${color}-500`}
-      >
+      <div className={classes.container}>
         <div className="flex items-center">
-          <div className={`bg-${color}-100 p-3 rounded-full mr-4`}>
-            <Icon className={`h-8 w-8 text-${color}-500`} />
+          <div className={classes.iconBg}>
+            <Icon className={classes.iconColor} />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">{title}</p>
@@ -124,13 +152,25 @@ export default function HRDashboard() {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-blue-600">Панель HR</h2>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* Первая строка с блоками "Всего задач" и "Задачи в процессе выполнения" */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <StatCard
           title="Всего задач"
           value={taskStats.total}
           icon={DocumentTextIcon}
           color="blue"
         />
+        
+        <StatCard
+          title="Задачи в процессе"
+          value={inProgressTasks.length}
+          icon={ClockIcon}
+          color="yellow"
+        />
+      </div>
+
+      {/* Вторая строка с остальными блоками */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <StatCard
           title="Выполнено задач"
           value={taskStats.completed}
@@ -178,56 +218,6 @@ export default function HRDashboard() {
             ></div>
           </div>
         </div>
-      </div>
-
-      {/* Задачи в процессе выполнения */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-medium text-gray-800 mb-4">
-          Задачи в процессе выполнения
-        </h3>
-        {inProgressTasks.length === 0 ? (
-          <p className="text-gray-500">Нет задач в процессе выполнения</p>
-        ) : (
-          <div className="space-y-4">
-            {inProgressTasks.map((task) => (
-              <div
-                key={task.id}
-                className="border rounded-lg p-4 hover:bg-gray-50"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-800">
-                      {task.title}
-                    </h4>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {task.description}
-                    </p>
-                    <div className="flex items-center gap-4 mt-2">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          task.priority === "high"
-                            ? "bg-red-100 text-red-800"
-                            : task.priority === "medium"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {task.priority}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        Срок: {formatDate(task.deadline)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <ClockIcon className="w-5 h-5 text-blue-500 mr-2" />
-                    <span className="text-sm text-blue-600">В процессе</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md">
