@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { UserIcon, UsersIcon } from "@heroicons/react/24/outline";
+import { 
+  UserIcon, 
+  UsersIcon, 
+  PencilSquareIcon, 
+  TrashIcon, 
+  LockOpenIcon, 
+  LockClosedIcon, 
+  KeyIcon 
+} from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
@@ -321,34 +329,57 @@ const Profiles = () => {
                 </div>
 
                 {userRole === "hr" && (
-                  <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-2 justify-end">
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-3 justify-end">
+                    {/* Кнопка редактирования */}
                     <button
-                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      type="button"
+                      className="p-2 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                       onClick={() => openEditModal(user)}
+                      title="Изменить"
+                      aria-label="Изменить пользователя"
                     >
-                      Изменить
+                      <PencilSquareIcon className="h-5 w-5" />
                     </button>
+                    
+                    {/* Кнопка блокировки/разблокировки */}
                     <button
-                      className={`px-3 py-1 ${
+                      type="button"
+                      className={`p-2 rounded-full focus:outline-none focus:ring-2 transition-colors ${
                         user.disabled
                           ? "bg-green-100 text-green-700 hover:bg-green-200 focus:ring-green-500"
                           : "bg-amber-100 text-amber-700 hover:bg-amber-200 focus:ring-amber-500"
-                      } rounded-md text-sm focus:outline-none focus:ring-2`}
+                      }`}
                       onClick={() => toggleUserStatus(user)}
+                      title={user.disabled ? "Разблокировать" : "Заблокировать"}
+                      aria-label={user.disabled ? "Разблокировать пользователя" : "Заблокировать пользователя"}
                     >
-                      {user.disabled ? "Разблокировать" : "Заблокировать"}
+                      {user.disabled ? (
+                        <LockOpenIcon className="h-5 w-5" />
+                      ) : (
+                        <LockClosedIcon className="h-5 w-5" />
+                      )}
                     </button>
+                    
+                    {/* Кнопка сброса пароля */}
                     <button
-                      className="px-3 py-1 bg-purple-100 text-purple-700 rounded-md text-sm hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      type="button"
+                      className="p-2 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                       onClick={() => resetUserPassword(user)}
+                      title="Сбросить пароль"
+                      aria-label="Сбросить пароль пользователя"
                     >
-                      Сбросить пароль
+                      <KeyIcon className="h-5 w-5" />
                     </button>
+                    
+                    {/* Кнопка удаления */}
                     <button
-                      className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      type="button"
+                      className="p-2 bg-red-100 text-red-700 rounded-full hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                       onClick={() => openDeleteModal(user)}
+                      title="Удалить"
+                      aria-label="Удалить пользователя"
                     >
-                      Удалить
+                      <TrashIcon className="h-5 w-5" />
                     </button>
                   </div>
                 )}
