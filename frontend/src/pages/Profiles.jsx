@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { 
-  UserIcon, 
-  UsersIcon, 
-  PencilSquareIcon, 
-  TrashIcon, 
-  LockOpenIcon, 
-  LockClosedIcon, 
-  KeyIcon 
+import {
+  UserIcon,
+  UsersIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  LockOpenIcon,
+  LockClosedIcon,
+  KeyIcon,
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -46,8 +46,8 @@ const Profiles = () => {
         });
         setUserRole(response.data.role);
 
-        // Если пользователь не HR, перенаправляем
-        if (response.data.role !== "hr") {
+        // Изменяем проверку - разрешаем доступ и HR, и менеджерам
+        if (response.data.role !== "hr" && response.data.role !== "manager") {
           toast.error("У вас нет доступа к этой странице");
           navigate("/dashboard");
         }
@@ -340,7 +340,7 @@ const Profiles = () => {
                     >
                       <PencilSquareIcon className="h-5 w-5" />
                     </button>
-                    
+
                     {/* Кнопка блокировки/разблокировки */}
                     <button
                       type="button"
@@ -351,7 +351,11 @@ const Profiles = () => {
                       }`}
                       onClick={() => toggleUserStatus(user)}
                       title={user.disabled ? "Разблокировать" : "Заблокировать"}
-                      aria-label={user.disabled ? "Разблокировать пользователя" : "Заблокировать пользователя"}
+                      aria-label={
+                        user.disabled
+                          ? "Разблокировать пользователя"
+                          : "Заблокировать пользователя"
+                      }
                     >
                       {user.disabled ? (
                         <LockOpenIcon className="h-5 w-5" />
@@ -359,7 +363,7 @@ const Profiles = () => {
                         <LockClosedIcon className="h-5 w-5" />
                       )}
                     </button>
-                    
+
                     {/* Кнопка сброса пароля */}
                     <button
                       type="button"
@@ -370,7 +374,7 @@ const Profiles = () => {
                     >
                       <KeyIcon className="h-5 w-5" />
                     </button>
-                    
+
                     {/* Кнопка удаления */}
                     <button
                       type="button"
