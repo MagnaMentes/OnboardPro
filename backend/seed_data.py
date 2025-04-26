@@ -11,21 +11,19 @@ def seed_database():
         # Create test users
         users = [
             {
-                "email": "test@onboardpro.com",  # Исправлено с hr@onboardpro.com
-                "password": pwd_context.hash("test123"),  # Исправлено с hr123
+                "email": "hr@onboardpro.com",
+                "password": pwd_context.hash("test123"),
                 "role": "hr",
                 "department": "HR"
             },
             {
                 "email": "manager@onboardpro.com",
-                # Исправлено с manager123
                 "password": pwd_context.hash("test123"),
                 "role": "manager",
                 "department": "Engineering"
             },
             {
                 "email": "employee@onboardpro.com",
-                # Исправлено с employee123
                 "password": pwd_context.hash("test123"),
                 "role": "employee",
                 "department": "Engineering"
@@ -67,13 +65,25 @@ def seed_database():
         ]
 
         db_plans = []
+        # Проверяем существование планов перед созданием
         for plan_data in plans:
-            plan = OnboardingPlan(**plan_data)
-            db.add(plan)
-            db_plans.append(plan)
-        db.commit()
+            existing_plan = db.query(OnboardingPlan).filter(
+                OnboardingPlan.role == plan_data["role"],
+                OnboardingPlan.title == plan_data["title"]
+            ).first()
 
-        # Create tasks
+            if existing_plan:
+                print(
+                    f"План '{plan_data['title']}' для роли '{plan_data['role']}' уже существует")
+                db_plans.append(existing_plan)
+            else:
+                print(f"Создаем новый план: {plan_data['title']}")
+                plan = OnboardingPlan(**plan_data)
+                db.add(plan)
+                db.commit()  # Сохраняем, чтобы получить ID
+                db_plans.append(plan)
+
+        # Create tasks - определение задач осталось тем же
         tasks = [
             {
                 "plan_id": db_plans[0].id,
@@ -132,14 +142,26 @@ def seed_database():
         ]
 
         db_tasks = []
+        # Проверяем существование задач перед созданием
         for task_data in tasks:
-            task = Task(**task_data)
-            db.add(task)
-            db_tasks.append(task)
-        db.commit()
+            existing_task = db.query(Task).filter(
+                Task.plan_id == task_data["plan_id"],
+                Task.user_id == task_data["user_id"],
+                Task.title == task_data["title"]
+            ).first()
+
+            if existing_task:
+                print(f"Задача '{task_data['title']}' уже существует")
+                db_tasks.append(existing_task)
+            else:
+                print(f"Создаем новую задачу: {task_data['title']}")
+                task = Task(**task_data)
+                db.add(task)
+                db.commit()  # Сохраняем, чтобы получить ID
+                db_tasks.append(task)
 
         # Create feedback
-        feedback = [
+        feedback_items = [
             {
                 "sender_id": db_users[1].id,  # manager
                 "recipient_id": db_users[2].id,  # employee
@@ -154,13 +176,27 @@ def seed_database():
             }
         ]
 
-        for feedback_data in feedback:
-            feedback = Feedback(**feedback_data)
-            db.add(feedback)
+        # Проверяем существование обратной связи перед созданием
+        for feedback_data in feedback_items:
+            existing_feedback = db.query(Feedback).filter(
+                Feedback.sender_id == feedback_data["sender_id"],
+                Feedback.recipient_id == feedback_data["recipient_id"],
+                Feedback.task_id == feedback_data["task_id"],
+                Feedback.message == feedback_data["message"]
+            ).first()
+
+            if existing_feedback:
+                print(
+                    f"Отзыв от ID:{feedback_data['sender_id']} к ID:{feedback_data['recipient_id']} уже существует")
+            else:
+                print(
+                    f"Создаем новый отзыв от ID:{feedback_data['sender_id']} к ID:{feedback_data['recipient_id']}")
+                feedback = Feedback(**feedback_data)
+                db.add(feedback)
         db.commit()
 
         # Create analytics
-        analytics = [
+        analytics_items = [
             {
                 "user_id": db_users[2].id,
                 "metric": "task_completion_rate",
@@ -173,9 +209,23 @@ def seed_database():
             }
         ]
 
-        for analytics_data in analytics:
-            analytics = Analytics(**analytics_data)
-            db.add(analytics)
+        # Проверяем существование аналитики перед созданием
+        for analytics_data in analytics_items:
+            existing_analytics = db.query(Analytics).filter(
+                Analytics.user_id == analytics_data["user_id"],
+                Analytics.metric == analytics_data["metric"]
+            ).first()
+
+            if existing_analytics:
+                print(
+                    f"Аналитика '{analytics_data['metric']}' для ID:{analytics_data['user_id']} уже существует")
+                # Обновляем значение
+                existing_analytics.value = analytics_data["value"]
+            else:
+                print(
+                    f"Создаем новую аналитику '{analytics_data['metric']}' для ID:{analytics_data['user_id']}")
+                analytics = Analytics(**analytics_data)
+                db.add(analytics)
         db.commit()
 
         print("Database seeded successfully!")
