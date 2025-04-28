@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import { PaperAirplaneIcon, UserIcon } from "@heroicons/react/24/outline";
+import {
+  PaperAirplaneIcon,
+  UserIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 export default function Feedback() {
   const [users, setUsers] = useState([]);
@@ -10,6 +14,7 @@ export default function Feedback() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,11 +95,23 @@ export default function Feedback() {
       setFeedback((prev) => [...prev, newFeedback]);
       setMessage("");
       setSelectedUser("");
+      // Закрываем модальное окно после успешной отправки
+      setIsModalOpen(false);
     } catch (err) {
       setError(err.message);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const openModal = () => {
+    setIsModalOpen(true);
+    setError(null); // Сбрасываем ошибки при открытии модального окна
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setError(null);
   };
 
   const formatDate = (dateString) => {
@@ -118,72 +135,110 @@ export default function Feedback() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-blue-600">Обратная связь</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-blue-600">Обратная связь</h2>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <strong className="font-bold">Ошибка!</strong>
-          <span className="block sm:inline"> {error}</span>
-        </div>
-      )}
-
-      {/* Форма отправки отзыва */}
-      {(userRole === "hr" || userRole === "manager") && (
-        <div className="bg-white p-4 rounded shadow-md">
-          <h3 className="text-lg font-medium text-gray-800 mb-3">
+        {/* Кнопка для открытия модального окна (только для HR и менеджеров) */}
+        {(userRole === "hr" || userRole === "manager") && (
+          <button
+            onClick={openModal}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             Отправить отзыв
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="recipient"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Получатель
-              </label>
-              <select
-                id="recipient"
-                value={selectedUser}
-                onChange={(e) => setSelectedUser(e.target.value)}
-                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                required
-              >
-                <option value="">Выберите получателя</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.email} ({user.role})
-                  </option>
-                ))}
-              </select>
-            </div>
+          </button>
+        )}
+      </div>
 
-            <div>
-              <label
-                htmlFor="message"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Сообщение
-              </label>
-              <textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
-                required
-              />
-            </div>
+      {/* Модальное окно с формой отправки отзыва */}
+      {isModalOpen && (
+        <div className="fixed inset-0 overflow-y-auto z-50">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div
+              className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
+              onClick={closeModal}
+            ></div>
 
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                <PaperAirplaneIcon className="w-4 h-4 mr-2" />
-                {isSubmitting ? "Отправляется..." : "Отправить"}
-              </button>
+            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-md sm:w-full z-10">
+              <div className="bg-blue-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Отправить обратную связь
+                </h3>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+
+              {error && (
+                <div className="mt-2 mx-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                  <strong className="font-bold">Ошибка!</strong>
+                  <span className="block sm:inline"> {error}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
+                <div>
+                  <label
+                    htmlFor="recipient"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Получатель
+                  </label>
+                  <select
+                    id="recipient"
+                    value={selectedUser}
+                    onChange={(e) => setSelectedUser(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Выберите получателя</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.email} ({user.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="message"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Сообщение
+                  </label>
+                  <textarea
+                    id="message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end mt-6 space-x-3">
+                  <button
+                    type="button"
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    onClick={closeModal}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    <PaperAirplaneIcon className="w-4 h-4 mr-2" />
+                    {isSubmitting ? "Отправляется..." : "Отправить"}
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       )}
 
