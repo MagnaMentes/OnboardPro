@@ -340,7 +340,9 @@ const Profiles = () => {
                   <div>
                     <div className="flex items-center">
                       <h3 className="text-lg font-medium text-gray-900 truncate mr-2">
-                        {user.email}
+                        {`${user.last_name || ""} ${user.first_name || ""} ${
+                          user.middle_name || ""
+                        }`.trim() || user.email}
                       </h3>
                       {user.disabled && (
                         <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
@@ -361,25 +363,17 @@ const Profiles = () => {
 
               <div className="p-4 border-t border-gray-200">
                 <div className="space-y-2">
-                  {(user.last_name || user.first_name || user.middle_name) && (
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">ФИО:</span>{" "}
-                      {`${user.last_name || ""} ${user.first_name || ""} ${
-                        user.middle_name || ""
-                      }`.trim() || "Не указано"}
-                    </p>
-                  )}
                   {user.phone && (
                     <p className="text-sm text-gray-600">
                       <span className="font-medium">Телефон:</span> {user.phone}
                     </p>
                   )}
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">ID:</span> {user.id}
-                  </p>
-                  <p className="text-sm text-gray-600">
                     <span className="font-medium">Отдел:</span>{" "}
                     {user.department || "Не указан"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Email:</span> {user.email}
                   </p>
                 </div>
 
