@@ -3,7 +3,7 @@ set -e
 
 # Запуск миграций базы данных
 echo "Applying database migrations..."
-alembic upgrade head
+alembic upgrade heads
 
 # Запуск скрипта инициализации данных
 echo "Initializing database with seed data..."

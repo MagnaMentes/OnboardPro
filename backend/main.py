@@ -7,12 +7,13 @@ from sqlalchemy.sql.expression import distinct
 import models
 import auth
 from database import engine, get_db
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import datetime
 from typing import Optional, List
 from integrations import send_telegram_notification, create_calendar_event, import_workable_employees, handle_telegram_webhook, sync_calendar_task_status, sync_workable_candidate
 import secrets
 import string
+import re
 
 app = FastAPI()
 
@@ -46,6 +47,29 @@ class UserCreate(BaseModel):
     middle_name: str | None = None
     phone: str | None = None
 
+    @field_validator('phone')
+    @classmethod
+    def validate_ukrainian_phone(cls, v):
+        if v is None:
+            return v
+        # Удаляем все пробелы для проверки формата
+        cleaned_number = v.replace(" ", "")
+        # Проверяем украинский формат номера: +380XXXXXXXXX
+        pattern = r'^\+380\d{9}$'
+        if not re.match(pattern, cleaned_number):
+            raise ValueError(
+                'Номер телефона должен быть в украинском формате: +380 XX XXX XX XX')
+
+        # Форматируем номер телефона в стандартном украинском формате
+        # Сначала убираем все пробелы, затем добавляем их в нужных местах
+        if " " not in v:  # Если номер не содержит пробелов, форматируем его
+            operator_code = cleaned_number[4:6]
+            first_part = cleaned_number[6:9]
+            second_part = cleaned_number[9:11]
+            third_part = cleaned_number[11:13]
+            v = f"+380 {operator_code} {first_part} {second_part} {third_part}"
+        return v
+
 
 class UserUpdate(BaseModel):
     email: str
@@ -55,6 +79,29 @@ class UserUpdate(BaseModel):
     last_name: str | None = None
     middle_name: str | None = None
     phone: str | None = None
+
+    @field_validator('phone')
+    @classmethod
+    def validate_ukrainian_phone(cls, v):
+        if v is None:
+            return v
+        # Удаляем все пробелы для проверки формата
+        cleaned_number = v.replace(" ", "")
+        # Проверяем украинский формат номера: +380XXXXXXXXX
+        pattern = r'^\+380\d{9}$'
+        if not re.match(pattern, cleaned_number):
+            raise ValueError(
+                'Номер телефона должен быть в украинском формате: +380 XX XXX XX XX')
+
+        # Форматируем номер телефона в стандартном украинском формате
+        # Сначала убираем все пробелы, затем добавляем их в нужных местах
+        if " " not in v:  # Если номер не содержит пробелов, форматируем его
+            operator_code = cleaned_number[4:6]
+            first_part = cleaned_number[6:9]
+            second_part = cleaned_number[9:11]
+            third_part = cleaned_number[11:13]
+            v = f"+380 {operator_code} {first_part} {second_part} {third_part}"
+        return v
 
 
 class PlanCreate(BaseModel):
@@ -180,7 +227,7 @@ async def create_user(user: UserCreate, db: Session = Depends(auth.get_db)):
     db_user = models.User(
         email=user.email,
         password=hashed_password,
-        role=user.role, 
+        role=user.role,
         department=user.department,
         first_name=user.first_name,
         last_name=user.last_name,

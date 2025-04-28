@@ -18,7 +18,14 @@ if not SECRET_KEY:
 
 ALGORITHM = "HS256"
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Исправление проблем с bcrypt
+try:
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+except Exception as e:
+    print(f"Error initializing bcrypt: {e}")
+    # Запасной вариант с использованием sha256_crypt, если bcrypt не работает
+    pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
@@ -31,7 +38,11 @@ def get_db():
 
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        print(f"Error verifying password: {e}")
+        return False
 
 
 def create_access_token(data: dict):
