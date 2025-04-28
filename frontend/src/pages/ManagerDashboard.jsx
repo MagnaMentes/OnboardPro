@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   PlusIcon,
   TrashIcon,
   XMarkIcon,
   PencilIcon,
+  AdjustmentsVerticalIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { getApiBaseUrl } from "../config/api";
 import { ToastContainer, toast } from "react-toastify";
@@ -36,6 +40,16 @@ export default function ManagerDashboard() {
   const [isEditPlanModalOpen, setIsEditPlanModalOpen] = useState(false);
   const [isDeletePlanModalOpen, setIsDeletePlanModalOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState(null);
+
+  // Новые состояния для фильтрации и сортировки задач
+  const [taskStatusFilter, setTaskStatusFilter] = useState("all");
+  const [taskPriorityFilter, setTaskPriorityFilter] = useState("all");
+  const [taskUserFilter, setTaskUserFilter] = useState("all");
+  const [taskPlanFilter, setTaskPlanFilter] = useState("all");
+  const [taskSortField, setTaskSortField] = useState("deadline");
+  const [taskSortDirection, setTaskSortDirection] = useState("asc");
+  const [isTaskFiltersVisible, setIsTaskFiltersVisible] = useState(false);
+  const [taskSearchQuery, setTaskSearchQuery] = useState("");
 
   const apiBaseUrl = getApiBaseUrl();
 
@@ -85,6 +99,140 @@ export default function ManagerDashboard() {
 
     fetchData();
   }, [apiBaseUrl]);
+
+  // Функция для обновления списка задач из базы данных
+  const refreshTasksFromDatabase = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const tasksResponse = await fetch(`${apiBaseUrl}/tasks`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!tasksResponse.ok) {
+        throw new Error("Ошибка при получении списка задач");
+      }
+
+      const tasksData = await tasksResponse.json();
+      setTasks(tasksData);
+      toast.success("Список задач успешно обновлен");
+      console.log("Список задач обновлен из базы данных:", tasksData);
+    } catch (err) {
+      console.error("Ошибка при обновлении списка задач:", err);
+      toast.error(err.message);
+    }
+  };
+
+  // Функция переключения направления сортировки
+  const toggleSortDirection = (field) => {
+    if (taskSortField === field) {
+      setTaskSortDirection(taskSortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setTaskSortField(field);
+      setTaskSortDirection("asc");
+    }
+  };
+
+  // Функция сброса всех фильтров
+  const resetTaskFilters = () => {
+    setTaskStatusFilter("all");
+    setTaskPriorityFilter("all");
+    setTaskUserFilter("all");
+    setTaskPlanFilter("all");
+    setTaskSearchQuery("");
+  };
+
+  // Фильтрация и сортировка задач на основе выбранных параметров
+  const filteredAndSortedTasks = useMemo(() => {
+    // Сначала применяем фильтры
+    let result = [...tasks];
+
+    // Фильтр по поисковому запросу (ищет в названии и описании)
+    if (taskSearchQuery.trim()) {
+      const query = taskSearchQuery.toLowerCase();
+      result = result.filter(
+        (task) =>
+          task.title.toLowerCase().includes(query) ||
+          (task.description && task.description.toLowerCase().includes(query))
+      );
+    }
+
+    // Фильтр по статусу
+    if (taskStatusFilter !== "all") {
+      result = result.filter((task) => task.status === taskStatusFilter);
+    }
+
+    // Фильтр по приоритету
+    if (taskPriorityFilter !== "all") {
+      result = result.filter((task) => task.priority === taskPriorityFilter);
+    }
+
+    // Фильтр по сотруднику
+    if (taskUserFilter !== "all") {
+      result = result.filter(
+        (task) => task.user_id === parseInt(taskUserFilter)
+      );
+    }
+
+    // Фильтр по плану
+    if (taskPlanFilter !== "all") {
+      result = result.filter(
+        (task) => task.plan_id === parseInt(taskPlanFilter)
+      );
+    }
+
+    // Затем применяем сортировку
+    result.sort((a, b) => {
+      let compareResult = 0;
+
+      switch (taskSortField) {
+        case "deadline":
+          compareResult = new Date(a.deadline) - new Date(b.deadline);
+          break;
+        case "priority":
+          const priorityValues = { low: 1, medium: 2, high: 3 };
+          compareResult =
+            priorityValues[a.priority] - priorityValues[b.priority];
+          break;
+        case "title":
+          compareResult = a.title.localeCompare(b.title);
+          break;
+        case "status":
+          compareResult = a.status.localeCompare(b.status);
+          break;
+        default:
+          compareResult = 0;
+      }
+
+      // Если направление сортировки desc, инвертируем результат сравнения
+      return taskSortDirection === "asc" ? compareResult : -compareResult;
+    });
+
+    return result;
+  }, [
+    tasks,
+    taskSearchQuery,
+    taskStatusFilter,
+    taskPriorityFilter,
+    taskUserFilter,
+    taskPlanFilter,
+    taskSortField,
+    taskSortDirection,
+  ]);
+
+  // Отображение иконки сортировки возле заголовка столбца
+  const renderSortIcon = (field) => {
+    if (taskSortField !== field) {
+      return null;
+    }
+
+    return taskSortDirection === "asc" ? (
+      <ArrowUpIcon className="h-3 w-3 inline ml-1" />
+    ) : (
+      <ArrowDownIcon className="h-3 w-3 inline ml-1" />
+    );
+  };
 
   // Обработчики задач
   const handleInputChange = (e) => {
@@ -824,18 +972,202 @@ export default function ManagerDashboard() {
           <h3 className="text-xl font-semibold text-gray-700">
             Управление задачами
           </h3>
+          <div className="flex space-x-2">
+            <button
+              onClick={refreshTasksFromDatabase}
+              className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              title="Обновить список задач из базы данных"
+            >
+              <ArrowPathIcon className="h-4 w-4 mr-1" />
+              Обновить
+            </button>
+            <button
+              onClick={() => setIsTaskModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Создать новую задачу
+            </button>
+          </div>
+        </div>
+
+        {/* Строка поиска и переключатель панели фильтров */}
+        <div className="flex flex-col md:flex-row md:justify-between mb-4 space-y-2 md:space-y-0">
+          <div className="flex items-center w-full md:w-auto">
+            <input
+              type="text"
+              placeholder="Поиск по названию или описанию..."
+              className="border border-gray-300 rounded-l px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={taskSearchQuery}
+              onChange={(e) => setTaskSearchQuery(e.target.value)}
+            />
+            {taskSearchQuery && (
+              <button
+                onClick={() => setTaskSearchQuery("")}
+                className="bg-gray-100 px-3 py-2 border-t border-r border-b border-gray-300"
+                title="Очистить поиск"
+              >
+                <XMarkIcon className="h-5 w-5 text-gray-500" />
+              </button>
+            )}
+          </div>
           <button
-            onClick={() => setIsTaskModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            onClick={() => setIsTaskFiltersVisible(!isTaskFiltersVisible)}
+            className="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Создать новую задачу
+            <AdjustmentsVerticalIcon className="h-5 w-5 mr-2" />
+            Фильтры
+            {(taskStatusFilter !== "all" ||
+              taskPriorityFilter !== "all" ||
+              taskUserFilter !== "all" ||
+              taskPlanFilter !== "all") && (
+              <span className="inline-flex items-center justify-center ml-2 w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full">
+                {
+                  [
+                    taskStatusFilter !== "all",
+                    taskPriorityFilter !== "all",
+                    taskUserFilter !== "all",
+                    taskPlanFilter !== "all",
+                  ].filter(Boolean).length
+                }
+              </span>
+            )}
           </button>
         </div>
 
-        {tasks.length === 0 ? (
+        {/* Панель фильтров */}
+        {isTaskFiltersVisible && (
+          <div className="bg-gray-50 p-4 mb-4 rounded border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label
+                  htmlFor="statusFilter"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Статус
+                </label>
+                <select
+                  id="statusFilter"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={taskStatusFilter}
+                  onChange={(e) => setTaskStatusFilter(e.target.value)}
+                >
+                  <option value="all">Все статусы</option>
+                  <option value="pending">В очереди</option>
+                  <option value="in-progress">В процессе</option>
+                  <option value="completed">Завершено</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="priorityFilter"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Приоритет
+                </label>
+                <select
+                  id="priorityFilter"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={taskPriorityFilter}
+                  onChange={(e) => setTaskPriorityFilter(e.target.value)}
+                >
+                  <option value="all">Все приоритеты</option>
+                  <option value="low">Низкий</option>
+                  <option value="medium">Средний</option>
+                  <option value="high">Высокий</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="userFilter"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Сотрудник
+                </label>
+                <select
+                  id="userFilter"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={taskUserFilter}
+                  onChange={(e) => setTaskUserFilter(e.target.value)}
+                >
+                  <option value="all">Все сотрудники</option>
+                  {users
+                    .filter((user) => user.role === "employee")
+                    .map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.email}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="planFilter"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  План адаптации
+                </label>
+                <select
+                  id="planFilter"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={taskPlanFilter}
+                  onChange={(e) => setTaskPlanFilter(e.target.value)}
+                >
+                  <option value="all">Все планы</option>
+                  {plans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4 space-x-2">
+              <button
+                onClick={resetTaskFilters}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Сбросить фильтры
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Информация о результатах после применения фильтров */}
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-sm text-gray-600">
+            Отображено {filteredAndSortedTasks.length} из {tasks.length} задач
+            {(taskStatusFilter !== "all" ||
+              taskPriorityFilter !== "all" ||
+              taskUserFilter !== "all" ||
+              taskPlanFilter !== "all" ||
+              taskSearchQuery) &&
+              " (применены фильтры)"}
+          </div>
+          <div className="text-sm text-gray-600">
+            Сортировка:{" "}
+            {taskSortField === "title"
+              ? "название"
+              : taskSortField === "deadline"
+              ? "срок"
+              : taskSortField === "priority"
+              ? "приоритет"
+              : taskSortField === "status"
+              ? "статус"
+              : ""}
+            {taskSortDirection === "asc"
+              ? " (по возрастанию)"
+              : " (по убыванию)"}
+          </div>
+        </div>
+
+        {filteredAndSortedTasks.length === 0 ? (
           <div className="bg-gray-50 p-4 rounded">
-            <p className="text-gray-500">Нет активных задач</p>
+            <p className="text-gray-500">
+              {tasks.length === 0
+                ? "Нет активных задач"
+                : "Нет задач, соответствующих выбранным фильтрам"}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -844,39 +1176,51 @@ export default function ManagerDashboard() {
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => toggleSortDirection("title")}
                   >
-                    Задача
+                    <div className="flex items-center">
+                      Задача {renderSortIcon("title")}
+                    </div>
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   >
-                    Сотрудник
+                    <div className="flex items-center">Сотрудник</div>
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   >
-                    План
+                    <div className="flex items-center">План</div>
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => toggleSortDirection("priority")}
                   >
-                    Приоритет
+                    <div className="flex items-center">
+                      Приоритет {renderSortIcon("priority")}
+                    </div>
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => toggleSortDirection("deadline")}
                   >
-                    Срок
+                    <div className="flex items-center">
+                      Срок {renderSortIcon("deadline")}
+                    </div>
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => toggleSortDirection("status")}
                   >
-                    Статус
+                    <div className="flex items-center">
+                      Статус {renderSortIcon("status")}
+                    </div>
                   </th>
                   <th
                     scope="col"
@@ -887,7 +1231,7 @@ export default function ManagerDashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {tasks.map((task) => (
+                {filteredAndSortedTasks.map((task) => (
                   <tr key={task.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -918,7 +1262,11 @@ export default function ManagerDashboard() {
                             : "bg-green-100 text-green-800"
                         }`}
                       >
-                        {task.priority}
+                        {task.priority === "high"
+                          ? "Высокий"
+                          : task.priority === "medium"
+                          ? "Средний"
+                          : "Низкий"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -937,13 +1285,18 @@ export default function ManagerDashboard() {
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {task.status}
+                        {task.status === "completed"
+                          ? "Завершено"
+                          : task.status === "in-progress"
+                          ? "В процессе"
+                          : "В очереди"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleDeleteTask(task.id)}
                         className="text-red-600 hover:text-red-900 focus:outline-none"
+                        title="Удалить задачу"
                       >
                         <TrashIcon className="h-5 w-5" />
                       </button>
