@@ -209,164 +209,165 @@ export default function ManagerDashboard() {
   // Модальное окно для создания задачи
   const TaskModal = () => {
     if (!isTaskModalOpen) return null;
-    
+
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center p-5 border-b">
-            <h3 className="text-lg font-medium text-gray-800">
-              Создать новую задачу
-            </h3>
-            <button
-              onClick={() => setIsTaskModalOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-          </div>
-          <div className="p-5">
-            <form onSubmit={handleTaskSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="user_id"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Сотрудник
-                  </label>
-                  <select
-                    id="user_id"
-                    name="user_id"
-                    value={newTask.user_id}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="">Выберите сотрудника</option>
-                    {users
-                      .filter((user) => user.role === "employee")
-                      .map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.email} ({user.department || "Без отдела"})
+      <div className="fixed inset-0 overflow-y-auto z-50">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
+            onClick={() => setIsTaskModalOpen(false)}
+          ></div>
+
+          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-3xl max-h-[90vh] overflow-y-auto z-10">
+            <div className="bg-blue-50 px-4 py-3 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-blue-900">
+                Создать новую задачу
+              </h3>
+            </div>
+
+            <div className="p-5">
+              <form onSubmit={handleTaskSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="user_id"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Сотрудник
+                    </label>
+                    <select
+                      id="user_id"
+                      name="user_id"
+                      value={newTask.user_id}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    >
+                      <option value="">Выберите сотрудника</option>
+                      {users
+                        .filter((user) => user.role === "employee")
+                        .map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.email} ({user.department || "Без отдела"})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="plan_id"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      План адаптации
+                    </label>
+                    <select
+                      id="plan_id"
+                      name="plan_id"
+                      value={newTask.plan_id}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    >
+                      <option value="">Выберите план</option>
+                      {plans.map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.title} ({plan.role})
                         </option>
                       ))}
-                  </select>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="title"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Название задачи
+                    </label>
+                    <input
+                      type="text"
+                      id="title"
+                      name="title"
+                      value={newTask.title}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="priority"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Приоритет
+                    </label>
+                    <select
+                      id="priority"
+                      name="priority"
+                      value={newTask.priority}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                      <option value="low">Низкий</option>
+                      <option value="medium">Средний</option>
+                      <option value="high">Высокий</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="deadline"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Срок выполнения
+                    </label>
+                    <input
+                      type="date"
+                      id="deadline"
+                      name="deadline"
+                      value={newTask.deadline}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label
-                    htmlFor="plan_id"
+                    htmlFor="description"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    План адаптации
+                    Описание
                   </label>
-                  <select
-                    id="plan_id"
-                    name="plan_id"
-                    value={newTask.plan_id}
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={newTask.description}
                     onChange={handleInputChange}
-                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="">Выберите план</option>
-                    {plans.map((plan) => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.title} ({plan.role})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="title"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Название задачи
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={newTask.title}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                    required
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[100px]"
                   />
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="priority"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsTaskModalOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    Приоритет
-                  </label>
-                  <select
-                    id="priority"
-                    name="priority"
-                    value={newTask.priority}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                    Отмена
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    <option value="low">Низкий</option>
-                    <option value="medium">Средний</option>
-                    <option value="high">Высокий</option>
-                  </select>
+                    Создать задачу
+                  </button>
                 </div>
-
-                <div>
-                  <label
-                    htmlFor="deadline"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Срок выполнения
-                  </label>
-                  <input
-                    type="date"
-                    id="deadline"
-                    name="deadline"
-                    value={newTask.deadline}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Описание
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={newTask.description}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsTaskModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Отмена
-                </button>
-                <button
-                  type="submit"
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <PlusIcon className="w-4 h-4 mr-2" />
-                  Создать задачу
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -376,95 +377,96 @@ export default function ManagerDashboard() {
   // Модальное окно для создания плана
   const PlanModal = () => {
     if (!isPlanModalOpen) return null;
-    
+
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center p-5 border-b">
-            <h3 className="text-lg font-medium text-gray-800">
-              Создать новый план адаптации
-            </h3>
-            <button
-              onClick={() => setIsPlanModalOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-          </div>
-          <div className="p-5">
-            <form onSubmit={handlePlanSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="plan_title"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Название плана
-                  </label>
-                  <input
-                    id="plan_title"
-                    name="title"
-                    type="text"
-                    value={newPlan.title}
-                    onChange={handlePlanInputChange}
-                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
+      <div className="fixed inset-0 overflow-y-auto z-50">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
+            onClick={() => setIsPlanModalOpen(false)}
+          ></div>
+
+          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-2xl max-h-[90vh] overflow-y-auto z-10">
+            <div className="bg-blue-50 px-4 py-3 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-blue-900">
+                Создать новый план адаптации
+              </h3>
+            </div>
+
+            <div className="p-5">
+              <form onSubmit={handlePlanSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="plan_title"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Название плана
+                    </label>
+                    <input
+                      id="plan_title"
+                      name="title"
+                      type="text"
+                      value={newPlan.title}
+                      onChange={handlePlanInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="plan_role"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Роль
+                    </label>
+                    <select
+                      id="plan_role"
+                      name="role"
+                      value={newPlan.role}
+                      onChange={handlePlanInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    >
+                      <option value="employee">Сотрудник</option>
+                      <option value="manager">Менеджер</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label
+                      htmlFor="plan_description"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Описание
+                    </label>
+                    <textarea
+                      id="plan_description"
+                      name="description"
+                      value={newPlan.description}
+                      onChange={handlePlanInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[80px]"
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label
-                    htmlFor="plan_role"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsPlanModalOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    Роль
-                  </label>
-                  <select
-                    id="plan_role"
-                    name="role"
-                    value={newPlan.role}
-                    onChange={handlePlanInputChange}
-                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                    required
+                    Отмена
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    disabled={isCreatingPlan}
                   >
-                    <option value="employee">Сотрудник</option>
-                    <option value="manager">Менеджер</option>
-                  </select>
+                    {isCreatingPlan ? "Создание..." : "Создать план"}
+                  </button>
                 </div>
-                <div className="md:col-span-2">
-                  <label
-                    htmlFor="plan_description"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Описание
-                  </label>
-                  <textarea
-                    id="plan_description"
-                    name="description"
-                    value={newPlan.description}
-                    onChange={handlePlanInputChange}
-                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                    rows={2}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsPlanModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Отмена
-                </button>
-                <button
-                  type="submit"
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={isCreatingPlan}
-                >
-                  {isCreatingPlan ? "Создание..." : "Создать план"}
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -482,7 +484,7 @@ export default function ManagerDashboard() {
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-blue-600">Панель менеджера</h2>
-      
+
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           <strong className="font-bold">Ошибка!</strong>
@@ -709,7 +711,10 @@ export default function ManagerDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {tasks.filter(task => task.plan_id === plan.id).length}
+                        {
+                          tasks.filter((task) => task.plan_id === plan.id)
+                            .length
+                        }
                       </div>
                     </td>
                   </tr>

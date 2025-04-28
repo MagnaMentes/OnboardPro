@@ -587,148 +587,147 @@ const Profiles = () => {
                 </h3>
               </div>
 
-              <form onSubmit={handleCreateUser} className="px-4 py-5">
-                <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+              <form onSubmit={handleCreateUser} className="px-5 py-5 space-y-4">
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Пароль
-                    </label>
-                    <input
-                      type="password"
-                      id="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Пароль
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="role"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Роль
-                    </label>
-                    <select
-                      id="role"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                      <option value="employee">Сотрудник</option>
-                      <option value="manager">Менеджер</option>
-                      <option value="hr">HR</option>
-                    </select>
-                  </div>
+                <div>
+                  <label
+                    htmlFor="role"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Роль
+                  </label>
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  >
+                    <option value="employee">Сотрудник</option>
+                    <option value="manager">Менеджер</option>
+                    <option value="hr">HR</option>
+                  </select>
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="department"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Отдел
-                    </label>
-                    <input
-                      type="text"
-                      id="department"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="department"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Отдел
+                  </label>
+                  <input
+                    type="text"
+                    id="department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="first_name"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Имя
-                    </label>
-                    <input
-                      type="text"
-                      id="first_name"
-                      name="first_name"
-                      value={formData.first_name}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="first_name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Имя
+                  </label>
+                  <input
+                    type="text"
+                    id="first_name"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="last_name"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Фамилия
-                    </label>
-                    <input
-                      type="text"
-                      id="last_name"
-                      name="last_name"
-                      value={formData.last_name}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="last_name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Фамилия
+                  </label>
+                  <input
+                    type="text"
+                    id="last_name"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="middle_name"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Отчество
-                    </label>
-                    <input
-                      type="text"
-                      id="middle_name"
-                      name="middle_name"
-                      value={formData.middle_name}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="middle_name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Отчество
+                  </label>
+                  <input
+                    type="text"
+                    id="middle_name"
+                    name="middle_name"
+                    value={formData.middle_name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="phone"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Телефон
-                    </label>
-                    <input
-                      type="text"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Телефон
+                  </label>
+                  <input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="+380 XX XXX XX XX"
+                  />
                 </div>
 
                 <div className="mt-6 flex justify-end space-x-3">
@@ -768,130 +767,129 @@ const Profiles = () => {
                 </h3>
               </div>
 
-              <form onSubmit={handleUpdateUser} className="px-4 py-5">
-                <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="edit-email"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="edit-email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+              <form onSubmit={handleUpdateUser} className="px-5 py-5 space-y-4">
+                <div>
+                  <label
+                    htmlFor="edit-email"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="edit-email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="edit-role"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Роль
-                    </label>
-                    <select
-                      id="edit-role"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                      <option value="employee">Сотрудник</option>
-                      <option value="manager">Менеджер</option>
-                      <option value="hr">HR</option>
-                    </select>
-                  </div>
+                <div>
+                  <label
+                    htmlFor="edit-role"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Роль
+                  </label>
+                  <select
+                    id="edit-role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  >
+                    <option value="employee">Сотрудник</option>
+                    <option value="manager">Менеджер</option>
+                    <option value="hr">HR</option>
+                  </select>
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="edit-department"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Отдел
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-department"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="edit-department"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Отдел
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="edit-first_name"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Имя
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-first_name"
-                      name="first_name"
-                      value={formData.first_name}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="edit-first_name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Имя
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-first_name"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="edit-last_name"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Фамилия
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-last_name"
-                      name="last_name"
-                      value={formData.last_name}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="edit-last_name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Фамилия
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-last_name"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="edit-middle_name"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Отчество
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-middle_name"
-                      name="middle_name"
-                      value={formData.middle_name}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="edit-middle_name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Отчество
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-middle_name"
+                    name="middle_name"
+                    value={formData.middle_name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="edit-phone"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Телефон
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="edit-phone"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Телефон
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="+380 XX XXX XX XX"
+                  />
                 </div>
 
                 <div className="mt-6 flex justify-end space-x-3">
@@ -931,7 +929,7 @@ const Profiles = () => {
                 </h3>
               </div>
 
-              <div className="p-6">
+              <div className="p-6 space-y-4">
                 <p className="text-sm text-gray-500">
                   Вы уверены, что хотите удалить пользователя{" "}
                   <strong>{currentUser.email}</strong>? Это действие нельзя
@@ -976,19 +974,17 @@ const Profiles = () => {
                 </h3>
               </div>
 
-              <div className="p-6">
-                <div className="mb-4">
-                  <p className="text-sm text-gray-500 mb-2">
-                    Временный пароль для пользователя{" "}
-                    <strong>{resetPasswordInfo.email}</strong> успешно
-                    сгенерирован:
-                  </p>
+              <div className="p-6 space-y-4">
+                <p className="text-sm text-gray-500 mb-2">
+                  Временный пароль для пользователя{" "}
+                  <strong>{resetPasswordInfo.email}</strong> успешно
+                  сгенерирован:
+                </p>
 
-                  <div className="bg-gray-50 p-3 rounded-md border border-gray-200 font-mono text-center">
-                    <span className="text-lg font-medium text-gray-800">
-                      {resetPasswordInfo.password}
-                    </span>
-                  </div>
+                <div className="bg-gray-50 p-3 rounded-md border border-gray-200 font-mono text-center">
+                  <span className="text-lg font-medium text-gray-800">
+                    {resetPasswordInfo.password}
+                  </span>
                 </div>
 
                 <div className="bg-yellow-50 p-3 rounded-md">
