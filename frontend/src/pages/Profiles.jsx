@@ -34,6 +34,10 @@ const Profiles = () => {
     password: "",
     role: "employee",
     department: "",
+    first_name: "",
+    last_name: "",
+    middle_name: "",
+    phone: "",
   });
 
   useEffect(() => {
@@ -150,6 +154,10 @@ const Profiles = () => {
       password: "",
       role: "employee",
       department: "",
+      first_name: "",
+      last_name: "",
+      middle_name: "",
+      phone: "",
     });
     setIsCreateModalOpen(true);
   };
@@ -160,6 +168,10 @@ const Profiles = () => {
       email: user.email,
       role: user.role,
       department: user.department || "",
+      first_name: user.first_name || "",
+      last_name: user.last_name || "",
+      middle_name: user.middle_name || "",
+      phone: user.phone || "",
     });
     setIsEditModalOpen(true);
   };
@@ -349,6 +361,19 @@ const Profiles = () => {
 
               <div className="p-4 border-t border-gray-200">
                 <div className="space-y-2">
+                  {(user.last_name || user.first_name || user.middle_name) && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">ФИО:</span>{" "}
+                      {`${user.last_name || ""} ${user.first_name || ""} ${
+                        user.middle_name || ""
+                      }`.trim() || "Не указано"}
+                    </p>
+                  )}
+                  {user.phone && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Телефон:</span> {user.phone}
+                    </p>
+                  )}
                   <p className="text-sm text-gray-600">
                     <span className="font-medium">ID:</span> {user.id}
                   </p>
@@ -642,6 +667,74 @@ const Profiles = () => {
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
+
+                  <div>
+                    <label
+                      htmlFor="first_name"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Имя
+                    </label>
+                    <input
+                      type="text"
+                      id="first_name"
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="last_name"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Фамилия
+                    </label>
+                    <input
+                      type="text"
+                      id="last_name"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="middle_name"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Отчество
+                    </label>
+                    <input
+                      type="text"
+                      id="middle_name"
+                      name="middle_name"
+                      value={formData.middle_name}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Телефон
+                    </label>
+                    <input
+                      type="text"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-6 flex justify-end space-x-3">
@@ -733,6 +826,74 @@ const Profiles = () => {
                       id="edit-department"
                       name="department"
                       value={formData.department}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit-first_name"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Имя
+                    </label>
+                    <input
+                      type="text"
+                      id="edit-first_name"
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit-last_name"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Фамилия
+                    </label>
+                    <input
+                      type="text"
+                      id="edit-last_name"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit-middle_name"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Отчество
+                    </label>
+                    <input
+                      type="text"
+                      id="edit-middle_name"
+                      name="middle_name"
+                      value={formData.middle_name}
+                      onChange={handleChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit-phone"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Телефон
+                    </label>
+                    <input
+                      type="text"
+                      id="edit-phone"
+                      name="phone"
+                      value={formData.phone}
                       onChange={handleChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />

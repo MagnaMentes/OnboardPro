@@ -41,12 +41,20 @@ class UserCreate(BaseModel):
     password: str
     role: str
     department: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    middle_name: str | None = None
+    phone: str | None = None
 
 
 class UserUpdate(BaseModel):
     email: str
     role: str
     department: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    middle_name: str | None = None
+    phone: str | None = None
 
 
 class PlanCreate(BaseModel):
@@ -110,6 +118,10 @@ class UserResponse(BaseModel):
     email: str
     role: str
     department: Optional[str]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    phone: Optional[str] = None
     disabled: bool = False
 
 
@@ -165,8 +177,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 @app.post("/users")
 async def create_user(user: UserCreate, db: Session = Depends(auth.get_db)):
     hashed_password = auth.pwd_context.hash(user.password)
-    db_user = models.User(email=user.email, password=hashed_password,
-                          role=user.role, department=user.department)
+    db_user = models.User(
+        email=user.email,
+        password=hashed_password,
+        role=user.role, 
+        department=user.department,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        middle_name=user.middle_name,
+        phone=user.phone
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -219,6 +239,10 @@ async def update_user(
     db_user.email = user_data.email
     db_user.role = user_data.role
     db_user.department = user_data.department
+    db_user.first_name = user_data.first_name
+    db_user.last_name = user_data.last_name
+    db_user.middle_name = user_data.middle_name
+    db_user.phone = user_data.phone
 
     db.commit()
     db.refresh(db_user)
