@@ -91,16 +91,6 @@ export default function Layout() {
             <span>OnboardPro</span>
           </Link>
 
-          {/* Информация о пользователе - видна только на десктопе */}
-          {user && (
-            <div className="hidden md:flex items-center mr-4 text-sm">
-              <span className="mr-2">{user.email}</span>
-              <span className="bg-blue-700 px-2 py-1 rounded-full text-xs uppercase">
-                {user.role}
-              </span>
-            </div>
-          )}
-
           {/* Навигация для десктопа (≥1280px) - иконки + текст */}
           <nav className="hidden xl:flex space-x-2">
             {filteredNavItems.map((item) => (
