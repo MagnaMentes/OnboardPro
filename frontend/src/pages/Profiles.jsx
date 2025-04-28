@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getApiBaseUrl } from "../config/api"; // Импортируем функцию для получения базового API URL
 
 const Profiles = () => {
   const navigate = useNavigate();
@@ -24,6 +25,10 @@ const Profiles = () => {
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all"); // Фильтр для отображения пользователей
   const [searchTerm, setSearchTerm] = useState(""); // Поиск по почте или отделу
+
+  // Получаем базовый URL API для правильного формирования путей к изображениям
+  const apiBaseUrl = getApiBaseUrl();
+  console.log("Profiles: используемый URL API:", apiBaseUrl);
 
   // Состояния для управления фотографиями
   const [photoFile, setPhotoFile] = useState(null);
@@ -56,7 +61,7 @@ const Profiles = () => {
 
     const fetchUserRole = async () => {
       try {
-        const response = await axios.get("/users/me", {
+        const response = await axios.get(`${apiBaseUrl}/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserRole(response.data.role);
@@ -73,7 +78,7 @@ const Profiles = () => {
 
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("/users", {
+        const response = await axios.get(`${apiBaseUrl}/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(response.data);
@@ -86,7 +91,7 @@ const Profiles = () => {
 
     fetchUserRole();
     fetchUsers();
-  }, [navigate]);
+  }, [navigate, apiBaseUrl]);
 
   // Функция для обработки выбора файла фотографии
   const handlePhotoChange = (e) => {
@@ -119,7 +124,7 @@ const Profiles = () => {
     formData.append("file", photoFile);
 
     try {
-      const response = await axios.post(`/users/${userId}/photo`, formData, {
+      const response = await axios.post(`${apiBaseUrl}/users/${userId}/photo`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -137,14 +142,14 @@ const Profiles = () => {
   const deleteUserPhoto = async (userId) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.delete(`/users/${userId}/photo`, {
+      await axios.delete(`${apiBaseUrl}/users/${userId}/photo`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       // Обновляем список пользователей чтобы отобразить изменения
-      const response = await axios.get("/users", {
+      const response = await axios.get(`${apiBaseUrl}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(response.data);
@@ -251,8 +256,8 @@ const Profiles = () => {
       phone: user.phone || "",
     });
     setPhotoPreview(
-      user.photo_path
-        ? `${process.env.REACT_APP_API_URL}${user.photo_path}`
+      user.photo
+        ? `${apiBaseUrl}${user.photo}`
         : null
     );
     setIsEditModalOpen(true);
@@ -272,7 +277,7 @@ const Profiles = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post("/users", formData, {
+      const response = await axios.post(`${apiBaseUrl}/users`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -282,7 +287,7 @@ const Profiles = () => {
       }
 
       // Обновляем список пользователей
-      const usersResponse = await axios.get("/users", {
+      const usersResponse = await axios.get(`${apiBaseUrl}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(usersResponse.data);
@@ -300,7 +305,7 @@ const Profiles = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      await axios.put(`/users/${currentUser.id}`, formData, {
+      await axios.put(`${apiBaseUrl}/users/${currentUser.id}`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -310,7 +315,7 @@ const Profiles = () => {
       }
 
       // Обновляем список пользователей
-      const response = await axios.get("/users", {
+      const response = await axios.get(`${apiBaseUrl}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(response.data);
@@ -327,7 +332,7 @@ const Profiles = () => {
   const handleDeleteUser = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`/users/${currentUser.id}`, {
+      await axios.delete(`${apiBaseUrl}/users/${currentUser.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -347,7 +352,7 @@ const Profiles = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `/users/${user.id}/toggle-status`,
+        `${apiBaseUrl}/users/${user.id}/toggle-status`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -375,7 +380,7 @@ const Profiles = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `/users/${user.id}/reset-password`,
+        `${apiBaseUrl}/users/${user.id}/reset-password`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -429,12 +434,12 @@ const Profiles = () => {
                   >
                     {user.photo ? (
                       <img
-                        src={`${process.env.REACT_APP_API_URL}${user.photo}`}
+                        src={`${apiBaseUrl}${user.photo}`}
                         alt={`${user.first_name || user.email}`}
                         className="h-full w-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.parentElement.innerHTML = `<UserIcon className="h-10 w-10 ${colorClasses.icon} mx-auto my-3" />`;
+                          e.target.src = `${apiBaseUrl}/static/default_avatar.png`;
                         }}
                       />
                     ) : (
