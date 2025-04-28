@@ -124,12 +124,16 @@ const Profiles = () => {
     formData.append("file", photoFile);
 
     try {
-      const response = await axios.post(`${apiBaseUrl}/users/${userId}/photo`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axios.post(
+        `${apiBaseUrl}/users/${userId}/photo`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
       return response.data;
     } catch (error) {
       console.error("Error uploading photo:", error);
@@ -255,11 +259,7 @@ const Profiles = () => {
       middle_name: user.middle_name || "",
       phone: user.phone || "",
     });
-    setPhotoPreview(
-      user.photo
-        ? `${apiBaseUrl}${user.photo}`
-        : null
-    );
+    setPhotoPreview(user.photo ? `${apiBaseUrl}${user.photo}` : null);
     setIsEditModalOpen(true);
   };
 

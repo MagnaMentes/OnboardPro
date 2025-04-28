@@ -17,6 +17,7 @@ export default function ManagerDashboard() {
   const [users, setUsers] = useState([]);
   const [plans, setPlans] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [userRole, setUserRole] = useState(null); // Состояние для хранения роли текущего пользователя
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newTask, setNewTask] = useState({
@@ -60,6 +61,16 @@ export default function ManagerDashboard() {
         if (!token) {
           throw new Error("Не авторизован");
         }
+
+        // Получаем данные о текущем пользователе
+        const currentUserResponse = await fetch(`${apiBaseUrl}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!currentUserResponse.ok) {
+          throw new Error("Ошибка при получении данных пользователя");
+        }
+        const userData = await currentUserResponse.json();
+        setUserRole(userData.role);
 
         // Получаем список всех пользователей
         const usersResponse = await fetch(`${apiBaseUrl}/users`, {
@@ -1337,13 +1348,15 @@ export default function ManagerDashboard() {
               </svg>
               Обновить
             </button>
-            <button
-              onClick={() => setIsPlanModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Создать план адаптации
-            </button>
+            {userRole === "hr" && (
+              <button
+                onClick={() => setIsPlanModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <PlusIcon className="w-4 h-4 mr-2" />
+                Создать план адаптации
+              </button>
+            )}
           </div>
         </div>
 
@@ -1423,20 +1436,24 @@ export default function ManagerDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => handleEditPlan(plan)}
-                          className="text-blue-600 hover:text-blue-900 focus:outline-none"
-                          title="Редактировать план"
-                        >
-                          <PencilIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => openDeletePlanModal(plan)}
-                          className="text-red-600 hover:text-red-900 focus:outline-none"
-                          title="Удалить план"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
+                        {userRole === "hr" && (
+                          <>
+                            <button
+                              onClick={() => handleEditPlan(plan)}
+                              className="text-blue-600 hover:text-blue-900 focus:outline-none"
+                              title="Редактировать план"
+                            >
+                              <PencilIcon className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => openDeletePlanModal(plan)}
+                              className="text-red-600 hover:text-red-900 focus:outline-none"
+                              title="Удалить план"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
