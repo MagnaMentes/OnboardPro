@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { authApi } from "../config/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -8,54 +9,29 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Получаем базовый URL API из переменных окружения
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "";
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      const formData = new URLSearchParams();
-      formData.append("username", email);
-      formData.append("password", password);
+      // Используем centralized API клиент для входа
+      const data = await authApi.login(email, password);
 
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Ошибка при входе");
-      }
-
+      // Сохраняем токен
       localStorage.setItem("token", data.access_token);
 
-      // Получаем информацию о пользователе, чтобы узнать его роль
-      const userResponse = await fetch(`${API_BASE_URL}/users/me`, {
-        headers: {
-          Authorization: `Bearer ${data.access_token}`,
-        },
-      });
-
-      const userData = await userResponse.json();
-
       // Перенаправляем пользователя в зависимости от его роли
-      if (userData.role === "hr") {
+      if (data.role === "hr") {
         navigate("/hr-dashboard");
-      } else if (userData.role === "manager") {
+      } else if (data.role === "manager") {
         navigate("/manager-dashboard");
       } else {
         // По умолчанию для сотрудников
         navigate("/dashboard");
       }
     } catch (err) {
+      console.error("Ошибка при авторизации:", err);
       setError("Ошибка авторизации. Проверьте логин и пароль.");
     } finally {
       setIsLoading(false);

@@ -36,6 +36,7 @@ class OnboardingPlan(Base):
     id = Column(Integer, primary_key=True)
     role = Column(String, nullable=False)  # employee, manager, hr
     title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)  # Добавляем описание плана
     created_at = Column(DateTime, server_default=func.now())
 
 

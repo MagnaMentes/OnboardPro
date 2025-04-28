@@ -27,7 +27,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     # Разрешаем запросы с фронтенд сервера и из Docker-сети
-    allow_origins=["*"],  # В рабочем окружении лучше указать конкретные домены
+    allow_origins=["http://localhost:3000",
+                   "http://127.0.0.1:3000", "http://frontend:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -120,6 +121,7 @@ class UserUpdate(BaseModel):
 class PlanCreate(BaseModel):
     role: str
     title: str
+    description: Optional[str] = None
 
 
 class PlanResponse(BaseModel):
@@ -128,6 +130,7 @@ class PlanResponse(BaseModel):
     id: int
     role: str
     title: str
+    description: Optional[str] = None
     created_at: datetime
 
 
@@ -222,17 +225,35 @@ def generate_password(length=10):
 
 @app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(auth.get_db)):
+    print(f"[LOGIN] Попытка входа пользователя: {form_data.username}")
+
     user = db.query(models.User).filter(
         models.User.email == form_data.username).first()
-    if not user or not auth.verify_password(form_data.password, user.password):
+    if user is None:
+        print(f"[LOGIN] Пользователь с email {form_data.username} не найден")
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    print(
+        f"[LOGIN] Пользователь найден: {user.email}, ID: {user.id}, роль: {user.role}")
+
+    # Проверяем пароль
+    if not auth.verify_password(form_data.password, user.password):
+        print(f"[LOGIN] Неверный пароль для пользователя {user.email}")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    print(f"[LOGIN] Пароль верифицирован для пользователя {user.email}")
 
     # Проверка, не заблокирован ли пользователь
     if user.disabled:
+        print(f"[LOGIN] Пользователь {user.email} заблокирован")
         raise HTTPException(status_code=403, detail="User is disabled")
 
+    # Создаем JWT токен
     access_token = auth.create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    print(
+        f"[LOGIN] Создан токен для пользователя {user.email}: {access_token[:20]}...")
+
+    return {"access_token": access_token, "token_type": "bearer", "user_id": user.id, "role": user.role}
 
 
 @app.post("/users")
@@ -421,6 +442,59 @@ async def get_plans(
     db: Session = Depends(auth.get_db)
 ):
     return db.query(models.OnboardingPlan).all()
+
+
+@app.put("/plans/{plan_id}", response_model=PlanResponse)
+async def update_plan(
+    plan_id: int,
+    plan_update: PlanCreate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    if current_user.role != "hr":
+        raise HTTPException(status_code=403, detail="Only HR can update plans")
+
+    db_plan = db.query(models.OnboardingPlan).filter(
+        models.OnboardingPlan.id == plan_id).first()
+    if not db_plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    # Обновляем поля плана
+    for key, value in plan_update.model_dump().items():
+        setattr(db_plan, key, value)
+
+    db.commit()
+    db.refresh(db_plan)
+    return db_plan
+
+
+@app.delete("/plans/{plan_id}", response_model=dict)
+async def delete_plan(
+    plan_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    if current_user.role != "hr":
+        raise HTTPException(status_code=403, detail="Only HR can delete plans")
+
+    # Проверяем, что план существует
+    db_plan = db.query(models.OnboardingPlan).filter(
+        models.OnboardingPlan.id == plan_id).first()
+    if not db_plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    # Проверяем, привязаны ли задачи к этому плану
+    tasks = db.query(models.Task).filter(
+        models.Task.plan_id == plan_id).first()
+    if tasks:
+        raise HTTPException(
+            status_code=400, detail="Cannot delete plan with associated tasks")
+
+    # Удаляем план
+    db.delete(db_plan)
+    db.commit()
+
+    return {"message": "Plan deleted successfully"}
 
 
 @app.post("/tasks", response_model=TaskResponse)

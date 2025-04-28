@@ -1,71 +1,156 @@
 /**
- * Конфигурация API для приложения OnboardPro
- * Все URL-адреса API централизованы в этом файле
- * для обеспечения единого управления API-запросами
+ * API клиент для приложения OnboardPro
+ * Предоставляет единую точку доступа к бэкенд API
+ * с поддержкой работы как в Docker, так и в локальной разработке
  */
 
-// Базовый URL для API
-export const API_BASE_URL = "http://localhost:8000";
+// Получаем базовый URL API
+export const getApiBaseUrl = () => {
+  // Если приложение запущено локально, используем localhost
+  // Иначе используем значение из переменной окружения или пустую строку (относительный путь)
+  return window.location.hostname === "localhost"
+    ? "http://localhost:8000"
+    : process.env.REACT_APP_API_URL || "";
+};
 
-// Структура эндпоинтов API
-export const API = {
-  // Эндпоинты для работы с пользователями
-  users: {
-    me: `${API_BASE_URL}/users/me`,
-    login: `${API_BASE_URL}/login`,
-    list: `${API_BASE_URL}/users`,
-    create: `${API_BASE_URL}/users`,
-    update: (id) => `${API_BASE_URL}/users/${id}`,
-    delete: (id) => `${API_BASE_URL}/users/${id}`,
-    toggleStatus: (id) => `${API_BASE_URL}/users/${id}/toggle-status`,
-    resetPassword: (id) => `${API_BASE_URL}/users/${id}/reset-password`,
-  },
+/**
+ * Выполняет API запрос с настройками по умолчанию
+ * @param {string} endpoint - Конечная точка API (без базового URL)
+ * @param {Object} options - Опции fetch API
+ * @returns {Promise<any>} - Результат запроса в формате JSON
+ */
+export const apiRequest = async (endpoint, options = {}) => {
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint}`;
 
-  // Эндпоинты для работы с задачами
-  tasks: {
-    list: `${API_BASE_URL}/tasks`,
-    create: `${API_BASE_URL}/tasks`,
-    update: (id) => `${API_BASE_URL}/tasks/${id}`,
-    delete: (id) => `${API_BASE_URL}/tasks/${id}`,
-    updateStatus: (id) => `${API_BASE_URL}/tasks/${id}/status`,
-  },
+  // Добавляем токен авторизации, если он есть
+  const token = localStorage.getItem("token");
+  if (token && !options.headers?.Authorization) {
+    options.headers = {
+      ...options.headers,
+      Authorization: `Bearer ${token}`,
+    };
+  }
 
-  // Эндпоинты для работы с планами онбординга
-  plans: {
-    list: `${API_BASE_URL}/plans`,
-    create: `${API_BASE_URL}/plans`,
-    update: (id) => `${API_BASE_URL}/plans/${id}`,
-    delete: (id) => `${API_BASE_URL}/plans/${id}`,
-  },
+  console.log(`API запрос: ${url}`);
 
-  // Эндпоинты для работы с обратной связью
-  feedback: {
-    list: `${API_BASE_URL}/feedback`,
-    create: `${API_BASE_URL}/feedback`,
-    update: (id) => `${API_BASE_URL}/feedback/${id}`,
-    delete: (id) => `${API_BASE_URL}/feedback/${id}`,
+  try {
+    const response = await fetch(url, options);
+
+    // Если ответ не OK (не 2xx), выбрасываем ошибку
+    if (!response.ok) {
+      // Если ответ 401, значит токен недействителен
+      if (response.status === 401) {
+        localStorage.removeItem("token"); // Удаляем недействительный токен
+      }
+
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.detail || `Ошибка запроса: ${response.status}`
+      );
+    }
+
+    // Для всех остальных ответов пытаемся распарсить JSON
+    return await response.json();
+  } catch (error) {
+    console.error(`Ошибка API запроса к ${url}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * API для работы с пользователями
+ */
+export const usersApi = {
+  /**
+   * Получить текущего пользователя
+   * @returns {Promise<Object>} - Данные пользователя
+   */
+  getCurrentUser: () => apiRequest("/users/me"),
+
+  /**
+   * Получить всех пользователей
+   * @returns {Promise<Array>} - Список пользователей
+   */
+  getAllUsers: () => apiRequest("/users"),
+
+  /**
+   * Получить пользователя по ID
+   * @param {number} id - ID пользователя
+   * @returns {Promise<Object>} - Данные пользователя
+   */
+  getUserById: (id) => apiRequest(`/users/${id}`),
+};
+
+/**
+ * API для работы с аутентификацией
+ */
+export const authApi = {
+  /**
+   * Вход в систему
+   * @param {string} email - Email пользователя
+   * @param {string} password - Пароль пользователя
+   * @returns {Promise<Object>} - Данные авторизации с токеном
+   */
+  login: (email, password) => {
+    const formData = new URLSearchParams();
+    formData.append("username", email);
+    formData.append("password", password);
+
+    return apiRequest("/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData,
+    });
   },
 };
 
-// Вспомогательные функции для работы с API
-export const apiHelpers = {
-  // Функция для получения стандартных заголовков авторизации
-  authHeaders: () => {
-    const token = localStorage.getItem("token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  },
+/**
+ * API для работы с задачами
+ */
+export const tasksApi = {
+  /**
+   * Получить все задачи
+   * @returns {Promise<Array>} - Список задач
+   */
+  getAllTasks: () => apiRequest("/tasks"),
 
-  // Функция для получения заголовков формы
-  formHeaders: () => {
-    const token = localStorage.getItem("token");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    };
-  },
+  /**
+   * Создать новую задачу
+   * @param {Object} taskData - Данные задачи
+   * @returns {Promise<Object>} - Созданная задача
+   */
+  createTask: (taskData) =>
+    apiRequest("/tasks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(taskData),
+    }),
+
+  /**
+   * Обновить статус задачи
+   * @param {number} taskId - ID задачи
+   * @param {string} status - Новый статус
+   * @returns {Promise<Object>} - Обновленная задача
+   */
+  updateTaskStatus: (taskId, status) =>
+    apiRequest(`/tasks/${taskId}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    }),
 };
 
-export default API;
+export default {
+  getApiBaseUrl,
+  apiRequest,
+  users: usersApi,
+  auth: authApi,
+  tasks: tasksApi,
+};

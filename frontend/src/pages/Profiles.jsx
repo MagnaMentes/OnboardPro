@@ -425,21 +425,24 @@ const Profiles = () => {
               <div className={`${colorClasses.cardHeader} p-4`}>
                 <div className="flex items-center">
                   <div
-                    className={`${colorClasses.iconContainer} p-3 rounded-full mr-4 overflow-hidden flex-shrink-0 h-12 w-12`}
+                    className={`h-16 w-16 rounded-full mr-4 overflow-hidden flex-shrink-0 border-2 ${colorClasses.iconContainer}`}
                   >
-                    {user.photo_path ? (
+                    {user.photo ? (
                       <img
-                        src={`${process.env.REACT_APP_API_URL}${user.photo_path}`}
+                        src={`${process.env.REACT_APP_API_URL}${user.photo}`}
                         alt={`${user.first_name || user.email}`}
-                        className="h-full w-full object-cover rounded-full"
+                        className="h-full w-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = ""; // Заменить на путь к дефолтной иконке при ошибке
-                          e.target.parentElement.innerHTML = `<UserIcon className="h-6 w-6 ${colorClasses.icon}" />`;
+                          e.target.parentElement.innerHTML = `<UserIcon className="h-10 w-10 ${colorClasses.icon} mx-auto my-3" />`;
                         }}
                       />
                     ) : (
-                      <UserIcon className={`h-6 w-6 ${colorClasses.icon}`} />
+                      <div
+                        className={`flex items-center justify-center h-full w-full ${colorClasses.iconContainer}`}
+                      >
+                        <UserIcon className={`h-8 w-8 ${colorClasses.icon}`} />
+                      </div>
                     )}
                   </div>
                   <div>

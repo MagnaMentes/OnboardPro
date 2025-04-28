@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { usersApi } from "../config/api";
 import {
   HomeIcon,
   UserGroupIcon,
@@ -59,17 +60,22 @@ export default function Layout() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      fetch("/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => res.json())
-        .then((data) => setUser(data))
+      // Используем централизованный API-клиент
+      usersApi
+        .getCurrentUser()
+        .then((data) => {
+          console.log("Получены данные пользователя:", data);
+          setUser(data);
+        })
         .catch((err) => {
-          // Удален вызов console.error, добавлена обработка ошибки
+          console.error("Ошибка при получении данных пользователя:", err);
+          // Если токен просрочен или недействителен, удаляем его
+          localStorage.removeItem("token");
           setUser(null);
+          navigate("/login");
         });
     }
-  }, []);
+  }, [navigate]);
 
   // Функция выхода
   function handleLogout() {
