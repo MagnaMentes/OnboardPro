@@ -7,6 +7,7 @@ import {
   LockOpenIcon,
   LockClosedIcon,
   KeyIcon,
+  FunnelIcon,
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -19,12 +20,15 @@ const Profiles = () => {
   const [userRole, setUserRole] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all"); // Фильтр для отображения пользователей
+  const [searchTerm, setSearchTerm] = useState(""); // Поиск по почте или отделу
 
   // Состояния для управления модальными окнами
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [resetPasswordInfo, setResetPasswordInfo] = useState(null); // Для отображения временного пароля
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -46,7 +50,7 @@ const Profiles = () => {
         });
         setUserRole(response.data.role);
 
-        // Изменяем проверку - разрешаем доступ и HR, и менеджерам
+        // Если пользователь не HR или менеджер, перенаправляем
         if (response.data.role !== "hr" && response.data.role !== "manager") {
           toast.error("У вас нет доступа к этой странице");
           navigate("/dashboard");
@@ -75,7 +79,24 @@ const Profiles = () => {
 
   // Функция для группировки пользователей по ролям
   const getUsersByRole = (role) => {
-    return users.filter((user) => user.role === role);
+    const filteredUsers =
+      activeFilter === "all"
+        ? users
+        : activeFilter === "active"
+        ? users.filter((user) => !user.disabled)
+        : users.filter((user) => user.disabled);
+
+    // Применяем поиск, если есть поисковый запрос
+    const searchedUsers = searchTerm
+      ? filteredUsers.filter(
+          (user) =>
+            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (user.department &&
+              user.department.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+      : filteredUsers;
+
+    return searchedUsers.filter((user) => user.role === role);
   };
 
   // Функция для получения цветов для разных ролей
@@ -249,14 +270,23 @@ const Profiles = () => {
   const resetUserPassword = async (user) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post(
+      const response = await axios.post(
         `/users/${user.id}/reset-password`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      toast.success("Пароль пользователя сброшен и отправлен на его email");
+
+      // Сохраняем информацию о временном пароле для отображения
+      if (response.data && response.data.temp_password) {
+        setResetPasswordInfo({
+          email: user.email,
+          password: response.data.temp_password,
+        });
+      }
+
+      toast.success("Пароль пользователя сброшен");
     } catch (err) {
       toast.error("Ошибка при сбросе пароля");
     }
@@ -434,6 +464,72 @@ const Profiles = () => {
             Добавить пользователя
           </button>
         )}
+      </div>
+
+      {/* Фильтры и поиск */}
+      <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+          {/* Фильтры по статусу */}
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setActiveFilter("all")}
+              className={`px-3 py-1 rounded-md text-sm font-medium ${
+                activeFilter === "all"
+                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                  : "text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              Все
+            </button>
+            <button
+              onClick={() => setActiveFilter("active")}
+              className={`px-3 py-1 rounded-md text-sm font-medium ${
+                activeFilter === "active"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              Активные
+            </button>
+            <button
+              onClick={() => setActiveFilter("disabled")}
+              className={`px-3 py-1 rounded-md text-sm font-medium ${
+                activeFilter === "disabled"
+                  ? "bg-red-50 text-red-700 border border-red-200"
+                  : "text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              Заблокированные
+            </button>
+          </div>
+
+          {/* Поиск по email/отделу */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Поиск по email или отделу..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div>
@@ -701,6 +797,60 @@ const Profiles = () => {
                     className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
                     Удалить
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно с информацией о сброшенном пароле */}
+      {resetPasswordInfo && (
+        <div className="fixed inset-0 overflow-y-auto z-50">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div
+              className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
+              onClick={() => setResetPasswordInfo(null)}
+            ></div>
+
+            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full z-10">
+              <div className="bg-purple-50 px-4 py-3 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-purple-900">
+                  Временный пароль
+                </h3>
+              </div>
+
+              <div className="p-6">
+                <div className="mb-4">
+                  <p className="text-sm text-gray-500 mb-2">
+                    Временный пароль для пользователя{" "}
+                    <strong>{resetPasswordInfo.email}</strong> успешно
+                    сгенерирован:
+                  </p>
+
+                  <div className="bg-gray-50 p-3 rounded-md border border-gray-200 font-mono text-center">
+                    <span className="text-lg font-medium text-gray-800">
+                      {resetPasswordInfo.password}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 p-3 rounded-md">
+                  <p className="text-yellow-700 text-sm">
+                    <strong>Важно:</strong> Этот пароль отображается только один
+                    раз. Сохраните его и передайте пользователю безопасным
+                    способом.
+                  </p>
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setResetPasswordInfo(null)}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  >
+                    Закрыть
                   </button>
                 </div>
               </div>
