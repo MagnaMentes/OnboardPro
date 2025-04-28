@@ -19,6 +19,8 @@ class User(Base):
     telegram_id = Column(String, nullable=True)
     # Флаг для блокировки пользователя
     disabled = Column(Boolean, default=False)
+    # Путь к фотографии пользователя
+    photo = Column(String, nullable=True)
 
     tasks = relationship("Task", back_populates="assignee")
     sent_feedback = relationship("Feedback",

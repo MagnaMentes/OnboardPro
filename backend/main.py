@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi import FastAPI, Depends, HTTPException, status, Request, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import distinct
@@ -14,6 +15,11 @@ from integrations import send_telegram_notification, create_calendar_event, impo
 import secrets
 import string
 import re
+import os
+import shutil
+from fastapi.responses import FileResponse
+from pathlib import Path
+import uuid
 
 app = FastAPI()
 
@@ -28,6 +34,9 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
+# Монтирование директории static для раздачи фотографий
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.get("/health")
 def health_check():
@@ -35,6 +44,10 @@ def health_check():
 
 
 models.Base.metadata.create_all(bind=engine)
+
+# Убедимся, что директория для фотографий существует
+PHOTOS_DIR = Path("static/photos")
+PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class UserCreate(BaseModel):
@@ -170,6 +183,7 @@ class UserResponse(BaseModel):
     middle_name: Optional[str] = None
     phone: Optional[str] = None
     disabled: bool = False
+    photo: Optional[str] = None
 
 
 class TelegramConnect(BaseModel):
@@ -548,6 +562,97 @@ async def delete_all_users(db: Session = Depends(auth.get_db)):
     db.query(models.User).delete()
     db.commit()
     return {"message": "All users deleted successfully"}
+
+
+@app.post("/users/{user_id}/photo", response_model=UserResponse)
+async def upload_user_photo(
+    user_id: int,
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """Загрузка фотографии пользователя"""
+    # Проверяем права доступа (только HR может загружать фото других пользователей)
+    if current_user.role != "hr" and current_user.id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Недостаточно прав для загрузки фотографии этого пользователя"
+        )
+
+    # Проверяем существование пользователя
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    # Проверяем тип файла (разрешаем только изображения)
+    content_type = file.content_type
+    if not content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400,
+            detail="Разрешены только файлы изображений (jpg, png, gif)"
+        )
+
+    # Получаем расширение файла из MIME типа
+    ext = content_type.split("/")[1]
+    if ext == "jpeg":
+        ext = "jpg"
+
+    # Формируем уникальное имя файла, включая ID пользователя
+    file_name = f"user_{user_id}_{uuid.uuid4().hex}.{ext}"
+    file_path = PHOTOS_DIR / file_name
+
+    # Удаляем предыдущую фотографию пользователя, если она существует
+    if user.photo:
+        old_photo_path = Path("static") / user.photo.split("/static/")[1]
+        if old_photo_path.exists():
+            old_photo_path.unlink()
+
+    # Сохраняем новую фотографию
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Обновляем путь к фотографии в базе данных
+    # Путь должен быть доступен через URL
+    user.photo = f"/static/photos/{file_name}"
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+
+@app.delete("/users/{user_id}/photo")
+async def delete_user_photo(
+    user_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """Удаление фотографии пользователя"""
+    # Проверяем права доступа (только HR или сам пользователь)
+    if current_user.role != "hr" and current_user.id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Недостаточно прав для удаления фотографии этого пользователя"
+        )
+
+    # Проверяем существование пользователя
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    # Проверяем наличие фотографии у пользователя
+    if not user.photo:
+        return {"message": "У пользователя нет фотографии"}
+
+    # Удаляем файл фотографии
+    photo_path = Path("static") / user.photo.split("/static/")[1]
+    if photo_path.exists():
+        photo_path.unlink()
+
+    # Обновляем данные пользователя
+    user.photo = None
+    db.commit()
+
+    return {"message": "Фотография пользователя успешно удалена"}
 
 
 @app.post("/integrations/telegram")

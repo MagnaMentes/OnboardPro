@@ -2,8 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Устанавливаем curl для проверки здоровья
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Устанавливаем необходимые пакеты: curl для проверки здоровья и sqlite3 для работы с базой данных
+RUN apt-get update && apt-get install -y curl sqlite3 && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -13,7 +13,7 @@ COPY . .
 # Создаем директорию для тестов
 RUN mkdir -p /app/tests
 
-# Делаем скрипт запуска исполняемым
+# Делаем скрипты исполняемыми
 RUN chmod +x /app/start.sh
 
 EXPOSE 8000

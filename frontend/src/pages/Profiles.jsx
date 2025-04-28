@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   UserIcon,
   UsersIcon,
@@ -8,6 +8,8 @@ import {
   LockClosedIcon,
   KeyIcon,
   FunnelIcon,
+  PhotoIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -22,6 +24,11 @@ const Profiles = () => {
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all"); // Фильтр для отображения пользователей
   const [searchTerm, setSearchTerm] = useState(""); // Поиск по почте или отделу
+
+  // Состояния для управления фотографиями
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Состояния для управления модальными окнами
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -80,6 +87,74 @@ const Profiles = () => {
     fetchUserRole();
     fetchUsers();
   }, [navigate]);
+
+  // Функция для обработки выбора файла фотографии
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Функция для удаления выбранной фотографии
+  const removePhotoPreview = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Функция для загрузки фотографии на сервер
+  const uploadUserPhoto = async (userId) => {
+    if (!photoFile) return;
+
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", photoFile);
+
+    try {
+      const response = await axios.post(`/users/${userId}/photo`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      toast.error("Ошибка при загрузке фотографии");
+      return null;
+    }
+  };
+
+  // Функция для удаления фотографии пользователя
+  const deleteUserPhoto = async (userId) => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`/users/${userId}/photo`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Обновляем список пользователей чтобы отобразить изменения
+      const response = await axios.get("/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(response.data);
+
+      toast.success("Фотография пользователя удалена");
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+      toast.error("Ошибка при удалении фотографии");
+    }
+  };
 
   // Функция для группировки пользователей по ролям
   const getUsersByRole = (role) => {
@@ -159,6 +234,8 @@ const Profiles = () => {
       middle_name: "",
       phone: "",
     });
+    setPhotoFile(null);
+    setPhotoPreview(null);
     setIsCreateModalOpen(true);
   };
 
@@ -173,6 +250,11 @@ const Profiles = () => {
       middle_name: user.middle_name || "",
       phone: user.phone || "",
     });
+    setPhotoPreview(
+      user.photo_path
+        ? `${process.env.REACT_APP_API_URL}${user.photo_path}`
+        : null
+    );
     setIsEditModalOpen(true);
   };
 
@@ -190,15 +272,20 @@ const Profiles = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      await axios.post("/users", formData, {
+      const response = await axios.post("/users", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      // Загружаем фотографию, если она была выбрана
+      if (photoFile) {
+        await uploadUserPhoto(response.data.id);
+      }
+
       // Обновляем список пользователей
-      const response = await axios.get("/users", {
+      const usersResponse = await axios.get("/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsers(response.data);
+      setUsers(usersResponse.data);
 
       setIsCreateModalOpen(false);
       toast.success("Пользователь успешно создан");
@@ -216,6 +303,11 @@ const Profiles = () => {
       await axios.put(`/users/${currentUser.id}`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      // Загружаем фотографию, если она была выбрана
+      if (photoFile) {
+        await uploadUserPhoto(currentUser.id);
+      }
 
       // Обновляем список пользователей
       const response = await axios.get("/users", {
@@ -333,9 +425,22 @@ const Profiles = () => {
               <div className={`${colorClasses.cardHeader} p-4`}>
                 <div className="flex items-center">
                   <div
-                    className={`${colorClasses.iconContainer} p-3 rounded-full mr-4`}
+                    className={`${colorClasses.iconContainer} p-3 rounded-full mr-4 overflow-hidden flex-shrink-0 h-12 w-12`}
                   >
-                    <UserIcon className={`h-6 w-6 ${colorClasses.icon}`} />
+                    {user.photo_path ? (
+                      <img
+                        src={`${process.env.REACT_APP_API_URL}${user.photo_path}`}
+                        alt={`${user.first_name || user.email}`}
+                        className="h-full w-full object-cover rounded-full"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = ""; // Заменить на путь к дефолтной иконке при ошибке
+                          e.target.parentElement.innerHTML = `<UserIcon className="h-6 w-6 ${colorClasses.icon}" />`;
+                        }}
+                      />
+                    ) : (
+                      <UserIcon className={`h-6 w-6 ${colorClasses.icon}`} />
+                    )}
                   </div>
                   <div>
                     <div className="flex items-center">
@@ -730,6 +835,42 @@ const Profiles = () => {
                   />
                 </div>
 
+                <div>
+                  <label
+                    htmlFor="photo"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Фотография
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="file"
+                      id="photo"
+                      name="photo"
+                      ref={fileInputRef}
+                      onChange={handlePhotoChange}
+                      accept="image/*"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                    {photoPreview && (
+                      <div className="relative">
+                        <img
+                          src={photoPreview}
+                          alt="Preview"
+                          className="h-16 w-16 object-cover rounded-md border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={removePhotoPreview}
+                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          <XCircleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
                     type="button"
@@ -890,6 +1031,42 @@ const Profiles = () => {
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="+380 XX XXX XX XX"
                   />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="edit-photo"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Фотография
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="file"
+                      id="edit-photo"
+                      name="photo"
+                      ref={fileInputRef}
+                      onChange={handlePhotoChange}
+                      accept="image/*"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                    {photoPreview && (
+                      <div className="relative">
+                        <img
+                          src={photoPreview}
+                          alt="Preview"
+                          className="h-16 w-16 object-cover rounded-md border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={removePhotoPreview}
+                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          <XCircleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-6 flex justify-end space-x-3">

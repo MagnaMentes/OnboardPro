@@ -5,6 +5,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - user_photos:/app/static/photos
     environment:
       - DATABASE_URL=sqlite:///onboardpro.db
       - SECRET_KEY=${SECRET_KEY}
@@ -33,3 +34,7 @@ services:
       backend:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  user_photos:
+    driver: local
