@@ -9,17 +9,75 @@ import models
 import auth
 from database import engine, get_db
 from pydantic import BaseModel, ConfigDict, field_validator
-from datetime import datetime
-from typing import Optional, List
+from datetime import datetime, timedelta
+from typing import Optional, List, Dict, Any
 from integrations import send_telegram_notification, create_calendar_event, import_workable_employees, handle_telegram_webhook, sync_calendar_task_status, sync_workable_candidate
 import secrets
 import string
 import re
 import os
 import shutil
+import hashlib
+import time
+import json
 from fastapi.responses import FileResponse
 from pathlib import Path
 import uuid
+
+# Простая реализация кэша в памяти
+analytics_cache = {}
+analytics_versions = {}
+CACHE_EXPIRATION_TIME = 300  # 5 минут в секундах
+
+# Функция для генерации ключа кэша на основе параметров запроса
+
+
+def generate_cache_key(endpoint: str, params: Dict[str, Any]) -> str:
+    # Сортируем параметры для консистентности ключа
+    sorted_params = sorted([(k, str(v))
+                           for k, v in params.items() if v is not None])
+    params_str = json.dumps(sorted_params)
+    # Создаем хеш для получения короткого ключа
+    key = hashlib.md5(f"{endpoint}:{params_str}".encode()).hexdigest()
+    return key
+
+# Функция для проверки и получения данных из кэша
+
+
+def get_cached_data(endpoint: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    key = generate_cache_key(endpoint, params)
+    if key in analytics_cache:
+        cache_time, version, data = analytics_cache[key]
+        # Проверяем срок действия кэша
+        if time.time() - cache_time < CACHE_EXPIRATION_TIME:
+            # Проверяем, не устарела ли версия данных
+            endpoint_version = analytics_versions.get(endpoint, 0)
+            if version >= endpoint_version:
+                return data
+    return None
+
+# Функция для сохранения данных в кэше
+
+
+def cache_data(endpoint: str, params: Dict[str, Any], data: Dict[str, Any]) -> None:
+    key = generate_cache_key(endpoint, params)
+    # Получаем текущую версию эндпоинта или создаем новую
+    version = analytics_versions.get(endpoint, 0)
+    analytics_cache[key] = (time.time(), version, data)
+
+# Функция для инвалидации кэша при изменениях
+
+
+def invalidate_analytics_cache(endpoint: Optional[str] = None) -> None:
+    if endpoint:
+        # Инкрементируем версию только для указанного эндпоинта
+        current_version = analytics_versions.get(endpoint, 0)
+        analytics_versions[endpoint] = current_version + 1
+    else:
+        # Инкрементируем версии для всех эндпоинтов
+        for key in analytics_versions:
+            analytics_versions[key] += 1
+
 
 app = FastAPI()
 
@@ -512,6 +570,10 @@ async def create_task(
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
+
+    # Инвалидируем кэш аналитики при создании новой задачи
+    invalidate_analytics_cache()
+
     return db_task
 
 
@@ -558,6 +620,10 @@ async def update_task(
     # Сохраняем изменения
     db.commit()
     db.refresh(task)
+
+    # Инвалидируем кэш аналитики при изменении задачи
+    invalidate_analytics_cache()
+
     return task
 
 
@@ -579,6 +645,10 @@ async def update_task_status(
     task.status = status
     db.commit()
     db.refresh(task)
+
+    # Инвалидируем кэш аналитики при изменении статуса задачи
+    invalidate_analytics_cache()
+
     return task
 
 
@@ -604,6 +674,10 @@ async def delete_task(
 
     db.delete(task)
     db.commit()
+
+    # Инвалидируем кэш аналитики при удалении задачи
+    invalidate_analytics_cache()
+
     return {"message": "Task deleted successfully"}
 
 
@@ -883,39 +957,442 @@ async def get_analytics(
 
 @app.get("/analytics/summary")
 async def get_analytics_summary(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    department: Optional[str] = None,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    """Получение сводной аналитики для HR-дашборда"""
+    """Получение сводной аналитики для HR-дашборда с фильтрами по дате и отделу"""
     if current_user.role != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can view analytics")
 
-    # Общая статистика по задачам
-    total_tasks = db.query(models.Task).count()
-    completed_tasks = db.query(models.Task).filter(
-        models.Task.status == "completed"
-    ).count()
+    # Проверяем кэш перед выполнением запроса
+    cache_params = {
+        "start_date": start_date.isoformat() if start_date else None,
+        "end_date": end_date.isoformat() if end_date else None,
+        "department": department
+    }
+
+    # Пытаемся получить данные из кэша
+    cached_data = get_cached_data("analytics_summary", cache_params)
+    if cached_data:
+        # Если данные найдены в кэше, возвращаем их
+        return cached_data
+
+    # Если кэш не найден, выполняем запрос к БД
+    # Базовый запрос для задач
+    task_query = db.query(models.Task)
+    completed_task_query = db.query(models.Task).filter(
+        models.Task.status == "completed")
+
+    # Применяем фильтрацию по датам к задачам, если указаны
+    if start_date:
+        task_query = task_query.filter(models.Task.created_at >= start_date)
+        completed_task_query = completed_task_query.filter(
+            models.Task.created_at >= start_date)
+    if end_date:
+        task_query = task_query.filter(models.Task.created_at <= end_date)
+        completed_task_query = completed_task_query.filter(
+            models.Task.created_at <= end_date)
+
+    # Фильтрация по отделу требует join с таблицей пользователей
+    if department:
+        task_query = task_query.join(models.User, models.Task.user_id == models.User.id) \
+            .filter(models.User.department == department)
+        completed_task_query = completed_task_query.join(models.User, models.Task.user_id == models.User.id) \
+            .filter(models.User.department == department)
+
+    # Получаем статистику по задачам с применёнными фильтрами
+    total_tasks = task_query.count()
+    completed_tasks = completed_task_query.count()
     completion_rate = completed_tasks / total_tasks if total_tasks > 0 else 0
 
-    # Статистика по отзывам
-    total_feedback = db.query(models.Feedback).count()
-    avg_feedback_per_user = db.query(
-        func.count(models.Feedback.id) /
-        func.count(distinct(models.Feedback.recipient_id))
-    ).scalar() or 0
+    # Статистика по отзывам с учётом фильтров
+    feedback_query = db.query(models.Feedback)
 
-    return {
+    if start_date or end_date or department:
+        feedback_query = feedback_query.join(
+            models.User, models.Feedback.recipient_id == models.User.id)
+
+    if start_date:
+        feedback_query = feedback_query.filter(
+            models.Feedback.created_at >= start_date)
+    if end_date:
+        feedback_query = feedback_query.filter(
+            models.Feedback.created_at <= end_date)
+    if department:
+        feedback_query = feedback_query.filter(
+            models.User.department == department)
+
+    total_feedback = feedback_query.count()
+
+    # Средний рейтинг отзывов по пользователям
+    if department:
+        users_count = db.query(models.User).filter(
+            models.User.department == department).count()
+    else:
+        users_count = db.query(models.User).count()
+
+    avg_feedback_per_user = total_feedback / users_count if users_count > 0 else 0
+
+    # Дополнительная статистика по приоритетам задач
+    priority_stats = {}
+    for priority in ["low", "medium", "high"]:
+        priority_query = task_query.filter(models.Task.priority == priority)
+        priority_stats[priority] = {
+            "total": priority_query.count(),
+            "completed": priority_query.filter(models.Task.status == "completed").count()
+        }
+
+    # Подготавливаем результат с метаданными версионирования
+    timestamp = datetime.now().isoformat()
+    result = {
         "task_stats": {
             "total": total_tasks,
             "completed": completed_tasks,
-            "completion_rate": completion_rate
+            "completion_rate": completion_rate,
+            "priority": priority_stats
         },
         "feedback_stats": {
             "total": total_feedback,
             "avg_per_user": avg_feedback_per_user
+        },
+        "filters_applied": {
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
+            "department": department
+        },
+        "metadata": {
+            "generated_at": timestamp,
+            "version": analytics_versions.get("analytics_summary", 0)
         }
     }
+
+    # Сохраняем результат в кэш
+    cache_data("analytics_summary", cache_params, result)
+
+    return result
+
+
+@app.get("/analytics/tasks")
+async def get_task_analytics(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    department: Optional[str] = None,
+    export_csv: bool = False,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """
+    Получение аналитики по задачам с возможностью экспорта в CSV
+
+    - start_date: фильтр по дате начала
+    - end_date: фильтр по дате окончания
+    - department: фильтрация по отделу
+    - export_csv: если True, возвращает CSV файл вместо JSON
+    """
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    from sqlalchemy.orm import joinedload
+
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Only HR can view task analytics"
+        )
+
+    # Для CSV экспорта мы не используем кэширование
+    if not export_csv:
+        # Проверяем кэш перед выполнением запроса
+        cache_params = {
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
+            "department": department
+        }
+
+        # Пытаемся получить данные из кэша
+        cached_data = get_cached_data("analytics_tasks", cache_params)
+        if cached_data:
+            # Если данные найдены в кэше, возвращаем их
+            return cached_data
+
+    # Оптимизированный запрос с использованием joinedload для избежания проблемы N+1
+    query = db.query(models.Task).options(
+        joinedload(models.Task.assignee)
+    )
+
+    # Применяем фильтры
+    if start_date:
+        query = query.filter(models.Task.created_at >= start_date)
+    if end_date:
+        query = query.filter(models.Task.created_at <= end_date)
+    if department:
+        query = query.join(models.User, models.Task.user_id == models.User.id)\
+            .filter(models.User.department == department)
+
+    # Получаем все задачи одним запросом (избегаем N+1 проблему)
+    tasks = query.all()
+
+    # Подготавливаем данные для ответа или экспорта
+    tasks_data = []
+    for task in tasks:
+        # Используем уже загруженную связь с assignee (нет дополнительных запросов)
+        assignee = task.assignee
+        task_data = {
+            "id": task.id,
+            "title": task.title,
+            "description": task.description,
+            "priority": task.priority,
+            "status": task.status,
+            "deadline": task.deadline.isoformat() if task.deadline else None,
+            "created_at": task.created_at.isoformat() if task.created_at else None,
+            "assignee_id": task.user_id,
+            "assignee_name": f"{assignee.first_name} {assignee.last_name}" if assignee and assignee.first_name and assignee.last_name else assignee.email if assignee else "Не назначен",
+            "department": assignee.department if assignee else "Неизвестно",
+            "plan_id": task.plan_id
+        }
+        tasks_data.append(task_data)
+
+    # Экспорт в CSV если запрошено
+    if export_csv:
+        output = io.StringIO()
+        writer = csv.DictWriter(
+            output, fieldnames=tasks_data[0].keys() if tasks_data else [])
+        writer.writeheader()
+        writer.writerows(tasks_data)
+
+        response = StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv"
+        )
+        response.headers[
+            "Content-Disposition"] = f"attachment; filename=tasks_analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return response
+
+    # Для больших данных: ограничиваем количество задач, возвращаемых в JSON
+    MAX_TASKS_IN_RESPONSE = 500
+    if len(tasks_data) > MAX_TASKS_IN_RESPONSE:
+        # Отсортируем по дате создания и вернем самые новые
+        tasks_data = sorted(tasks_data,
+                            key=lambda x: x["created_at"] if x["created_at"] else "0000",
+                            reverse=True)[:MAX_TASKS_IN_RESPONSE]
+
+    # Дополнительная аналитика для JSON-ответа
+    total_tasks = len(tasks_data)
+    completed_tasks = sum(
+        1 for task in tasks_data if task["status"] == "completed")
+
+    # Статистика по приоритетам
+    priority_counts = {"low": 0, "medium": 0, "high": 0}
+    for task in tasks_data:
+        if task["priority"] in priority_counts:
+            priority_counts[task["priority"]] += 1
+
+    # Статистика по отделам
+    department_stats = {}
+    for task in tasks_data:
+        dept = task["department"]
+        if dept not in department_stats:
+            department_stats[dept] = {"total": 0, "completed": 0}
+
+        department_stats[dept]["total"] += 1
+        if task["status"] == "completed":
+            department_stats[dept]["completed"] += 1
+
+    # Рассчитываем процент выполнения для каждого отдела
+    for dept in department_stats:
+        total = department_stats[dept]["total"]
+        completed = department_stats[dept]["completed"]
+        department_stats[dept]["completion_rate"] = completed / \
+            total if total > 0 else 0
+
+    # Подготавливаем результат с метаданными версионирования
+    timestamp = datetime.now().isoformat()
+    result = {
+        "tasks": tasks_data,
+        "summary": {
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "completion_rate": completed_tasks / total_tasks if total_tasks > 0 else 0,
+            "priority_distribution": priority_counts,
+            "department_stats": department_stats
+        },
+        "filters_applied": {
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
+            "department": department
+        },
+        "metadata": {
+            "generated_at": timestamp,
+            "version": analytics_versions.get("analytics_tasks", 0),
+            "truncated": len(tasks_data) > MAX_TASKS_IN_RESPONSE
+        }
+    }
+
+    # Сохраняем результат в кэш (только JSON, не CSV)
+    if not export_csv:
+        cache_data("analytics_tasks", cache_params, result)
+
+    return result
+
+
+@app.get("/analytics/users")
+async def get_user_analytics(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    department: Optional[str] = None,
+    export_csv: bool = False,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """
+    Получение аналитики по пользователям
+
+    - start_date: фильтр по дате начала
+    - end_date: фильтр по дате окончания
+    - department: фильтрация по отделу
+    - export_csv: если True, возвращает CSV файл вместо JSON
+    """
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403, detail="Only HR can view user analytics"
+        )
+
+    # Проверяем кэш перед выполнением запроса (кроме экспорта в CSV)
+    if not export_csv:
+        cache_params = {
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
+            "department": department
+        }
+        cached_data = get_cached_data("analytics_users", cache_params)
+        if cached_data:
+            return cached_data
+
+    # Базовый запрос пользователей с фильтрами
+    users_query = db.query(models.User)
+
+    # Применяем фильтр по отделу, если указан
+    if department:
+        users_query = users_query.filter(models.User.department == department)
+
+    users = users_query.all()
+    users_data = []
+
+    for user in users:
+        # Запрос задач пользователя
+        task_query = db.query(models.Task).filter(
+            models.Task.user_id == user.id)
+
+        # Фильтрация по датам
+        if start_date:
+            task_query = task_query.filter(
+                models.Task.created_at >= start_date)
+        if end_date:
+            task_query = task_query.filter(models.Task.created_at <= end_date)
+
+        # Получаем все задачи и завершенные задачи
+        all_tasks = task_query.all()
+        completed_tasks = [
+            task for task in all_tasks if task.status == "completed"]
+        tasks_total = len(all_tasks)
+        tasks_completed = len(completed_tasks)
+
+        # Расчет времени онбординга (разница между датой создания и датой последней завершенной задачи)
+        onboarding_time = None
+        if tasks_completed > 0 and tasks_total > 0:
+            # Находим дату последней завершенной задачи
+            latest_completed = max(
+                [task.created_at for task in completed_tasks])
+            # Находим дату первой задачи
+            earliest_task = min([task.created_at for task in all_tasks])
+            # Расчет времени в днях
+            delta = latest_completed - earliest_task
+            onboarding_time = delta.days
+
+        # Рассчитываем процент выполнения задач
+        task_completion_rate = tasks_completed / tasks_total if tasks_total > 0 else 0
+
+        user_data = {
+            "id": user.id,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "department": user.department,
+            "role": user.role,
+            "created_at": user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else None,
+            "tasks_total": tasks_total,
+            "tasks_completed": tasks_completed,
+            "task_completion_rate": task_completion_rate,
+            "onboarding_time": onboarding_time
+        }
+        users_data.append(user_data)
+
+    # Для экспорта в CSV
+    if export_csv and users_data:
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=users_data[0].keys())
+        writer.writeheader()
+        writer.writerows(users_data)
+
+        response = StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv"
+        )
+        response.headers[
+            "Content-Disposition"] = f"attachment; filename=users_analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return response
+
+    # Статистика по отделам
+    departments = {}
+    for user in users_data:
+        dept = user["department"] or "Не указан"
+        if dept not in departments:
+            departments[dept] = {
+                "count": 0,
+                "completed_tasks": 0,
+                "total_tasks": 0
+            }
+        departments[dept]["count"] += 1
+        departments[dept]["completed_tasks"] += user["tasks_completed"]
+        departments[dept]["total_tasks"] += user["tasks_total"]
+
+    # Расчет среднего времени онбординга
+    users_with_onboarding = [
+        user for user in users_data if user["onboarding_time"] is not None]
+    avg_onboarding_time = sum(user["onboarding_time"] for user in users_with_onboarding) / \
+        len(users_with_onboarding) if users_with_onboarding else 0
+
+    # Формируем результат
+    result = {
+        "users": users_data,
+        "summary": {
+            "total_users": len(users_data),
+            "avg_onboarding_time": avg_onboarding_time,
+            "departments": departments
+        },
+        "filters_applied": {
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
+            "department": department
+        },
+        "metadata": {
+            "generated_at": datetime.now().isoformat(),
+            "version": analytics_versions.get("analytics_users", 0)
+        }
+    }
+
+    # Сохраняем в кэш только для не-CSV запросов
+    if not export_csv:
+        cache_data("analytics_users", cache_params, result)
+
+    return result
 
 
 @app.get("/health")

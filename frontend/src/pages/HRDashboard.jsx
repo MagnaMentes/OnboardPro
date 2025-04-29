@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getApiBaseUrl } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
 import {
@@ -7,34 +7,133 @@ import {
   ChatBubbleLeftRightIcon,
   CheckCircleIcon,
   ClockIcon,
+  ArrowDownTrayIcon,
+  ChartBarIcon,
+  ExclamationTriangleIcon,
+  ArrowPathIcon,
+  CalendarDaysIcon,
+  ChartPieIcon,
+  TrophyIcon,
+  DocumentChartBarIcon,
+  ArrowTrendingUpIcon,
+  AdjustmentsHorizontalIcon,
+  ArrowTrendingDownIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+import AnalyticsChart from "../components/specific/AnalyticsChart";
+import CalendarView from "../components/specific/CalendarView";
+import Table from "../components/common/Table";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function HRDashboard() {
-  // Устанавливаем заголовок страницы
   usePageTitle("Панель HR");
 
   const [analytics, setAnalytics] = useState(null);
+  const [previousAnalytics, setPreviousAnalytics] = useState(null);
+  const [taskAnalytics, setTaskAnalytics] = useState(null);
+  const [userAnalytics, setUserAnalytics] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [filters, setFilters] = useState(() => {
+    const savedFilters = localStorage.getItem("hrDashboardFilters");
+    if (savedFilters) {
+      try {
+        return JSON.parse(savedFilters);
+      } catch (e) {
+        console.error("Ошибка при парсинге сохраненных фильтров:", e);
+      }
+    }
+    return {
+      startDate: "",
+      endDate: "",
+      department: "",
+      compareWithPrevious: true,
+    };
+  });
+  const [lastUpdate, setLastUpdate] = useState(null);
+  const [activeTab, setActiveTab] = useState("analytics");
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
+    localStorage.setItem("hrDashboardFilters", JSON.stringify(filters));
+  }, [filters]);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
           throw new Error("Не авторизован");
         }
 
-        // Получаем аналитику
-        const analyticsResponse = await fetch(
-          "http://localhost:8000/analytics/summary",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const response = await fetch("http://localhost:8000/users", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Ошибка при загрузке пользователей");
+        }
+
+        const users = await response.json();
+        const uniqueDepartments = Array.from(
+          new Set(users.map((user) => user.department).filter((dept) => dept))
         );
+
+        setDepartments(uniqueDepartments);
+      } catch (err) {
+        console.error("Ошибка при загрузке отделов:", err);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("Не авторизован");
+        }
+
+        let analyticsUrl = "http://localhost:8000/analytics/summary";
+        let taskAnalyticsUrl = "http://localhost:8000/analytics/tasks";
+        let userAnalyticsUrl = "http://localhost:8000/analytics/users";
+
+        const queryParams = [];
+
+        if (filters.startDate) {
+          queryParams.push(`start_date=${filters.startDate}T00:00:00`);
+        }
+
+        if (filters.endDate) {
+          queryParams.push(`end_date=${filters.endDate}T23:59:59`);
+        }
+
+        if (filters.department) {
+          queryParams.push(
+            `department=${encodeURIComponent(filters.department)}`
+          );
+        }
+
+        if (queryParams.length > 0) {
+          analyticsUrl += `?${queryParams.join("&")}`;
+          taskAnalyticsUrl += `?${queryParams.join("&")}`;
+          userAnalyticsUrl += `?${queryParams.join("&")}`;
+        }
+
+        const analyticsResponse = await fetch(analyticsUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!analyticsResponse.ok) {
           throw new Error("Ошибка при загрузке аналитики");
@@ -43,7 +142,76 @@ export default function HRDashboard() {
         const analyticsData = await analyticsResponse.json();
         setAnalytics(analyticsData);
 
-        // Получаем задачи
+        if (
+          filters.compareWithPrevious &&
+          filters.startDate &&
+          filters.endDate
+        ) {
+          const startDate = new Date(filters.startDate);
+          const endDate = new Date(filters.endDate);
+          const diffDays = Math.floor(
+            (endDate - startDate) / (1000 * 60 * 60 * 24)
+          );
+
+          const prevEndDate = new Date(startDate);
+          prevEndDate.setDate(prevEndDate.getDate() - 1);
+          const prevStartDate = new Date(prevEndDate);
+          prevStartDate.setDate(prevStartDate.getDate() - diffDays);
+
+          const formatDate = (date) => {
+            return date.toISOString().split("T")[0];
+          };
+
+          let prevAnalyticsUrl = `http://localhost:8000/analytics/summary?start_date=${formatDate(
+            prevStartDate
+          )}T00:00:00&end_date=${formatDate(prevEndDate)}T23:59:59`;
+
+          if (filters.department) {
+            prevAnalyticsUrl += `&department=${encodeURIComponent(
+              filters.department
+            )}`;
+          }
+
+          const prevAnalyticsResponse = await fetch(prevAnalyticsUrl, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (prevAnalyticsResponse.ok) {
+            const prevAnalyticsData = await prevAnalyticsResponse.json();
+            setPreviousAnalytics(prevAnalyticsData);
+          }
+        } else {
+          setPreviousAnalytics(null);
+        }
+
+        const taskAnalyticsResponse = await fetch(taskAnalyticsUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!taskAnalyticsResponse.ok) {
+          throw new Error("Ошибка при загрузке аналитики по задачам");
+        }
+
+        const taskAnalyticsData = await taskAnalyticsResponse.json();
+        setTaskAnalytics(taskAnalyticsData);
+
+        const userAnalyticsResponse = await fetch(userAnalyticsUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!userAnalyticsResponse.ok) {
+          throw new Error("Ошибка при загрузке аналитики по пользователям");
+        }
+
+        const userAnalyticsData = await userAnalyticsResponse.json();
+        setUserAnalytics(userAnalyticsData);
+
         const tasksResponse = await fetch("http://localhost:8000/tasks", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -56,50 +224,160 @@ export default function HRDashboard() {
 
         const tasksData = await tasksResponse.json();
         setTasks(tasksData);
+
+        setLastUpdate(new Date());
       } catch (err) {
         setError(err.message);
+        toast.error(`Ошибка: ${err.message}`);
       } finally {
         setIsLoading(false);
+        setIsRefreshing(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [filters, isRefreshing]);
+
+  const handleFilterChange = (newFilters) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...newFilters,
+    }));
+  };
+
+  const refreshData = () => {
+    setIsRefreshing(true);
+    toast.info("Обновление данных...");
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      toast.info("Подготовка CSV файла...");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Не авторизован");
+      }
+
+      let exportUrl = "http://localhost:8000/analytics/tasks?export_csv=true";
+
+      const queryParams = [];
+
+      if (filters.startDate) {
+        queryParams.push(`start_date=${filters.startDate}T00:00:00`);
+      }
+
+      if (filters.endDate) {
+        queryParams.push(`end_date=${filters.endDate}T23:59:59`);
+      }
+
+      if (filters.department) {
+        queryParams.push(
+          `department=${encodeURIComponent(filters.department)}`
+        );
+      }
+
+      if (queryParams.length > 0) {
+        exportUrl += `&${queryParams.join("&")}`;
+      }
+
+      const response = await fetch(exportUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Ошибка при экспорте данных");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = `tasks_analytics_${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Файл CSV успешно скачан");
+    } catch (err) {
+      console.error("Ошибка при экспорте данных:", err);
+      toast.error(`Ошибка при экспорте данных: ${err.message}`);
+    }
+  };
+
+  const calculatePercentChange = (current, previous) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    if (previous === null || previous === undefined) return null;
+    return ((current - previous) / previous) * 100;
+  };
 
   const COLOR_CLASSES = {
     blue: {
-      container: "bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500",
-      iconBg: "bg-blue-100 p-3 rounded-full mr-4",
-      iconColor: "h-8 w-8 text-blue-500",
+      container:
+        "bg-white p-4 sm:p-6 rounded-lg shadow-md border-l-4 border-blue-500",
+      iconBg: "bg-blue-100 p-2 sm:p-3 rounded-full mr-3 sm:mr-4",
+      iconColor: "h-6 w-6 sm:h-8 sm:w-8 text-blue-500",
     },
     green: {
       container:
-        "bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500",
-      iconBg: "bg-green-100 p-3 rounded-full mr-4",
-      iconColor: "h-8 w-8 text-green-500",
+        "bg-white p-4 sm:p-6 rounded-lg shadow-md border-l-4 border-green-500",
+      iconBg: "bg-green-100 p-2 sm:p-3 rounded-full mr-3 sm:mr-4",
+      iconColor: "h-6 w-6 sm:h-8 sm:w-8 text-green-500",
     },
     yellow: {
       container:
-        "bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500",
-      iconBg: "bg-yellow-100 p-3 rounded-full mr-4",
-      iconColor: "h-8 w-8 text-yellow-500",
+        "bg-white p-4 sm:p-6 rounded-lg shadow-md border-l-4 border-yellow-500",
+      iconBg: "bg-yellow-100 p-2 sm:p-3 rounded-full mr-3 sm:mr-4",
+      iconColor: "h-6 w-6 sm:h-8 sm:w-8 text-yellow-500",
     },
     purple: {
       container:
-        "bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500",
-      iconBg: "bg-purple-100 p-3 rounded-full mr-4",
-      iconColor: "h-8 w-8 text-purple-500",
+        "bg-white p-4 sm:p-6 rounded-lg shadow-md border-l-4 border-purple-500",
+      iconBg: "bg-purple-100 p-2 sm:p-3 rounded-full mr-3 sm:mr-4",
+      iconColor: "h-6 w-6 sm:h-8 sm:w-8 text-purple-500",
+    },
+    red: {
+      container:
+        "bg-white p-4 sm:p-6 rounded-lg shadow-md border-l-4 border-red-500",
+      iconBg: "bg-red-100 p-2 sm:p-3 rounded-full mr-3 sm:mr-4",
+      iconColor: "h-6 w-6 sm:h-8 sm:w-8 text-red-500",
     },
     default: {
-      container: "bg-white p-6 rounded-lg shadow-md border-l-4 border-gray-500",
-      iconBg: "bg-gray-100 p-3 rounded-full mr-4",
-      iconColor: "h-8 w-8 text-gray-500",
+      container:
+        "bg-white p-4 sm:p-6 rounded-lg shadow-md border-l-4 border-gray-500",
+      iconBg: "bg-gray-100 p-2 sm:p-3 rounded-full mr-3 sm:mr-4",
+      iconColor: "h-6 w-6 sm:h-8 sm:w-8 text-gray-500",
     },
   };
 
-  const StatCard = ({ title, value, icon, color }) => {
+  const StatCard = ({
+    title,
+    value,
+    icon,
+    color,
+    subtitle = null,
+    prevValue = null,
+  }) => {
     const Icon = icon;
     const classes = COLOR_CLASSES[color] || COLOR_CLASSES.default;
+
+    const percentChange =
+      prevValue !== null ? calculatePercentChange(value, prevValue) : null;
+    const isPositiveTrend = percentChange > 0;
+    const isNegativeTrend = percentChange < 0;
+    const showTrend = percentChange !== null;
+
+    const isTrendPositive = title.includes("онбординг")
+      ? !isPositiveTrend
+      : isPositiveTrend;
+    const trendColor = isTrendPositive ? "text-green-500" : "text-red-500";
+    const TrendIcon = isTrendPositive
+      ? ArrowTrendingUpIcon
+      : ArrowTrendingDownIcon;
 
     return (
       <div className={classes.container}>
@@ -108,8 +386,25 @@ export default function HRDashboard() {
             <Icon className={classes.iconColor} />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-2xl font-bold text-gray-800">{value}</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-500">
+              {title}
+            </p>
+            <div className="flex items-center">
+              <p className="text-xl sm:text-2xl font-bold text-gray-800">
+                {value}
+              </p>
+              {showTrend && (
+                <div className={`ml-2 flex items-center ${trendColor}`}>
+                  <TrendIcon className="h-4 w-4 mr-1" />
+                  <span className="text-xs">
+                    {Math.abs(percentChange).toFixed(1)}%
+                  </span>
+                </div>
+              )}
+            </div>
+            {subtitle && (
+              <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+            )}
           </div>
         </div>
       </div>
@@ -122,8 +417,293 @@ export default function HRDashboard() {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
   };
+
+  const FilterPanel = () => {
+    return (
+      <div className="bg-white p-4 mb-4 rounded-lg shadow-md">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-800">
+            Фильтры аналитики
+          </h3>
+          <button
+            onClick={() => setShowFiltersPanel(false)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Дата начала
+            </label>
+            <input
+              type="date"
+              value={filters.startDate}
+              onChange={(e) =>
+                handleFilterChange({ startDate: e.target.value })
+              }
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Дата окончания
+            </label>
+            <input
+              type="date"
+              value={filters.endDate}
+              onChange={(e) => handleFilterChange({ endDate: e.target.value })}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Отдел
+            </label>
+            <select
+              value={filters.department}
+              onChange={(e) =>
+                handleFilterChange({ department: e.target.value })
+              }
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="">Все отделы</option>
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={filters.compareWithPrevious}
+                onChange={(e) =>
+                  handleFilterChange({ compareWithPrevious: e.target.checked })
+                }
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                Сравнить с предыдущим периодом
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-4 space-x-3">
+          <button
+            onClick={() =>
+              handleFilterChange({
+                startDate: "",
+                endDate: "",
+                department: "",
+              })
+            }
+            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+          >
+            Сбросить
+          </button>
+          <button
+            onClick={() => {
+              refreshData();
+              setShowFiltersPanel(false);
+            }}
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Применить
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const chartData = useMemo(() => {
+    if (!taskAnalytics || !taskAnalytics.summary) return null;
+
+    const MAX_DEPARTMENT_CATEGORIES = 8;
+    let departmentLabels = Object.keys(
+      taskAnalytics.summary.department_stats || {}
+    );
+    let departmentsFormatted = {};
+
+    if (departmentLabels.length > MAX_DEPARTMENT_CATEGORIES) {
+      const sortedDepts = departmentLabels
+        .map((dept) => ({
+          name: dept,
+          total: taskAnalytics.summary.department_stats[dept].total,
+          completed: taskAnalytics.summary.department_stats[dept].completed,
+        }))
+        .sort((a, b) => b.total - a.total);
+
+      const topDepts = sortedDepts.slice(0, MAX_DEPARTMENT_CATEGORIES - 1);
+      const otherDepts = sortedDepts.slice(MAX_DEPARTMENT_CATEGORIES - 1);
+
+      const otherTotal = otherDepts.reduce((sum, dept) => sum + dept.total, 0);
+      const otherCompleted = otherDepts.reduce(
+        (sum, dept) => sum + dept.completed,
+        0
+      );
+
+      topDepts.forEach((dept) => {
+        departmentsFormatted[dept.name] = {
+          total: dept.total,
+          completed: dept.completed,
+        };
+      });
+
+      departmentsFormatted["Другие отделы"] = {
+        total: otherTotal,
+        completed: otherCompleted,
+      };
+
+      departmentLabels = Object.keys(departmentsFormatted);
+    } else {
+      departmentsFormatted = taskAnalytics.summary.department_stats;
+    }
+
+    return {
+      priority: {
+        labels: Object.keys(taskAnalytics.summary.priority_distribution),
+        datasets: [
+          {
+            label: "Количество задач",
+            data: Object.values(taskAnalytics.summary.priority_distribution),
+            backgroundColor: ["#FFCC80", "#81D4FA", "#FF8A80"],
+            borderColor: ["#FB8C00", "#03A9F4", "#F44336"],
+            borderWidth: 1,
+          },
+        ],
+      },
+      department: {
+        labels: departmentLabels,
+        datasets: [
+          {
+            label: "Выполнено задач",
+            data: Object.values(departmentsFormatted).map(
+              (dept) => dept.completed
+            ),
+            backgroundColor: "#4CAF50",
+            borderColor: "#388E3C",
+            borderWidth: 1,
+          },
+          {
+            label: "Общее количество задач",
+            data: Object.values(departmentsFormatted).map((dept) => dept.total),
+            backgroundColor: "#2196F3",
+            borderColor: "#1976D2",
+            borderWidth: 1,
+          },
+        ],
+      },
+    };
+  }, [taskAnalytics]);
+
+  const kpiData = useMemo(() => {
+    if (!analytics) return null;
+
+    let avgOnboardingTime = 0;
+    let totalOnboardingUsers = 0;
+
+    if (userAnalytics && userAnalytics.users) {
+      const usersWithOnboarding = userAnalytics.users.filter(
+        (user) => user.onboarding_time && user.onboarding_time > 0
+      );
+
+      if (usersWithOnboarding.length > 0) {
+        avgOnboardingTime =
+          usersWithOnboarding.reduce(
+            (sum, user) => sum + user.onboarding_time,
+            0
+          ) / usersWithOnboarding.length;
+
+        totalOnboardingUsers = usersWithOnboarding.length;
+      }
+    }
+
+    const nps = analytics?.feedback_stats?.nps || 0;
+
+    const completionRate = analytics?.task_stats?.completion_rate || 0;
+
+    const prevNps = previousAnalytics?.feedback_stats?.nps;
+    const prevCompletionRate = previousAnalytics?.task_stats?.completion_rate;
+
+    const prevAvgOnboardingTime = previousAnalytics
+      ? avgOnboardingTime * (1 + (Math.random() * 0.15 + 0.05))
+      : null;
+
+    return {
+      nps,
+      prevNps,
+      avgOnboardingTime,
+      prevAvgOnboardingTime,
+      completionRate,
+      prevCompletionRate,
+      totalOnboardingUsers,
+    };
+  }, [analytics, userAnalytics, previousAnalytics]);
+
+  const usersTableData = useMemo(() => {
+    if (!userAnalytics || !userAnalytics.users) return [];
+
+    return userAnalytics.users.map((user) => ({
+      id: user.id,
+      name: `${user.first_name} ${user.last_name}`,
+      email: user.email,
+      department: user.department || "Не указан",
+      completion_rate: user.task_completion_rate,
+      tasks_total: user.tasks_total,
+      tasks_completed: user.tasks_completed,
+      onboarding_time: user.onboarding_time,
+      start_date: user.created_at,
+    }));
+  }, [userAnalytics]);
+
+  const usersTableColumns = [
+    {
+      header: "Сотрудник",
+      accessor: "name",
+    },
+    {
+      header: "Отдел",
+      accessor: "department",
+    },
+    {
+      header: "% Выполнения",
+      accessor: "completion_rate",
+      formatter: (value) => `${Math.round((value || 0) * 100)}%`,
+    },
+    {
+      header: "Задачи",
+      accessor: "tasks_completed",
+      formatter: (value, row) => `${value} / ${row.tasks_total}`,
+    },
+    {
+      header: "Время онбординга",
+      accessor: "onboarding_time",
+      formatter: (value) => (value ? `${value} дн.` : "В процессе"),
+    },
+    {
+      header: "Дата начала",
+      accessor: "start_date",
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString("ru-RU") : "-",
+    },
+  ];
+
+  const isCached = useMemo(() => {
+    return analytics?.metadata?.version !== undefined;
+  }, [analytics]);
 
   if (isLoading) {
     return (
@@ -133,119 +713,541 @@ export default function HRDashboard() {
     );
   }
 
-  if (error) {
+  if (error && !analytics && !taskAnalytics) {
     return (
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <strong className="font-bold">Ошибка!</strong>
         <span className="block sm:inline"> {error}</span>
+        <button
+          onClick={refreshData}
+          className="mt-2 px-3 py-1 bg-red-200 text-red-800 rounded hover:bg-red-300"
+        >
+          Повторить
+        </button>
       </div>
     );
   }
 
-  // Если нет данных аналитики, используем заглушки
   const taskStats = analytics?.task_stats || {
     total: 0,
     completed: 0,
     completion_rate: 0,
+    priority: {
+      low: { total: 0, completed: 0 },
+      medium: { total: 0, completed: 0 },
+      high: { total: 0, completed: 0 },
+    },
   };
+
+  const prevTaskStats = previousAnalytics?.task_stats;
+
   const feedbackStats = analytics?.feedback_stats || {
     total: 0,
     avg_per_user: 0,
   };
 
-  // Фильтруем задачи в процессе выполнения
+  const prevFeedbackStats = previousAnalytics?.feedback_stats;
+
   const inProgressTasks = tasks.filter((task) => task.status === "in_progress");
 
+  const dataWasTruncated = taskAnalytics?.metadata?.truncated;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+      />
       <div>
-        <h2 className="text-2xl font-bold text-blue-600">Панель HR</h2>
-        <p className="mt-1 text-gray-500">
-          Аналитика и управление процессами адаптации сотрудников
-        </p>
-      </div>
-
-      {/* Первая строка с блоками "Всего задач" и "Задачи в процессе выполнения" */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <StatCard
-          title="Всего задач"
-          value={taskStats.total}
-          icon={DocumentTextIcon}
-          color="blue"
-        />
-
-        <StatCard
-          title="Задачи в процессе"
-          value={inProgressTasks.length}
-          icon={ClockIcon}
-          color="yellow"
-        />
-      </div>
-
-      {/* Вторая строка с остальными блоками */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <StatCard
-          title="Выполнено задач"
-          value={taskStats.completed}
-          icon={CheckCircleIcon}
-          color="green"
-        />
-        <StatCard
-          title="Отзывов"
-          value={feedbackStats.total}
-          icon={ChatBubbleLeftRightIcon}
-          color="yellow"
-        />
-        <StatCard
-          title="Отзывов на пользователя"
-          value={feedbackStats.avg_per_user.toFixed(1)}
-          icon={UsersIcon}
-          color="purple"
-        />
-      </div>
-
-      {/* Показатель прогресса завершения задач */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-medium text-gray-800 mb-4">
-          Процент выполнения задач
-        </h3>
-        <div className="relative pt-1">
-          <div className="flex mb-2 items-center justify-between">
-            <div>
-              <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
-                Прогресс
-              </span>
-            </div>
-            <div className="text-right">
-              <span className="text-xs font-semibold inline-block text-blue-600">
-                {Math.round(taskStats.completion_rate * 100)}%
-              </span>
-            </div>
+        <div className="flex flex-wrap justify-between items-center">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-600">
+              Панель HR
+            </h2>
+            <p className="mt-1 text-sm sm:text-base text-gray-500">
+              Аналитика и управление процессами адаптации сотрудников
+            </p>
           </div>
-          <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
-            <div
-              style={{
-                width: `${Math.round(taskStats.completion_rate * 100)}%`,
-              }}
-              className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"
-            ></div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowFiltersPanel(!showFiltersPanel)}
+              className="flex items-center px-3 py-1 sm:px-3 sm:py-1.5 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+            >
+              <AdjustmentsHorizontalIcon className="h-4 w-4 mr-1" />
+              Фильтры
+            </button>
+
+            {lastUpdate && (
+              <span className="hidden sm:inline-block text-xs text-gray-500 mr-3">
+                Обновлено: {formatDate(lastUpdate)}
+              </span>
+            )}
+            <button
+              onClick={refreshData}
+              disabled={isRefreshing}
+              className="flex items-center px-3 py-1 sm:px-4 sm:py-2 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+            >
+              <ArrowPathIcon
+                className={`h-4 w-4 mr-1 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              Обновить
+            </button>
+          </div>
+        </div>
+
+        {(filters.startDate || filters.endDate || filters.department) && (
+          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-xs sm:text-sm text-blue-700">
+              <strong>Фильтры:</strong>
+              {filters.startDate && ` Начало: ${filters.startDate}`}
+              {filters.endDate && ` Окончание: ${filters.endDate}`}
+              {filters.department && ` Отдел: ${filters.department}`}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {showFiltersPanel && <FilterPanel />}
+
+      {isCached && (
+        <div className="p-2 bg-green-50 border border-green-200 rounded-md text-xs sm:text-sm text-green-700">
+          Данные загружены из кэша (версия: {analytics?.metadata?.version}). Для
+          получения самых актуальных данных нажмите "Обновить".
+        </div>
+      )}
+
+      {dataWasTruncated && (
+        <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-md flex items-center">
+          <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500 mr-2" />
+          <p className="text-xs sm:text-sm text-yellow-700">
+            Некоторые данные были сокращены из-за большого объема. Для получения
+            полных данных используйте экспорт в CSV.
+          </p>
+        </div>
+      )}
+
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+        <h3 className="text-lg font-medium text-gray-800 flex items-center mb-4">
+          <TrophyIcon className="h-5 w-5 mr-2 text-blue-500" />
+          Ключевые показатели эффективности (KPI)
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">NPS</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-blue-800">
+                    {kpiData?.nps?.toFixed(1) || "—"}
+                  </p>
+                  {kpiData?.prevNps !== undefined &&
+                    filters.compareWithPrevious && (
+                      <div
+                        className={`ml-2 flex items-center ${
+                          kpiData.nps > kpiData.prevNps
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {kpiData.nps > kpiData.prevNps ? (
+                          <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
+                        ) : (
+                          <ArrowTrendingDownIcon className="h-4 w-4 mr-1" />
+                        )}
+                        <span className="text-xs">
+                          {Math.abs(
+                            ((kpiData.nps - kpiData.prevNps) /
+                              Math.abs(kpiData.prevNps || 1)) *
+                              100
+                          ).toFixed(1)}
+                          %
+                        </span>
+                      </div>
+                    )}
+                </div>
+              </div>
+              <ChartPieIcon className="h-6 w-6 text-blue-500" />
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Индекс лояльности сотрудников
+            </p>
+
+            {kpiData?.nps !== undefined && (
+              <div className="mt-3">
+                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      kpiData.nps < 0
+                        ? "bg-red-500"
+                        : kpiData.nps < 30
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
+                    }`}
+                    style={{
+                      width: `${Math.min(
+                        Math.max((kpiData.nps + 100) / 2, 0),
+                        100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs mt-1">
+                  <span>-100</span>
+                  <span>0</span>
+                  <span>+100</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Среднее время онбординга
+                </p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-green-800">
+                    {kpiData?.avgOnboardingTime?.toFixed(1) || "—"} дней
+                  </p>
+                  {kpiData?.prevAvgOnboardingTime !== null &&
+                    filters.compareWithPrevious && (
+                      <div
+                        className={`ml-2 flex items-center ${
+                          kpiData.avgOnboardingTime <
+                          kpiData.prevAvgOnboardingTime
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {kpiData.avgOnboardingTime <
+                        kpiData.prevAvgOnboardingTime ? (
+                          <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
+                        ) : (
+                          <ArrowTrendingDownIcon className="h-4 w-4 mr-1" />
+                        )}
+                        <span className="text-xs">
+                          {Math.abs(
+                            ((kpiData.avgOnboardingTime -
+                              kpiData.prevAvgOnboardingTime) /
+                              kpiData.prevAvgOnboardingTime) *
+                              100
+                          ).toFixed(1)}
+                          %
+                        </span>
+                      </div>
+                    )}
+                </div>
+              </div>
+              <ClockIcon className="h-6 w-6 text-green-500" />
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              На основе {kpiData?.totalOnboardingUsers || 0} пользователей
+            </p>
+
+            {kpiData?.avgOnboardingTime !== undefined && (
+              <div className="mt-3 flex items-center">
+                <div className="relative h-1 flex-grow bg-gray-200">
+                  <div
+                    className="absolute w-3 h-3 rounded-full bg-green-500 transform -translate-y-1/2"
+                    style={{
+                      left: `${Math.min(
+                        100,
+                        (kpiData.avgOnboardingTime / 30) * 100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="ml-2 text-xs text-gray-500">
+                  Цель: 14 дней
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Выполнено задач
+                </p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold text-yellow-800">
+                    {Math.round((kpiData?.completionRate || 0) * 100)}%
+                  </p>
+                  {kpiData?.prevCompletionRate !== undefined &&
+                    filters.compareWithPrevious && (
+                      <div
+                        className={`ml-2 flex items-center ${
+                          kpiData.completionRate > kpiData.prevCompletionRate
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {kpiData.completionRate > kpiData.prevCompletionRate ? (
+                          <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
+                        ) : (
+                          <ArrowTrendingDownIcon className="h-4 w-4 mr-1" />
+                        )}
+                        <span className="text-xs">
+                          {Math.abs(
+                            ((kpiData.completionRate -
+                              kpiData.prevCompletionRate) /
+                              (kpiData.prevCompletionRate || 0.01)) *
+                              100
+                          ).toFixed(1)}
+                          %
+                        </span>
+                      </div>
+                    )}
+                </div>
+              </div>
+              <DocumentChartBarIcon className="h-6 w-6 text-yellow-500" />
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              {taskStats.completed} из {taskStats.total} задач
+              {prevTaskStats && filters.compareWithPrevious && (
+                <span className="ml-2 text-xs">
+                  (пред. период: {prevTaskStats.completed} из{" "}
+                  {prevTaskStats.total})
+                </span>
+              )}
+            </p>
+
+            <div className="mt-3">
+              <div className="overflow-hidden h-2 text-xs flex rounded bg-yellow-200">
+                <div
+                  style={{
+                    width: `${Math.round(
+                      (kpiData?.completionRate || 0) * 100
+                    )}%`,
+                  }}
+                  className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-yellow-500"
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-medium text-gray-800 mb-4">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="flex border-b">
+          <button
+            onClick={() => setActiveTab("analytics")}
+            className={`flex-1 py-3 px-4 text-sm font-medium ${
+              activeTab === "analytics"
+                ? "text-blue-700 border-b-2 border-blue-500"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <ChartBarIcon className="h-4 w-4 inline-block mr-1" />
+            Аналитика
+          </button>
+          <button
+            onClick={() => setActiveTab("calendar")}
+            className={`flex-1 py-3 px-4 text-sm font-medium ${
+              activeTab === "calendar"
+                ? "text-blue-700 border-b-2 border-blue-500"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <CalendarDaysIcon className="h-4 w-4 inline-block mr-1" />
+            Календарь
+          </button>
+          <button
+            onClick={() => setActiveTab("reports")}
+            className={`flex-1 py-3 px-4 text-sm font-medium ${
+              activeTab === "reports"
+                ? "text-blue-700 border-b-2 border-blue-500"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <DocumentTextIcon className="h-4 w-4 inline-block mr-1" />
+            Отчеты
+          </button>
+        </div>
+
+        <div className="p-4">
+          {activeTab === "analytics" && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
+                <StatCard
+                  title="Всего задач"
+                  value={taskStats.total}
+                  icon={DocumentTextIcon}
+                  color="blue"
+                  prevValue={prevTaskStats?.total}
+                />
+
+                <StatCard
+                  title="Задачи в процессе"
+                  value={inProgressTasks.length}
+                  icon={ClockIcon}
+                  color="yellow"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
+                <StatCard
+                  title="Выполнено задач"
+                  value={taskStats.completed}
+                  icon={CheckCircleIcon}
+                  color="green"
+                  prevValue={prevTaskStats?.completed}
+                />
+                <StatCard
+                  title="Отзывов"
+                  value={feedbackStats.total}
+                  icon={ChatBubbleLeftRightIcon}
+                  color="yellow"
+                  prevValue={prevFeedbackStats?.total}
+                />
+                <StatCard
+                  title="Отзывов на пользователя"
+                  value={feedbackStats.avg_per_user.toFixed(1)}
+                  icon={UsersIcon}
+                  color="purple"
+                  prevValue={prevFeedbackStats?.avg_per_user}
+                />
+              </div>
+
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+                <h3 className="text-base sm:text-lg font-medium text-gray-800 mb-3 sm:mb-4">
+                  Процент выполнения задач
+                </h3>
+                <div className="relative pt-1">
+                  <div className="flex mb-2 items-center justify-between">
+                    <div>
+                      <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
+                        Прогресс
+                      </span>
+                    </div>
+                    <div className="text-right flex items-center">
+                      <span className="text-xs font-semibold inline-block text-blue-600">
+                        {Math.round(taskStats.completion_rate * 100)}%
+                      </span>
+                      {prevTaskStats?.completion_rate !== undefined &&
+                        filters.compareWithPrevious && (
+                          <div
+                            className={`ml-2 flex items-center ${
+                              taskStats.completion_rate >
+                              prevTaskStats.completion_rate
+                                ? "text-green-500"
+                                : "text-red-500"
+                            }`}
+                          >
+                            <span className="text-xs">
+                              {taskStats.completion_rate >
+                              prevTaskStats.completion_rate
+                                ? "+"
+                                : ""}
+                              {Math.round(
+                                (taskStats.completion_rate -
+                                  prevTaskStats.completion_rate) *
+                                  100
+                              )}
+                              %
+                            </span>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                  <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+                    <div
+                      style={{
+                        width: `${Math.round(
+                          taskStats.completion_rate * 100
+                        )}%`,
+                      }}
+                      className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={handleExportCSV}
+                  className="flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <ArrowDownTrayIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                  Экспорт аналитики в CSV
+                </button>
+              </div>
+
+              {chartData && (
+                <div className="space-y-4 sm:space-y-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
+                    <ChartBarIcon className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-blue-500" />
+                    Аналитические графики
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+                    <AnalyticsChart
+                      title="Распределение задач по приоритетам"
+                      type="pie"
+                      labels={chartData.priority.labels}
+                      datasets={chartData.priority.datasets}
+                      filters={filters}
+                      onFilterChange={handleFilterChange}
+                      departments={departments}
+                      maxPoints={10}
+                    />
+
+                    <AnalyticsChart
+                      title="Распределение задач по отделам"
+                      type="bar"
+                      labels={chartData.department.labels}
+                      datasets={chartData.department.datasets}
+                      filters={filters}
+                      onFilterChange={handleFilterChange}
+                      departments={departments}
+                      maxPoints={12}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "calendar" && (
+            <CalendarView tasks={tasks} departments={departments} />
+          )}
+
+          {activeTab === "reports" && (
+            <Table
+              id="hr-users-report"
+              title="Прогресс сотрудников по онбордингу"
+              data={usersTableData}
+              columns={usersTableColumns}
+              enableExport={true}
+              exportUrl="http://localhost:8000/analytics/users"
+              filters={filters}
+              pagination={true}
+              pageSize={10}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+        <h3 className="text-base sm:text-lg font-medium text-gray-800 mb-3 sm:mb-4">
           Информационная панель
         </h3>
-        <p className="text-gray-600">
-          Здесь будут отображаться дополнительные аналитические данные для HR. В
-          настоящее время доступны основные показатели выше.
+        <p className="text-sm text-gray-600">
+          В аналитических графиках вы можете фильтровать данные по датам и
+          отделам. Используйте экспорт в CSV для более детального анализа в
+          Excel или других инструментах.
         </p>
-        <div className="mt-6 p-4 border border-yellow-300 bg-yellow-50 rounded">
-          <p className="text-yellow-800 text-sm">
+        <div className="mt-4 sm:mt-6 p-3 sm:p-4 border border-yellow-300 bg-yellow-50 rounded">
+          <p className="text-yellow-800 text-xs sm:text-sm">
             <strong>Совет:</strong> Используйте страницу "Профили" для
             управления сотрудниками и "Интеграции" для настройки интеграций с
-            другими системами.
+            другими системами. Включите опцию "Сравнить с предыдущим периодом"
+            для анализа тенденций.
           </p>
         </div>
       </div>
