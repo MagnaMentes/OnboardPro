@@ -16,8 +16,12 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getApiBaseUrl } from "../config/api"; // Импортируем функцию для получения базового API URL
+import usePageTitle from "../utils/usePageTitle";
 
 const Profiles = () => {
+  // Устанавливаем заголовок страницы
+  usePageTitle("Профили сотрудников");
+
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [userRole, setUserRole] = useState("");

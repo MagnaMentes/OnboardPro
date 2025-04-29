@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { getApiBaseUrl } from "../config/api";
+import usePageTitle from "../utils/usePageTitle";
 import {
   UsersIcon,
   DocumentTextIcon,
@@ -8,6 +10,9 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default function HRDashboard() {
+  // Устанавливаем заголовок страницы
+  usePageTitle("Панель HR");
+
   const [analytics, setAnalytics] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

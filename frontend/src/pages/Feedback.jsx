@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { getApiBaseUrl } from "../config/api";
+import usePageTitle from "../utils/usePageTitle";
 import {
   PaperAirplaneIcon,
   UserIcon,
@@ -6,6 +8,9 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default function Feedback() {
+  // Устанавливаем заголовок страницы
+  usePageTitle("Обратная связь");
+
   const [users, setUsers] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [message, setMessage] = useState("");

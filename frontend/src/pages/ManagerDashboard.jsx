@@ -12,8 +12,12 @@ import {
 import { getApiBaseUrl } from "../config/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import usePageTitle from "../utils/usePageTitle";
 
 export default function ManagerDashboard() {
+  // Устанавливаем заголовок страницы
+  usePageTitle("Панель менеджера");
+
   const [users, setUsers] = useState([]);
   const [plans, setPlans] = useState([]);
   const [tasks, setTasks] = useState([]);

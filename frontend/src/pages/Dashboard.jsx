@@ -4,11 +4,16 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
+import { getApiBaseUrl } from "../config/api";
+import usePageTitle from "../utils/usePageTitle";
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Устанавливаем заголовок страницы
+  usePageTitle("Дашборд сотрудника");
 
   useEffect(() => {
     const fetchTasks = async () => {

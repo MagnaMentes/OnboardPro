@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { getApiBaseUrl } from "../config/api";
+import usePageTitle from "../utils/usePageTitle";
 import {
   BoltIcon,
   CalendarIcon,
@@ -7,6 +9,9 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default function Integrations() {
+  // Устанавливаем заголовок страницы
+  usePageTitle("Интеграции");
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");

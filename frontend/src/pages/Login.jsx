@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "../config/api";
+import usePageTitle from "../utils/usePageTitle";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -8,6 +9,9 @@ export default function Login() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  
+  // Устанавливаем заголовок страницы "Вход в систему"
+  usePageTitle("Вход в систему");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
