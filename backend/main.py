@@ -527,6 +527,40 @@ async def get_tasks(
     return db.query(models.Task).all()
 
 
+@app.put("/tasks/{task_id}", response_model=TaskResponse)
+async def update_task(
+    task_id: int,
+    task_update: TaskCreate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """Обновление всех полей задачи"""
+    # Проверяем права доступа (только HR может редактировать задачи)
+    if current_user.role != "hr":
+        raise HTTPException(
+            status_code=403,
+            detail="Только HR может редактировать задачи"
+        )
+
+    # Проверяем существование задачи
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Задача не найдена")
+
+    # Обновляем поля задачи
+    task.plan_id = task_update.plan_id
+    task.user_id = task_update.user_id
+    task.title = task_update.title
+    task.description = task_update.description
+    task.priority = task_update.priority
+    task.deadline = task_update.deadline
+
+    # Сохраняем изменения
+    db.commit()
+    db.refresh(task)
+    return task
+
+
 @app.put("/tasks/{task_id}/status", response_model=TaskResponse)
 async def update_task_status(
     task_id: int,

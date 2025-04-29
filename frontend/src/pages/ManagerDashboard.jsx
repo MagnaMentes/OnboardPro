@@ -42,6 +42,11 @@ export default function ManagerDashboard() {
   const [isDeletePlanModalOpen, setIsDeletePlanModalOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState(null);
 
+  // Новые состояния для редактирования задачи
+  const [editingTask, setEditingTask] = useState(null);
+  const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
+  const [isUpdatingTask, setIsUpdatingTask] = useState(false);
+
   // Новые состояния для фильтрации и сортировки задач
   const [taskStatusFilter, setTaskStatusFilter] = useState("all");
   const [taskPriorityFilter, setTaskPriorityFilter] = useState("all");
@@ -260,6 +265,73 @@ export default function ManagerDashboard() {
   const handleEditPlanInputChange = (e) => {
     const { name, value } = e.target;
     setEditingPlan((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Обработчик для редактирования задачи
+  const handleEditTask = (task) => {
+    // Преобразуем дату из ISO формата в формат YYYY-MM-DD для input type="date"
+    const deadline = new Date(task.deadline).toISOString().split("T")[0];
+    setEditingTask({ ...task, deadline });
+    setIsEditTaskModalOpen(true);
+  };
+
+  // Обработчик изменения полей редактируемой задачи
+  const handleEditTaskInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingTask((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Обработчик обновления задачи
+  const handleUpdateTask = async (e) => {
+    e.preventDefault();
+    setIsUpdatingTask(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Не авторизован");
+      }
+
+      const taskData = {
+        ...editingTask,
+        plan_id: parseInt(editingTask.plan_id),
+        user_id: parseInt(editingTask.user_id),
+        deadline: new Date(editingTask.deadline).toISOString(),
+      };
+
+      const response = await fetch(`${apiBaseUrl}/tasks/${editingTask.id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(taskData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Ошибка при обновлении задачи");
+      }
+
+      const updatedTask = await response.json();
+
+      // Обновление локального состояния
+      setTasks((prev) =>
+        prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+      );
+
+      // Проверка, что данные действительно обновились
+      console.log("Задача успешно обновлена в базе данных:", updatedTask);
+      toast.success(`Задача "${updatedTask.title}" успешно обновлена`);
+
+      setError(null);
+      setIsEditTaskModalOpen(false);
+    } catch (err) {
+      console.error("Ошибка при обновлении задачи:", err);
+      toast.error(err.message);
+      setError(err.message);
+    } finally {
+      setIsUpdatingTask(false);
+    }
   };
 
   const handleTaskSubmit = async (e) => {
@@ -952,6 +1024,195 @@ export default function ManagerDashboard() {
     );
   };
 
+  // Модальное окно для редактирования задачи
+  const EditTaskModal = () => {
+    if (!isEditTaskModalOpen || !editingTask) return null;
+
+    return (
+      <div className="fixed inset-0 overflow-y-auto z-50">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
+            onClick={() => setIsEditTaskModalOpen(false)}
+          ></div>
+
+          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-3xl max-h-[90vh] overflow-y-auto z-10">
+            <div className="bg-blue-50 px-4 py-3 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-blue-900">
+                Редактировать задачу
+              </h3>
+            </div>
+
+            <div className="p-5">
+              <form onSubmit={handleUpdateTask} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="edit_user_id"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Сотрудник
+                    </label>
+                    <select
+                      id="edit_user_id"
+                      name="user_id"
+                      value={editingTask.user_id}
+                      onChange={handleEditTaskInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    >
+                      <option value="">Выберите сотрудника</option>
+                      {users
+                        .filter((user) => user.role === "employee")
+                        .map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.email} ({user.department || "Без отдела"})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit_plan_id"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      План адаптации
+                    </label>
+                    <select
+                      id="edit_plan_id"
+                      name="plan_id"
+                      value={editingTask.plan_id}
+                      onChange={handleEditTaskInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    >
+                      <option value="">Выберите план</option>
+                      {plans.map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.title} ({plan.role})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit_title"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Название задачи
+                    </label>
+                    <input
+                      type="text"
+                      id="edit_title"
+                      name="title"
+                      value={editingTask.title}
+                      onChange={handleEditTaskInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit_priority"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Приоритет
+                    </label>
+                    <select
+                      id="edit_priority"
+                      name="priority"
+                      value={editingTask.priority}
+                      onChange={handleEditTaskInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                      <option value="low">Низкий</option>
+                      <option value="medium">Средний</option>
+                      <option value="high">Высокий</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit_deadline"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Срок выполнения
+                    </label>
+                    <input
+                      type="date"
+                      id="edit_deadline"
+                      name="deadline"
+                      value={editingTask.deadline}
+                      onChange={handleEditTaskInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit_status"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Статус
+                    </label>
+                    <select
+                      id="edit_status"
+                      name="status"
+                      value={editingTask.status}
+                      onChange={handleEditTaskInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                      <option value="pending">В очереди</option>
+                      <option value="in_progress">В процессе</option>
+                      <option value="completed">Завершено</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="edit_description"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Описание
+                  </label>
+                  <textarea
+                    id="edit_description"
+                    name="description"
+                    value={editingTask.description || ""}
+                    onChange={handleEditTaskInputChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[100px]"
+                  />
+                </div>
+
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditTaskModalOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    disabled={isUpdatingTask}
+                  >
+                    {isUpdatingTask ? "Сохранение..." : "Сохранить задачу"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -976,6 +1237,7 @@ export default function ManagerDashboard() {
       <PlanModal />
       <EditPlanModal />
       <DeletePlanModal />
+      <EditTaskModal />
 
       {/* Раздел управления задачами */}
       <div className="bg-white p-6 rounded-lg shadow-md">
@@ -1304,13 +1566,26 @@ export default function ManagerDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleDeleteTask(task.id)}
-                        className="text-red-600 hover:text-red-900 focus:outline-none"
-                        title="Удалить задачу"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
+                      <div className="flex justify-end space-x-2">
+                        {userRole === "hr" && (
+                          <>
+                            <button
+                              onClick={() => handleEditTask(task)}
+                              className="text-blue-600 hover:text-blue-900 focus:outline-none mr-2"
+                              title="Редактировать задачу"
+                            >
+                              <PencilIcon className="h-5 w-5" />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="text-red-600 hover:text-red-900 focus:outline-none"
+                          title="Удалить задачу"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
