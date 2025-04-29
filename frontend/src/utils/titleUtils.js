@@ -9,10 +9,10 @@
  * @param {string} pageTitle - Название страницы
  */
 export const setPageTitle = (pageTitle) => {
-  if (pageTitle && pageTitle.trim() !== '') {
+  if (pageTitle && pageTitle.trim() !== "") {
     document.title = `OnboardPro - ${pageTitle}`;
   } else {
-    document.title = 'OnboardPro';
+    document.title = "OnboardPro";
   }
 };
 
@@ -20,5 +20,5 @@ export const setPageTitle = (pageTitle) => {
  * Сбрасывает заголовок страницы к дефолтному "OnboardPro"
  */
 export const resetPageTitle = () => {
-  document.title = 'OnboardPro';
+  document.title = "OnboardPro";
 };

@@ -1226,8 +1226,13 @@ export default function ManagerDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      <h2 className="text-2xl font-bold text-blue-600">Панель менеджера</h2>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-blue-600">Панель менеджера</h2>
+        <p className="mt-1 text-gray-500">
+          Управление планами адаптации и назначение задач сотрудникам
+        </p>
+      </div>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">

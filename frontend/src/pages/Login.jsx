@@ -9,7 +9,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  
+
   // Устанавливаем заголовок страницы "Вход в систему"
   usePageTitle("Вход в систему");
 

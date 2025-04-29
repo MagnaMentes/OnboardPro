@@ -68,30 +68,33 @@ export default function HRDashboard() {
 
   const COLOR_CLASSES = {
     blue: {
-      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500',
-      iconBg: 'bg-blue-100 p-3 rounded-full mr-4',
-      iconColor: 'h-8 w-8 text-blue-500'
+      container: "bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500",
+      iconBg: "bg-blue-100 p-3 rounded-full mr-4",
+      iconColor: "h-8 w-8 text-blue-500",
     },
     green: {
-      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500',
-      iconBg: 'bg-green-100 p-3 rounded-full mr-4',
-      iconColor: 'h-8 w-8 text-green-500'
+      container:
+        "bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500",
+      iconBg: "bg-green-100 p-3 rounded-full mr-4",
+      iconColor: "h-8 w-8 text-green-500",
     },
     yellow: {
-      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500',
-      iconBg: 'bg-yellow-100 p-3 rounded-full mr-4',
-      iconColor: 'h-8 w-8 text-yellow-500'
+      container:
+        "bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500",
+      iconBg: "bg-yellow-100 p-3 rounded-full mr-4",
+      iconColor: "h-8 w-8 text-yellow-500",
     },
     purple: {
-      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500',
-      iconBg: 'bg-purple-100 p-3 rounded-full mr-4',
-      iconColor: 'h-8 w-8 text-purple-500'
+      container:
+        "bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500",
+      iconBg: "bg-purple-100 p-3 rounded-full mr-4",
+      iconColor: "h-8 w-8 text-purple-500",
     },
     default: {
-      container: 'bg-white p-6 rounded-lg shadow-md border-l-4 border-gray-500',
-      iconBg: 'bg-gray-100 p-3 rounded-full mr-4',
-      iconColor: 'h-8 w-8 text-gray-500'
-    }
+      container: "bg-white p-6 rounded-lg shadow-md border-l-4 border-gray-500",
+      iconBg: "bg-gray-100 p-3 rounded-full mr-4",
+      iconColor: "h-8 w-8 text-gray-500",
+    },
   };
 
   const StatCard = ({ title, value, icon, color }) => {
@@ -151,11 +154,16 @@ export default function HRDashboard() {
   };
 
   // Фильтруем задачи в процессе выполнения
-  const inProgressTasks = tasks.filter(task => task.status === "in_progress");
+  const inProgressTasks = tasks.filter((task) => task.status === "in_progress");
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-blue-600">Панель HR</h2>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-blue-600">Панель HR</h2>
+        <p className="mt-1 text-gray-500">
+          Аналитика и управление процессами адаптации сотрудников
+        </p>
+      </div>
 
       {/* Первая строка с блоками "Всего задач" и "Задачи в процессе выполнения" */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -165,7 +173,7 @@ export default function HRDashboard() {
           icon={DocumentTextIcon}
           color="blue"
         />
-        
+
         <StatCard
           title="Задачи в процессе"
           value={inProgressTasks.length}

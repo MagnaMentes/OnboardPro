@@ -140,8 +140,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Панель управления</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-blue-600">Панель управления</h2>
+        <p className="mt-1 text-gray-500">
+          Управление задачами и отслеживание прогресса адаптации
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tasks.map((task) => (
           <div

@@ -142,19 +142,27 @@ export default function Integrations() {
 
   if (userRole !== "hr") {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        <strong className="font-bold">Доступ запрещен!</strong>
-        <span className="block sm:inline">
-          {" "}
-          Требуется роль HR для доступа к интеграциям.
-        </span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <strong className="font-bold">Доступ запрещен!</strong>
+          <span className="block sm:inline">
+            {" "}
+            Требуется роль HR для доступа к интеграциям.
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-blue-600">Интеграции</h2>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-blue-600">Интеграции</h2>
+        <p className="mt-1 text-gray-500">
+          Настройка и управление внешними сервисами для расширения
+          функциональности системы
+        </p>
+      </div>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
