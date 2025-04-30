@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
@@ -12,6 +12,30 @@ export default function Login() {
 
   // Устанавливаем заголовок страницы "Вход в систему"
   usePageTitle("Вход в систему");
+
+  // При загрузке страницы проверяем, авторизован ли пользователь
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Если токен есть, проверяем его и перенаправляем на соответствующую страницу
+      authApi
+        .validateToken()
+        .then((userData) => {
+          // Перенаправляем на соответствующий дашборд в зависимости от роли
+          if (userData.role === "hr") {
+            navigate("/hr-dashboard");
+          } else if (userData.role === "manager") {
+            navigate("/manager-dashboard");
+          } else {
+            navigate("/dashboard");
+          }
+        })
+        .catch(() => {
+          // Если токен невалидный - удаляем его
+          localStorage.removeItem("token");
+        });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

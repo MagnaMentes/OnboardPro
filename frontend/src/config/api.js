@@ -105,6 +105,14 @@ export const authApi = {
       body: formData,
     });
   },
+
+  /**
+   * Проверить валидность текущего токена
+   * @returns {Promise<Object>} - Данные пользователя, если токен валиден
+   */
+  validateToken: () => {
+    return usersApi.getCurrentUser();
+  },
 };
 
 /**

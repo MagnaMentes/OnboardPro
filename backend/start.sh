@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Создаем директорию для логов, если она не существует
+echo "Checking logs directory..."
+mkdir -p /app/logs
+chmod -R 755 /app/logs
+
 echo "Checking database structure..."
 
 # Функция для проверки наличия таблицы
@@ -51,6 +56,13 @@ if ! sqlite3 onboardpro.db "PRAGMA table_info(users);" | grep -q "photo" 2>/dev/
     
     # Добавляем колонку photo
     sqlite3 onboardpro.db "ALTER TABLE users ADD COLUMN photo TEXT;" || echo "Failed to add photo column!"
+fi
+
+# Проверяем, установлен ли пакет apscheduler
+echo "Checking required packages..."
+if ! pip list | grep -q "apscheduler"; then
+    echo "Installing missing package: apscheduler"
+    pip install apscheduler
 fi
 
 # Запуск скрипта инициализации данных

@@ -171,6 +171,7 @@ const AnalyticsChart = ({
       chartInstance.current.destroy();
     }
 
+    // Обновляем стили для графиков
     const dynamicOptions = {
       line: {
         tension: 0.4,
@@ -178,25 +179,34 @@ const AnalyticsChart = ({
         pointRadius: isResponsive || optimizedData.labels.length > 20 ? 0 : 3,
         pointHoverRadius: 4,
         spanGaps: true,
-        animation:
-          optimizedData.labels.length > 100 ? { duration: 0 } : undefined,
-        parsing: optimizedData.labels.length > 500 ? false : undefined,
+        animation: {
+          duration: 800,
+          easing: "easeInOutQuart",
+        },
       },
       bar: {
         barPercentage: optimizedData.labels.length > 10 ? 0.9 : 0.8,
         categoryPercentage: optimizedData.labels.length > 10 ? 0.8 : 0.9,
-        animation:
-          optimizedData.labels.length > 50 ? { duration: 0 } : undefined,
+        animation: {
+          duration: 800,
+          easing: "easeInOutQuart",
+        },
       },
       pie: {
-        animation: { duration: isResponsive ? 0 : 800 },
-        cutout: "0%",
-        radius: isResponsive ? "90%" : "100%",
+        animation: {
+          duration: 1000,
+          easing: "easeInOutQuart",
+        },
+        cutout: "10%",
+        radius: "90%",
       },
       doughnut: {
-        animation: { duration: isResponsive ? 0 : 800 },
+        animation: {
+          duration: 1000,
+          easing: "easeInOutQuart",
+        },
         cutout: "50%",
-        radius: isResponsive ? "90%" : "100%",
+        radius: "90%",
       },
     };
 
@@ -204,42 +214,43 @@ const AnalyticsChart = ({
       responsive: true,
       maintainAspectRatio: !isResponsive,
       aspectRatio: isResponsive ? 1 : 2,
-      animation:
-        isResponsive && optimizedData.labels.length > 30
-          ? { duration: 0 }
-          : undefined,
       plugins: {
         legend: {
           position: isResponsive ? "bottom" : "top",
           labels: {
             boxWidth: isResponsive ? 12 : 20,
             font: {
-              size: isResponsive ? 10 : 12,
+              size: isResponsive ? 10 : 14,
+              family: "Arial, sans-serif",
             },
           },
-          display: !(isResponsive && optimizedData.labels.length > 50),
         },
         title: {
           display: true,
           text: title,
           font: {
-            size: isResponsive ? 14 : 16,
+            size: isResponsive ? 16 : 20,
+            family: "Arial, sans-serif",
+            weight: "bold",
           },
+          color: "#333",
         },
         tooltip: {
           enabled: true,
-          mode: type === "line" ? "index" : "nearest",
-          intersect: type !== "line",
-          animation: {
-            duration: optimizedData.labels.length > 100 ? 0 : 150,
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          titleFont: {
+            size: 14,
+            weight: "bold",
           },
+          bodyFont: {
+            size: 12,
+          },
+          footerFont: {
+            size: 10,
+          },
+          padding: 10,
+          cornerRadius: 4,
         },
-        ...(isResponsive &&
-          optimizedData.labels.length > 30 && {
-            datalabels: {
-              display: false,
-            },
-          }),
       },
       scales:
         type !== "pie" && type !== "doughnut"
@@ -249,14 +260,10 @@ const AnalyticsChart = ({
                   font: {
                     size: isResponsive ? 10 : 12,
                   },
-                  maxRotation: optimizedData.labels.length > 10 ? 90 : 0,
-                  minRotation: optimizedData.labels.length > 10 ? 45 : 0,
-                  autoSkip: true,
-                  autoSkipPadding: 10,
-                  maxTicksLimit: isResponsive ? 8 : 20,
+                  color: "#666",
                 },
                 grid: {
-                  display: !isResponsive,
+                  color: "rgba(200, 200, 200, 0.2)",
                 },
               },
               y: {
@@ -265,16 +272,15 @@ const AnalyticsChart = ({
                   font: {
                     size: isResponsive ? 10 : 12,
                   },
-                  precision: 0,
-                  maxTicksLimit: isResponsive ? 5 : 10,
+                  color: "#666",
                 },
                 grid: {
-                  display: !isResponsive && optimizedData.labels.length <= 20,
+                  color: "rgba(200, 200, 200, 0.2)",
                 },
               },
             }
           : undefined,
-      ...(dynamicOptions[type] || {}),
+      ...dynamicOptions[type],
     };
 
     chartInstance.current = new Chart(chartRef.current, {

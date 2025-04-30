@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   ClockIcon,
   CheckCircleIcon,
@@ -7,13 +7,79 @@ import {
 import { getApiBaseUrl } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
 
+// Функция для получения пользователя из кэша
+const getUserFromCache = () => {
+  try {
+    const cachedUserData = localStorage.getItem("userData");
+    if (cachedUserData) {
+      const { user, timestamp } = JSON.parse(cachedUserData);
+      // Проверяем возраст кэша (30 минут)
+      if (Date.now() - timestamp < 30 * 60 * 1000) {
+        return user;
+      }
+    }
+  } catch (error) {
+    console.error("Ошибка при чтении данных пользователя из кэша:", error);
+  }
+  return null;
+};
+
+// Функция для сохранения пользователя в кэш
+const cacheUser = (user) => {
+  try {
+    localStorage.setItem(
+      "userData",
+      JSON.stringify({
+        user,
+        timestamp: Date.now(),
+      })
+    );
+  } catch (error) {
+    console.error("Ошибка при сохранении данных пользователя в кэш:", error);
+  }
+};
+
 export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [user, setUser] = useState(() => getUserFromCache());
 
   // Устанавливаем заголовок страницы
   usePageTitle("Дашборд сотрудника");
+
+  // Получение данных пользователя с минимизацией запросов
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Если данные пользователя уже есть в кэше, не делаем запрос
+        if (user) return;
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("Не авторизован");
+        }
+
+        const response = await fetch(`${getApiBaseUrl()}/users/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Ошибка при загрузке данных пользователя");
+        }
+
+        const userData = await response.json();
+        setUser(userData);
+        cacheUser(userData); // Сохраняем в кэш
+      } catch (err) {
+        console.error("Ошибка при получении данных пользователя:", err.message);
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -23,7 +89,7 @@ export default function Dashboard() {
           throw new Error("Не авторизован");
         }
 
-        const response = await fetch("http://localhost:8000/tasks", {
+        const response = await fetch(`${getApiBaseUrl()}/tasks`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -59,13 +125,29 @@ export default function Dashboard() {
   const getPriorityClass = (priority) => {
     switch (priority.toLowerCase()) {
       case "high":
-        return "bg-red-100 text-red-800";
+        return {
+          badge: "bg-red-100 text-red-800",
+          header: "bg-red-50 border-red-200",
+          text: "text-red-900",
+        };
       case "medium":
-        return "bg-yellow-100 text-yellow-800";
+        return {
+          badge: "bg-yellow-100 text-yellow-800",
+          header: "bg-yellow-50 border-yellow-200",
+          text: "text-yellow-900",
+        };
       case "low":
-        return "bg-green-100 text-green-800";
+        return {
+          badge: "bg-green-100 text-green-800",
+          header: "bg-green-50 border-green-200",
+          text: "text-green-900",
+        };
       default:
-        return "bg-gray-100 text-gray-800";
+        return {
+          badge: "bg-gray-100 text-gray-800",
+          header: "bg-gray-50 border-gray-200",
+          text: "text-gray-900",
+        };
     }
   };
 
@@ -97,9 +179,9 @@ export default function Dashboard() {
       }
 
       const response = await fetch(
-        `http://localhost:8000/tasks/${taskId}/status`,
+        `${getApiBaseUrl()}/tasks/${taskId}/status`,
         {
-          method: "PATCH",
+          method: "PUT", // Исправлено с PATCH на PUT согласно API бэкенда
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -112,10 +194,11 @@ export default function Dashboard() {
         throw new Error("Ошибка при обновлении статуса задачи");
       }
 
+      // Получаем обновленную задачу из ответа
+      const updatedTask = await response.json();
+
       setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === taskId ? { ...task, status: newStatus } : task
-        )
+        prevTasks.map((task) => (task.id === taskId ? updatedTask : task))
       );
     } catch (error) {
       setError("Ошибка при обновлении статуса задачи");
@@ -148,44 +231,57 @@ export default function Dashboard() {
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {task.title}
-              </h3>
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityClass(
-                  task.priority
-                )}`}
-              >
-                {task.priority}
-              </span>
-            </div>
-            <p className="text-gray-600 mb-4">{task.description}</p>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center text-gray-500">
-                <ClockIcon className="w-5 h-5 mr-2" />
-                <span>Срок: {formatDate(task.deadline)}</span>
+        {tasks.map((task) => {
+          const priorityClasses = getPriorityClass(task.priority);
+
+          return (
+            <div
+              key={task.id}
+              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
+            >
+              {/* Заголовочная часть с цветом в соответствии с приоритетом */}
+              <div className={`px-6 py-4 border-b ${priorityClasses.header}`}>
+                <div className="flex items-start justify-between">
+                  <h3
+                    className={`text-lg font-semibold ${priorityClasses.text}`}
+                  >
+                    {task.title}
+                  </h3>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${priorityClasses.badge}`}
+                  >
+                    {task.priority}
+                  </span>
+                </div>
               </div>
-              {getStatusIcon(task.status)}
+
+              {/* Содержимое карточки */}
+              <div className="p-6">
+                <p className="text-gray-600 mb-4">{task.description}</p>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center text-gray-500">
+                    <ClockIcon className="w-5 h-5 mr-2" />
+                    <span>Срок: {formatDate(task.deadline)}</span>
+                  </div>
+                  {getStatusIcon(task.status)}
+                </div>
+                <div className="flex items-center justify-between">
+                  <select
+                    value={task.status}
+                    onChange={(e) =>
+                      handleStatusChange(task.id, e.target.value)
+                    }
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="not_started">Не начато</option>
+                    <option value="in_progress">В процессе</option>
+                    <option value="completed">Завершено</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <select
-                value={task.status}
-                onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              >
-                <option value="not_started">Не начато</option>
-                <option value="in_progress">В процессе</option>
-                <option value="completed">Завершено</option>
-              </select>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -44,16 +44,18 @@ class Task(Base):
     __tablename__ = "tasks"
     id = Column(Integer, primary_key=True)
     plan_id = Column(Integer, ForeignKey("plans.id"))
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    priority = Column(String, nullable=False)  # low, medium, high
-    deadline = Column(DateTime, nullable=False)
-    # pending, in_progress, completed
-    status = Column(String, default="pending")
+    priority = Column(String, nullable=False, index=True)
+    deadline = Column(DateTime, nullable=False, index=True)
+    # pending, in_progress, completed, blocked
+    status = Column(String, default="pending", index=True)
     created_at = Column(DateTime, server_default=func.now())
 
-    assignee = relationship("User", back_populates="tasks")
+    # Используем lazy="joined" для автоматической загрузки связанного пользователя
+    # при запросе задач, что решает проблему N+1
+    assignee = relationship("User", back_populates="tasks", lazy="joined")
 
 
 class Feedback(Base):

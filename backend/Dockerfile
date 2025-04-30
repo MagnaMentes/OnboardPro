@@ -10,8 +10,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Создаем директорию для тестов
-RUN mkdir -p /app/tests
+# Создаем директорию для тестов и логов
+RUN mkdir -p /app/tests /app/logs
 
 # Делаем скрипты исполняемыми
 RUN chmod +x /app/start.sh

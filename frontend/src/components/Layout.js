@@ -26,6 +26,12 @@ const navItems = [
     roles: ["manager", "hr"],
   },
   {
+    name: "HR Dashboard",
+    path: "/hr-dashboard",
+    icon: ChartBarIcon,
+    roles: ["hr"],
+  },
+  {
     name: "Feedback",
     path: "/feedback",
     icon: ChatBubbleLeftRightIcon,
@@ -43,12 +49,6 @@ const navItems = [
     icon: BoltIcon,
     roles: ["hr"],
   },
-  {
-    name: "HR Dashboard",
-    path: "/hr-dashboard",
-    icon: ChartBarIcon,
-    roles: ["hr"],
-  },
 ];
 
 export default function Layout() {
@@ -58,23 +58,17 @@ export default function Layout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      // Используем централизованный API-клиент
-      usersApi
-        .getCurrentUser()
-        .then((data) => {
-          console.log("Получены данные пользователя:", data);
-          setUser(data);
-        })
-        .catch((err) => {
-          console.error("Ошибка при получении данных пользователя:", err);
-          // Если токен просрочен или недействителен, удаляем его
-          localStorage.removeItem("token");
-          setUser(null);
-          navigate("/login");
-        });
-    }
+    // Получаем данные о текущем пользователе
+    usersApi
+      .getCurrentUser()
+      .then((data) => {
+        setUser(data);
+      })
+      .catch((err) => {
+        console.error("Ошибка при получении данных пользователя:", err);
+        // Эта ошибка будет перехвачена компонентом ProtectedRoute
+        // и пользователь будет перенаправлен на страницу логина
+      });
   }, [navigate]);
 
   // Функция выхода
@@ -107,16 +101,19 @@ export default function Layout() {
                   location.pathname === item.path ? "active" : ""
                 }`}
               >
-                <item.icon className="w-5 h-5" />
-                <span className="nav-text">{item.name}</span>
+                <item.icon className="w-5 h-5 mr-3" />
+                <span>{item.name}</span>
               </Link>
             ))}
             {user && (
               <button
                 onClick={handleLogout}
-                className="nav-link flex items-center ml-2"
-                title="Выйти"
-                type="button"
+                className="nav-link flex items-center"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -124,7 +121,7 @@ export default function Layout() {
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-5 h-5 mr-1"
+                  className="w-5 h-5 mr-3"
                 >
                   <path
                     strokeLinecap="round"
@@ -255,7 +252,7 @@ export default function Layout() {
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-5 h-5 mr-1"
+                  className="w-5 h-5 mr-3"
                 >
                   <path
                     strokeLinecap="round"
@@ -275,15 +272,50 @@ export default function Layout() {
         </nav>
       </header>
 
-      <main className="flex-grow container py-6 pb-24">
+      <main className="flex-grow container py-6">
         <Outlet />
       </main>
 
-      <footer className="bg-blue-600 text-white py-4 w-full mt-auto fixed bottom-0 left-0 right-0 z-10 shadow-md">
+      <footer className="bg-gray-800 text-white py-4">
         <div className="container text-center">
-          <p>© 2025 magna_mentes. Все права защищены.</p>
+          <p>© 2025 OnboardPro. Все права защищены.</p>
         </div>
       </footer>
+
+      <style jsx="true">{`
+        .container {
+          width: 100%;
+          max-width: 1280px;
+          margin-left: auto;
+          margin-right: auto;
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+
+        .nav-link {
+          display: flex;
+          align-items: center;
+          padding: 0.5rem 1rem;
+          border-radius: 0.375rem;
+          color: white;
+          text-decoration: none;
+          transition: background-color 0.2s;
+          margin: 0.125rem;
+        }
+
+        .nav-link:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-link.active {
+          background-color: rgba(255, 255, 255, 0.2);
+          font-weight: 500;
+        }
+
+        .nav-text {
+          font-size: 0.875rem;
+        }
+      `}</style>
     </div>
   );
 }

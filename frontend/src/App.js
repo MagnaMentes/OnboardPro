@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ManagerDashboard from "./pages/ManagerDashboard";
@@ -12,17 +13,43 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Публичные маршруты */}
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="manager-dashboard" element={<ManagerDashboard />} />
-          <Route path="hr-dashboard" element={<HRDashboard />} />
-          <Route path="feedback" element={<Feedback />} />
-          <Route path="profiles" element={<Profiles />} />
-          <Route path="integrations" element={<Integrations />} />
+
+        {/* Защищенные маршруты - требуется авторизация */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+
+            {/* Маршруты с проверкой роли */}
+            <Route
+              element={<ProtectedRoute requiredRoles={["manager", "hr"]} />}
+            >
+              <Route path="manager-dashboard" element={<ManagerDashboard />} />
+              <Route path="profiles" element={<Profiles />} />
+            </Route>
+
+            <Route element={<ProtectedRoute requiredRoles={["hr"]} />}>
+              <Route path="hr-dashboard" element={<HRDashboard />} />
+              <Route path="integrations" element={<Integrations />} />
+            </Route>
+
+            <Route path="feedback" element={<Feedback />} />
+          </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+        {/* Любой другой маршрут перенаправляет на логин или дашборд в зависимости от авторизации */}
+        <Route
+          path="*"
+          element={
+            localStorage.getItem("token") ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
