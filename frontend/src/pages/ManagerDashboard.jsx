@@ -257,129 +257,30 @@ export default function ManagerDashboard() {
   // Обработчики задач
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewTask((prev) => ({ ...prev, [name]: value }));
+    setNewTask((prev) => {
+      const updatedTask = { ...prev };
+      updatedTask[name] = value;
+      return updatedTask;
+    });
   };
 
   // Обработчики планов
   const handlePlanInputChange = (e) => {
     const { name, value } = e.target;
-    setNewPlan((prev) => ({ ...prev, [name]: value }));
+    setNewPlan((prev) => {
+      const updatedPlan = { ...prev };
+      updatedPlan[name] = value;
+      return updatedPlan;
+    });
   };
 
   const handleEditPlanInputChange = (e) => {
     const { name, value } = e.target;
-    setEditingPlan((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Обработчик для редактирования задачи
-  const handleEditTask = (task) => {
-    // Преобразуем дату из ISO формата в формат YYYY-MM-DD для input type="date"
-    const deadline = new Date(task.deadline).toISOString().split("T")[0];
-    setEditingTask({ ...task, deadline });
-    setIsEditTaskModalOpen(true);
-  };
-
-  // Обработчик изменения полей редактируемой задачи
-  const handleEditTaskInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditingTask((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Обработчик обновления задачи
-  const handleUpdateTask = async (e) => {
-    e.preventDefault();
-    setIsUpdatingTask(true);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Не авторизован");
-      }
-
-      const taskData = {
-        ...editingTask,
-        plan_id: parseInt(editingTask.plan_id),
-        user_id: parseInt(editingTask.user_id),
-        deadline: new Date(editingTask.deadline).toISOString(),
-      };
-
-      const response = await fetch(`${apiBaseUrl}/tasks/${editingTask.id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(taskData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || "Ошибка при обновлении задачи");
-      }
-
-      const updatedTask = await response.json();
-
-      // Обновление локального состояния
-      setTasks((prev) =>
-        prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-      );
-
-      // Проверка, что данные действительно обновились
-      console.log("Задача успешно обновлена в базе данных:", updatedTask);
-      toast.success(`Задача "${updatedTask.title}" успешно обновлена`);
-
-      setError(null);
-      setIsEditTaskModalOpen(false);
-    } catch (err) {
-      console.error("Ошибка при обновлении задачи:", err);
-      toast.error(err.message);
-      setError(err.message);
-    } finally {
-      setIsUpdatingTask(false);
-    }
-  };
-
-  const handleTaskSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Не авторизован");
-      }
-
-      const taskData = {
-        ...newTask,
-        plan_id: parseInt(newTask.plan_id),
-        user_id: parseInt(newTask.user_id),
-        deadline: new Date(newTask.deadline).toISOString(),
-      };
-
-      const response = await fetch(`${apiBaseUrl}/tasks`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(taskData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Ошибка при создании задачи");
-      }
-
-      const createdTask = await response.json();
-      setTasks((prev) => [...prev, createdTask]);
-      setNewTask({
-        plan_id: "",
-        user_id: "",
-        title: "",
-        description: "",
-        priority: "medium",
-        deadline: new Date().toISOString().split("T")[0],
-      });
-      setIsTaskModalOpen(false);
-    } catch (err) {
-      setError(err.message);
-    }
+    setEditingPlan((prev) => {
+      const updatedPlan = { ...prev };
+      updatedPlan[name] = value;
+      return updatedPlan;
+    });
   };
 
   const handlePlanSubmit = async (e) => {
@@ -584,8 +485,95 @@ export default function ManagerDashboard() {
     }
   };
 
+  // Добавляем функцию для редактирования задачи
+  const handleEditTask = (task) => {
+    // Форматируем дату для редактирования в поле ввода типа date
+    const formattedDeadline = new Date(task.deadline)
+      .toISOString()
+      .split("T")[0];
+
+    // Создаем копию задачи с отформатированной датой
+    const taskWithFormattedDate = {
+      ...task,
+      deadline: formattedDeadline,
+    };
+
+    // Устанавливаем задачу для редактирования и открываем модальное окно
+    setEditingTask(taskWithFormattedDate);
+    setIsEditTaskModalOpen(true);
+  };
+
   // Модальное окно для создания задачи
   const TaskModal = () => {
+    // Создаем состояние безусловно, вне зависимости от isTaskModalOpen
+    const [localTaskData, setLocalTaskData] = useState({ ...newTask });
+
+    // Синхронизируем localTaskData с newTask при открытии модального окна
+    useEffect(() => {
+      if (isTaskModalOpen) {
+        setLocalTaskData({ ...newTask });
+      }
+    }, [isTaskModalOpen, newTask]);
+
+    // Локальный обработчик изменения полей формы
+    const handleLocalInputChange = (e) => {
+      const { name, value } = e.target;
+      setLocalTaskData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    // Обработчик отправки формы
+    const handleLocalSubmit = (e) => {
+      e.preventDefault();
+      // Обновляем общее состояние newTask только при отправке формы
+      setNewTask(localTaskData);
+      // Дальше используем обычный обработчик
+      const taskData = {
+        ...localTaskData,
+        plan_id: parseInt(localTaskData.plan_id),
+        user_id: parseInt(localTaskData.user_id),
+        deadline: new Date(localTaskData.deadline).toISOString(),
+      };
+
+      const submitForm = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            throw new Error("Не авторизован");
+          }
+
+          const response = await fetch(`${apiBaseUrl}/tasks`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(taskData),
+          });
+
+          if (!response.ok) {
+            throw new Error("Ошибка при создании задачи");
+          }
+
+          const createdTask = await response.json();
+          setTasks((prev) => [...prev, createdTask]);
+          setIsTaskModalOpen(false);
+          setLocalTaskData({
+            plan_id: "",
+            user_id: "",
+            title: "",
+            description: "",
+            priority: "medium",
+            deadline: new Date().toISOString().split("T")[0],
+          });
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+
+      submitForm();
+    };
+
+    // Если модальное окно закрыто, не рендерим его содержимое, но возвращаем null
     if (!isTaskModalOpen) return null;
 
     return (
@@ -604,7 +592,7 @@ export default function ManagerDashboard() {
             </div>
 
             <div className="p-5">
-              <form onSubmit={handleTaskSubmit} className="space-y-4">
+              <form onSubmit={handleLocalSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label
@@ -616,8 +604,8 @@ export default function ManagerDashboard() {
                     <select
                       id="user_id"
                       name="user_id"
-                      value={newTask.user_id}
-                      onChange={handleInputChange}
+                      value={localTaskData.user_id}
+                      onChange={handleLocalInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     >
@@ -642,8 +630,8 @@ export default function ManagerDashboard() {
                     <select
                       id="plan_id"
                       name="plan_id"
-                      value={newTask.plan_id}
-                      onChange={handleInputChange}
+                      value={localTaskData.plan_id}
+                      onChange={handleLocalInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     >
@@ -667,8 +655,8 @@ export default function ManagerDashboard() {
                       type="text"
                       id="title"
                       name="title"
-                      value={newTask.title}
-                      onChange={handleInputChange}
+                      value={localTaskData.title}
+                      onChange={handleLocalInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     />
@@ -684,8 +672,8 @@ export default function ManagerDashboard() {
                     <select
                       id="priority"
                       name="priority"
-                      value={newTask.priority}
-                      onChange={handleInputChange}
+                      value={localTaskData.priority}
+                      onChange={handleLocalInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     >
                       <option value="low">Низкий</option>
@@ -705,8 +693,8 @@ export default function ManagerDashboard() {
                       type="date"
                       id="deadline"
                       name="deadline"
-                      value={newTask.deadline}
-                      onChange={handleInputChange}
+                      value={localTaskData.deadline}
+                      onChange={handleLocalInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     />
@@ -723,8 +711,8 @@ export default function ManagerDashboard() {
                   <textarea
                     id="description"
                     name="description"
-                    value={newTask.description}
-                    onChange={handleInputChange}
+                    value={localTaskData.description}
+                    onChange={handleLocalInputChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[100px]"
                   />
                 </div>
@@ -754,6 +742,70 @@ export default function ManagerDashboard() {
 
   // Модальное окно для создания плана
   const PlanModal = () => {
+    // Создаем состояние безусловно, вне зависимости от isPlanModalOpen
+    const [localPlanData, setLocalPlanData] = useState({ ...newPlan });
+
+    // Синхронизируем localPlanData с newPlan при открытии модального окна
+    useEffect(() => {
+      if (isPlanModalOpen) {
+        setLocalPlanData({ ...newPlan });
+      }
+    }, [isPlanModalOpen, newPlan]);
+
+    // Локальный обработчик изменения полей формы
+    const handleLocalPlanInputChange = (e) => {
+      const { name, value } = e.target;
+      setLocalPlanData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    // Обработчик отправки формы
+    const handleLocalPlanSubmit = (e) => {
+      e.preventDefault();
+      setIsCreatingPlan(true);
+
+      // Обновляем общее состояние только при отправке формы
+      setNewPlan(localPlanData);
+
+      const submitPlan = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            throw new Error("Не авторизован");
+          }
+
+          const response = await fetch(`${apiBaseUrl}/plans`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(localPlanData),
+          });
+
+          if (!response.ok) {
+            throw new Error("Ошибка при создании плана");
+          }
+
+          const createdPlan = await response.json();
+          setPlans((prev) => [...prev, createdPlan]);
+          setNewPlan({
+            title: "",
+            description: "",
+            role: "employee",
+          });
+          setError(null);
+          setIsPlanModalOpen(false);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setIsCreatingPlan(false);
+        }
+      };
+
+      submitPlan();
+    };
+
+    // Если модальное окно закрыто, не рендерим его содержимое, но возвращаем null
     if (!isPlanModalOpen) return null;
 
     return (
@@ -772,7 +824,7 @@ export default function ManagerDashboard() {
             </div>
 
             <div className="p-5">
-              <form onSubmit={handlePlanSubmit} className="space-y-4">
+              <form onSubmit={handleLocalPlanSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label
@@ -785,8 +837,8 @@ export default function ManagerDashboard() {
                       id="plan_title"
                       name="title"
                       type="text"
-                      value={newPlan.title}
-                      onChange={handlePlanInputChange}
+                      value={localPlanData.title}
+                      onChange={handleLocalPlanInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     />
@@ -801,8 +853,8 @@ export default function ManagerDashboard() {
                     <select
                       id="plan_role"
                       name="role"
-                      value={newPlan.role}
-                      onChange={handlePlanInputChange}
+                      value={localPlanData.role}
+                      onChange={handleLocalPlanInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     >
@@ -820,8 +872,8 @@ export default function ManagerDashboard() {
                     <textarea
                       id="plan_description"
                       name="description"
-                      value={newPlan.description}
-                      onChange={handlePlanInputChange}
+                      value={localPlanData.description}
+                      onChange={handleLocalPlanInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[80px]"
                       required
                     />
@@ -1030,7 +1082,99 @@ export default function ManagerDashboard() {
 
   // Модальное окно для редактирования задачи
   const EditTaskModal = () => {
-    if (!isEditTaskModalOpen || !editingTask) return null;
+    // Создаем состояние безусловно, вне зависимости от isEditTaskModalOpen
+    const [localEditTaskData, setLocalEditTaskData] = useState({
+      ...(editingTask || {
+        id: "",
+        title: "",
+        description: "",
+        user_id: "",
+        plan_id: "",
+        priority: "medium",
+        status: "pending",
+        deadline: new Date().toISOString().split("T")[0],
+      }),
+    });
+
+    // Синхронизируем localEditTaskData с editingTask при открытии модального окна
+    useEffect(() => {
+      if (isEditTaskModalOpen && editingTask) {
+        setLocalEditTaskData({ ...editingTask });
+      }
+    }, [isEditTaskModalOpen, editingTask]);
+
+    // Локальный обработчик изменения полей формы
+    const handleLocalEditInputChange = (e) => {
+      const { name, value } = e.target;
+      setLocalEditTaskData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    // Обработчик отправки формы
+    const handleLocalUpdateSubmit = (e) => {
+      e.preventDefault();
+      setIsUpdatingTask(true);
+
+      // Обновляем общее состояние editingTask только при отправке формы
+      const taskData = {
+        ...localEditTaskData,
+        plan_id: parseInt(localEditTaskData.plan_id),
+        user_id: parseInt(localEditTaskData.user_id),
+        deadline: new Date(localEditTaskData.deadline).toISOString(),
+      };
+
+      const updateTask = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            throw new Error("Не авторизован");
+          }
+
+          const response = await fetch(
+            `${apiBaseUrl}/tasks/${localEditTaskData.id}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(taskData),
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || "Ошибка при обновлении задачи");
+          }
+
+          const updatedTask = await response.json();
+
+          // Обновление локального состояния
+          setTasks((prev) =>
+            prev.map((task) =>
+              task.id === updatedTask.id ? updatedTask : task
+            )
+          );
+
+          // Проверка, что данные действительно обновились
+          console.log("Задача успешно обновлена в базе данных:", updatedTask);
+          toast.success(`Задача "${updatedTask.title}" успешно обновлена`);
+
+          setError(null);
+          setIsEditTaskModalOpen(false);
+        } catch (err) {
+          console.error("Ошибка при обновлении задачи:", err);
+          toast.error(err.message);
+          setError(err.message);
+        } finally {
+          setIsUpdatingTask(false);
+        }
+      };
+
+      updateTask();
+    };
+
+    // Если модальное окно закрыто, не рендерим его содержимое, но возвращаем null
+    if (!isEditTaskModalOpen) return null;
 
     return (
       <div className="fixed inset-0 overflow-y-auto z-50">
@@ -1048,7 +1192,7 @@ export default function ManagerDashboard() {
             </div>
 
             <div className="p-5">
-              <form onSubmit={handleUpdateTask} className="space-y-4">
+              <form onSubmit={handleLocalUpdateSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label
@@ -1060,8 +1204,8 @@ export default function ManagerDashboard() {
                     <select
                       id="edit_user_id"
                       name="user_id"
-                      value={editingTask.user_id}
-                      onChange={handleEditTaskInputChange}
+                      value={localEditTaskData.user_id}
+                      onChange={handleLocalEditInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     >
@@ -1086,8 +1230,8 @@ export default function ManagerDashboard() {
                     <select
                       id="edit_plan_id"
                       name="plan_id"
-                      value={editingTask.plan_id}
-                      onChange={handleEditTaskInputChange}
+                      value={localEditTaskData.plan_id}
+                      onChange={handleLocalEditInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     >
@@ -1111,8 +1255,8 @@ export default function ManagerDashboard() {
                       type="text"
                       id="edit_title"
                       name="title"
-                      value={editingTask.title}
-                      onChange={handleEditTaskInputChange}
+                      value={localEditTaskData.title}
+                      onChange={handleLocalEditInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     />
@@ -1128,8 +1272,8 @@ export default function ManagerDashboard() {
                     <select
                       id="edit_priority"
                       name="priority"
-                      value={editingTask.priority}
-                      onChange={handleEditTaskInputChange}
+                      value={localEditTaskData.priority}
+                      onChange={handleLocalEditInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     >
                       <option value="low">Низкий</option>
@@ -1149,8 +1293,8 @@ export default function ManagerDashboard() {
                       type="date"
                       id="edit_deadline"
                       name="deadline"
-                      value={editingTask.deadline}
-                      onChange={handleEditTaskInputChange}
+                      value={localEditTaskData.deadline}
+                      onChange={handleLocalEditInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       required
                     />
@@ -1166,8 +1310,8 @@ export default function ManagerDashboard() {
                     <select
                       id="edit_status"
                       name="status"
-                      value={editingTask.status}
-                      onChange={handleEditTaskInputChange}
+                      value={localEditTaskData.status}
+                      onChange={handleLocalEditInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     >
                       <option value="pending">В очереди</option>
@@ -1187,8 +1331,8 @@ export default function ManagerDashboard() {
                   <textarea
                     id="edit_description"
                     name="description"
-                    value={editingTask.description || ""}
-                    onChange={handleEditTaskInputChange}
+                    value={localEditTaskData.description || ""}
+                    onChange={handleLocalEditInputChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[100px]"
                   />
                 </div>

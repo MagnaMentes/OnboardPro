@@ -276,7 +276,7 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <footer className="bg-gray-800 text-white py-4">
+      <footer className="bg-blue-600 text-white py-4">
         <div className="container text-center">
           <p>© 2025 OnboardPro. Все права защищены.</p>
         </div>
