@@ -1,21 +1,33 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { getApiBaseUrl } from "../config/api";
+import usePageTitle from "../utils/usePageTitle";
 import {
-  PlusIcon,
+  UserPlusIcon,
+  ArrowPathIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ChevronRightIcon,
+  FolderPlusIcon,
+  CalendarIcon,
+  UsersIcon,
+  DocumentPlusIcon,
+  PencilSquareIcon,
   TrashIcon,
-  XMarkIcon,
-  PencilIcon,
-  AdjustmentsVerticalIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
-  ClockIcon,
+  PlusIcon,
+  XMarkIcon,
+  AdjustmentsVerticalIcon,
   QueueListIcon,
+  PencilIcon,
 } from "@heroicons/react/24/outline";
-import { getApiBaseUrl } from "../config/api";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import usePageTitle from "../utils/usePageTitle";
+import Modal from "../components/common/Modal"; // Импорт универсального компонента модального окна
+import TaskModal from "../components/TaskModal"; // Импорт компонента TaskModal
 
 export default function ManagerDashboard() {
   // Устанавливаем заголовок страницы
@@ -515,863 +527,676 @@ export default function ManagerDashboard() {
     setIsEditTaskModalOpen(true);
   };
 
-  // Модальное окно для создания задачи
-  const TaskModal = () => {
-    // Создаем состояние безусловно, вне зависимости от isTaskModalOpen
-    const [localTaskData, setLocalTaskData] = useState({ ...newTask });
+  // Компонент PlanModal с использованием нового компонента Modal
+  function PlanModal({ isOpen, onClose, onSave }) {
+    const [planData, setPlanData] = useState({
+      title: "",
+      description: "",
+      role: "employee",
+    });
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    // Синхронизируем localTaskData с newTask при открытии модального окна
-    useEffect(() => {
-      if (isTaskModalOpen) {
-        setLocalTaskData({ ...newTask });
-      }
-    }, [isTaskModalOpen, newTask]);
-
-    // Локальный обработчик изменения полей формы
-    const handleLocalInputChange = (e) => {
+    const handleInputChange = (e) => {
       const { name, value } = e.target;
-      setLocalTaskData((prev) => ({ ...prev, [name]: value }));
+      setPlanData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     };
 
-    // Обработчик отправки формы
-    const handleLocalSubmit = (e) => {
-      e.preventDefault();
-      // Обновляем общее состояние newTask только при отправке формы
-      setNewTask(localTaskData);
-      // Дальше используем обычный обработчик
-      const taskData = {
-        ...localTaskData,
-        plan_id: parseInt(localTaskData.plan_id),
-        user_id: parseInt(localTaskData.user_id),
-        deadline: new Date(localTaskData.deadline).toISOString(),
-      };
-
-      const submitForm = async () => {
-        try {
-          const token = localStorage.getItem("token");
-          if (!token) {
-            throw new Error("Не авторизован");
-          }
-
-          const response = await fetch(`${apiBaseUrl}/tasks`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(taskData),
-          });
-
-          if (!response.ok) {
-            throw new Error("Ошибка при создании задачи");
-          }
-
-          const createdTask = await response.json();
-          setTasks((prev) => [...prev, createdTask]);
-          setIsTaskModalOpen(false);
-          setLocalTaskData({
-            plan_id: "",
-            user_id: "",
-            title: "",
-            description: "",
-            priority: "medium",
-            deadline: new Date().toISOString().split("T")[0],
-          });
-        } catch (err) {
-          setError(err.message);
-        }
-      };
-
-      submitForm();
-    };
-
-    // Если модальное окно закрыто, не рендерим его содержимое, но возвращаем null
-    if (!isTaskModalOpen) return null;
-
-    return (
-      <div className="fixed inset-0 overflow-y-auto z-50">
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
-            onClick={() => setIsTaskModalOpen(false)}
-          ></div>
-
-          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-3xl max-h-[90vh] overflow-y-auto z-10">
-            <div className="bg-blue-50 px-4 py-3 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-blue-900">
-                Создать новую задачу
-              </h3>
-            </div>
-
-            <div className="p-5">
-              <form onSubmit={handleLocalSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="user_id"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Сотрудник
-                    </label>
-                    <select
-                      id="user_id"
-                      name="user_id"
-                      value={localTaskData.user_id}
-                      onChange={handleLocalInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    >
-                      <option value="">Выберите сотрудника</option>
-                      {users
-                        .filter((user) => user.role === "employee")
-                        .map((user) => (
-                          <option key={user.id} value={user.id}>
-                            {user.email} ({user.department || "Без отдела"})
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="plan_id"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      План адаптации
-                    </label>
-                    <select
-                      id="plan_id"
-                      name="plan_id"
-                      value={localTaskData.plan_id}
-                      onChange={handleLocalInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    >
-                      <option value="">Выберите план</option>
-                      {plans.map((plan) => (
-                        <option key={plan.id} value={plan.id}>
-                          {plan.title} ({plan.role})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="title"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Название задачи
-                    </label>
-                    <input
-                      type="text"
-                      id="title"
-                      name="title"
-                      value={localTaskData.title}
-                      onChange={handleLocalInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="priority"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Приоритет
-                    </label>
-                    <select
-                      id="priority"
-                      name="priority"
-                      value={localTaskData.priority}
-                      onChange={handleLocalInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                      <option value="low">Низкий</option>
-                      <option value="medium">Средний</option>
-                      <option value="high">Высокий</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="deadline"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Срок выполнения
-                    </label>
-                    <input
-                      type="date"
-                      id="deadline"
-                      name="deadline"
-                      value={localTaskData.deadline}
-                      onChange={handleLocalInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="description"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Описание
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={localTaskData.description}
-                    onChange={handleLocalInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[100px]"
-                  />
-                </div>
-
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsTaskModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Создать задачу
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Модальное окно для создания плана
-  const PlanModal = () => {
-    // Создаем состояние безусловно, вне зависимости от isPlanModalOpen
-    const [localPlanData, setLocalPlanData] = useState({ ...newPlan });
-
-    // Синхронизируем localPlanData с newPlan при открытии модального окна
-    useEffect(() => {
-      if (isPlanModalOpen) {
-        setLocalPlanData({ ...newPlan });
+    const handleSubmit = async () => {
+      if (!planData.title) {
+        setError("Название плана обязательно");
+        return;
       }
-    }, [isPlanModalOpen, newPlan]);
 
-    // Локальный обработчик изменения полей формы
-    const handleLocalPlanInputChange = (e) => {
-      const { name, value } = e.target;
-      setLocalPlanData((prev) => ({ ...prev, [name]: value }));
+      setIsLoading(true);
+      try {
+        await onSave(planData);
+        onClose();
+      } catch (error) {
+        setError(error.message || "Не удалось сохранить план");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    // Обработчик отправки формы
-    const handleLocalPlanSubmit = (e) => {
-      e.preventDefault();
-      setIsCreatingPlan(true);
-
-      // Обновляем общее состояние только при отправке формы
-      setNewPlan(localPlanData);
-
-      const submitPlan = async () => {
-        try {
-          const token = localStorage.getItem("token");
-          if (!token) {
-            throw new Error("Не авторизован");
-          }
-
-          const response = await fetch(`${apiBaseUrl}/plans`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(localPlanData),
-          });
-
-          if (!response.ok) {
-            throw new Error("Ошибка при создании плана");
-          }
-
-          const createdPlan = await response.json();
-          setPlans((prev) => [...prev, createdPlan]);
-          setNewPlan({
-            title: "",
-            description: "",
-            role: "employee",
-          });
-          setError(null);
-          setIsPlanModalOpen(false);
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setIsCreatingPlan(false);
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Создать новый план адаптации"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              ) : null}
+              Создать план
+            </button>
+          </>
         }
-      };
+      >
+        <form className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-      submitPlan();
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Название плана
+            </label>
+            <input
+              type="text"
+              name="title"
+              id="title"
+              value={planData.title}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Описание
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows={3}
+              value={planData.description}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="role"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Роль сотрудника
+            </label>
+            <select
+              id="role"
+              name="role"
+              value={planData.role}
+              onChange={handleInputChange}
+              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            >
+              <option value="employee">Сотрудник</option>
+              <option value="manager">Менеджер</option>
+              <option value="admin">Администратор</option>
+              <option value="hr">HR</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
+    );
+  }
+
+  // Компонент EditPlanModal с использованием нового компонента Modal
+  function EditPlanModal({ isOpen, onClose, onSave, plan }) {
+    const [planData, setPlanData] = useState({
+      title: plan?.title || "",
+      description: plan?.description || "",
+      role: plan?.role || "employee",
+    });
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+      if (plan) {
+        setPlanData({
+          title: plan.title || "",
+          description: plan.description || "",
+          role: plan.role || "employee",
+        });
+      }
+    }, [plan]);
+
+    const handleInputChange = (e) => {
+      const { name, value } = e.target;
+      setPlanData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     };
 
-    // Если модальное окно закрыто, не рендерим его содержимое, но возвращаем null
-    if (!isPlanModalOpen) return null;
+    const handleSubmit = async () => {
+      if (!planData.title) {
+        setError("Название плана обязательно");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        await onSave(planData);
+        onClose();
+      } catch (error) {
+        setError(error.message || "Не удалось сохранить план");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     return (
-      <div className="fixed inset-0 overflow-y-auto z-50">
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
-            onClick={() => setIsPlanModalOpen(false)}
-          ></div>
-
-          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-2xl max-h-[90vh] overflow-y-auto z-10">
-            <div className="bg-blue-50 px-4 py-3 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-blue-900">
-                Создать новый план адаптации
-              </h3>
-            </div>
-
-            <div className="p-5">
-              <form onSubmit={handleLocalPlanSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="plan_title"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Название плана
-                    </label>
-                    <input
-                      id="plan_title"
-                      name="title"
-                      type="text"
-                      value={localPlanData.title}
-                      onChange={handleLocalPlanInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="plan_role"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Роль
-                    </label>
-                    <select
-                      id="plan_role"
-                      name="role"
-                      value={localPlanData.role}
-                      onChange={handleLocalPlanInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    >
-                      <option value="employee">Сотрудник</option>
-                      <option value="manager">Менеджер</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label
-                      htmlFor="plan_description"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Описание
-                    </label>
-                    <textarea
-                      id="plan_description"
-                      name="description"
-                      value={localPlanData.description}
-                      onChange={handleLocalPlanInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[80px]"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsPlanModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Редактировать план адаптации"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              ) : null}
+              Сохранить изменения
+            </button>
+          </>
+        }
+      >
+        <form className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
                   >
-                    Отмена
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    disabled={isCreatingPlan}
-                  >
-                    {isCreatingPlan ? "Создание..." : "Создать план"}
-                  </button>
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </div>
-              </form>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
             </div>
+          )}
+
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Название плана
+            </label>
+            <input
+              type="text"
+              name="title"
+              id="title"
+              value={planData.title}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+            />
           </div>
-        </div>
-      </div>
-    );
-  };
 
-  // Модальное окно для редактирования плана
-  const EditPlanModal = () => {
-    if (!isEditPlanModalOpen || !editingPlan) return null;
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Описание
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows={3}
+              value={planData.description}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="role"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Роль сотрудника
+            </label>
+            <select
+              id="role"
+              name="role"
+              value={planData.role}
+              onChange={handleInputChange}
+              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            >
+              <option value="employee">Сотрудник</option>
+              <option value="manager">Менеджер</option>
+              <option value="admin">Администратор</option>
+              <option value="hr">HR</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
+    );
+  }
+
+  // Компонент DeletePlanModal с использованием нового компонента Modal
+  function DeletePlanModal({ isOpen, onClose, onDelete, plan }) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const handleDelete = async () => {
+      setIsLoading(true);
+      try {
+        await onDelete();
+        onClose();
+      } catch (error) {
+        setError(error.message || "Не удалось удалить план");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     return (
-      <div className="fixed inset-0 overflow-y-auto z-50">
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
-            onClick={() => setIsEditPlanModalOpen(false)}
-          ></div>
-
-          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-2xl max-h-[90vh] overflow-y-auto z-10">
-            <div className="bg-blue-50 px-4 py-3 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-blue-900">
-                Редактировать план адаптации
-              </h3>
-            </div>
-
-            <div className="p-5">
-              <form onSubmit={handleUpdatePlan} className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="edit_plan_title"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Название плана
-                    </label>
-                    <input
-                      id="edit_plan_title"
-                      name="title"
-                      type="text"
-                      value={editingPlan.title}
-                      onChange={handleEditPlanInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="edit_plan_role"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Роль
-                    </label>
-                    <select
-                      id="edit_plan_role"
-                      name="role"
-                      value={editingPlan.role}
-                      onChange={handleEditPlanInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    >
-                      <option value="employee">Сотрудник</option>
-                      <option value="manager">Менеджер</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label
-                      htmlFor="edit_plan_description"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Описание
-                    </label>
-                    <textarea
-                      id="edit_plan_description"
-                      name="description"
-                      value={editingPlan.description}
-                      onChange={handleEditPlanInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[80px]"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditPlanModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Удаление плана адаптации"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              ) : null}
+              Удалить
+            </button>
+          </>
+        }
+      >
+        <div className="mt-2">
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
                   >
-                    Отмена
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    disabled={isEditingPlan}
-                  >
-                    {isEditingPlan ? "Сохранение..." : "Сохранить план"}
-                  </button>
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </div>
-              </form>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+          <p className="text-sm text-gray-500">
+            Вы действительно хотите удалить план "{plan?.title}"? Это действие
+            нельзя отменить, и все задачи, связанные с этим планом, также будут
+            удалены.
+          </p>
         </div>
-      </div>
+      </Modal>
     );
-  };
+  }
 
-  // Модальное окно подтверждения удаления плана
-  const DeletePlanModal = () => {
-    if (!isDeletePlanModalOpen || !planToDelete) return null;
-
-    const relatedTasks = tasks.filter(
-      (task) => task.plan_id === planToDelete.id
-    );
-    const hasTasks = relatedTasks.length > 0;
-
-    return (
-      <div className="fixed inset-0 overflow-y-auto z-50">
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
-            onClick={() => setIsDeletePlanModalOpen(false)}
-          ></div>
-
-          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-md max-h-[90vh] overflow-y-auto z-10">
-            <div className="bg-red-50 px-4 py-3 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-red-900">
-                Удаление плана адаптации
-              </h3>
-            </div>
-
-            <div className="p-5">
-              {hasTasks ? (
-                <div>
-                  <p className="text-gray-600 mb-4">
-                    Невозможно удалить план "{planToDelete.title}", так как с
-                    ним связано {relatedTasks.length} задач.
-                  </p>
-                  <p className="text-gray-600 mb-4">
-                    Сначала удалите все связанные задачи, затем повторите
-                    попытку.
-                  </p>
-                  <div className="mt-6 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setIsDeletePlanModalOpen(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      Закрыть
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-gray-600 mb-4">
-                    Вы действительно хотите удалить план "{planToDelete.title}"?
-                  </p>
-                  <p className="text-red-600 text-sm mb-4">
-                    Это действие нельзя отменить.
-                  </p>
-                  <div className="mt-6 flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsDeletePlanModalOpen(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      Отмена
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDeletePlan}
-                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    >
-                      Удалить план
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Модальное окно для редактирования задачи
-  const EditTaskModal = () => {
-    // Создаем состояние безусловно, вне зависимости от isEditTaskModalOpen
-    const [localEditTaskData, setLocalEditTaskData] = useState({
-      ...(editingTask || {
-        id: "",
-        title: "",
-        description: "",
-        user_id: "",
-        plan_id: "",
-        priority: "medium",
-        status: "pending",
-        deadline: new Date().toISOString().split("T")[0],
-      }),
+  // Компонент EditTaskModal с использованием нового компонента Modal
+  function EditTaskModal({ isOpen, onClose, onSave, task, employees }) {
+    const [taskData, setTaskData] = useState({
+      title: task?.title || "",
+      description: task?.description || "",
+      due_date: task?.due_date || new Date().toISOString().split("T")[0],
+      priority: task?.priority || "medium",
+      assignee_id: task?.assignee_id || "",
     });
 
-    // Синхронизируем localEditTaskData с editingTask при открытии модального окна
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
     useEffect(() => {
-      if (isEditTaskModalOpen && editingTask) {
-        setLocalEditTaskData({ ...editingTask });
+      if (task) {
+        setTaskData({
+          title: task.title || "",
+          description: task.description || "",
+          due_date: task.due_date || new Date().toISOString().split("T")[0],
+          priority: task.priority || "medium",
+          assignee_id: task.assignee_id || "",
+        });
       }
-    }, [isEditTaskModalOpen, editingTask]);
+    }, [task]);
 
-    // Локальный обработчик изменения полей формы
-    const handleLocalEditInputChange = (e) => {
+    const handleInputChange = (e) => {
       const { name, value } = e.target;
-      setLocalEditTaskData((prev) => ({ ...prev, [name]: value }));
+      setTaskData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     };
 
-    // Обработчик отправки формы
-    const handleLocalUpdateSubmit = (e) => {
-      e.preventDefault();
-      setIsUpdatingTask(true);
+    const handleSubmit = async () => {
+      if (!taskData.title || !taskData.due_date || !taskData.assignee_id) {
+        setError("Заполните все обязательные поля");
+        return;
+      }
 
-      // Обновляем общее состояние editingTask только при отправке формы
-      const taskData = {
-        ...localEditTaskData,
-        plan_id: parseInt(localEditTaskData.plan_id),
-        user_id: parseInt(localEditTaskData.user_id),
-        deadline: new Date(localEditTaskData.deadline).toISOString(),
-      };
-
-      const updateTask = async () => {
-        try {
-          const token = localStorage.getItem("token");
-          if (!token) {
-            throw new Error("Не авторизован");
-          }
-
-          const response = await fetch(
-            `${apiBaseUrl}/tasks/${localEditTaskData.id}`,
-            {
-              method: "PUT",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(taskData),
-            }
-          );
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.detail || "Ошибка при обновлении задачи");
-          }
-
-          const updatedTask = await response.json();
-
-          // Обновление локального состояния
-          setTasks((prev) =>
-            prev.map((task) =>
-              task.id === updatedTask.id ? updatedTask : task
-            )
-          );
-
-          // Проверка, что данные действительно обновились
-          console.log("Задача успешно обновлена в базе данных:", updatedTask);
-          toast.success(`Задача "${updatedTask.title}" успешно обновлена`);
-
-          setError(null);
-          setIsEditTaskModalOpen(false);
-        } catch (err) {
-          console.error("Ошибка при обновлении задачи:", err);
-          toast.error(err.message);
-          setError(err.message);
-        } finally {
-          setIsUpdatingTask(false);
-        }
-      };
-
-      updateTask();
+      setIsLoading(true);
+      try {
+        await onSave(taskData);
+        onClose();
+      } catch (error) {
+        setError(error.message || "Не удалось обновить задачу");
+      } finally {
+        setIsLoading(false);
+      }
     };
-
-    // Если модальное окно закрыто, не рендерим его содержимое, но возвращаем null
-    if (!isEditTaskModalOpen) return null;
 
     return (
-      <div className="fixed inset-0 overflow-y-auto z-50">
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div
-            className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
-            onClick={() => setIsEditTaskModalOpen(false)}
-          ></div>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Редактировать задачу"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              ) : null}
+              Сохранить изменения
+            </button>
+          </>
+        }
+      >
+        <form className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-3xl max-h-[90vh] overflow-y-auto z-10">
-            <div className="bg-blue-50 px-4 py-3 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-blue-900">
-                Редактировать задачу
-              </h3>
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Название задачи
+            </label>
+            <input
+              type="text"
+              name="title"
+              id="title"
+              value={taskData.title}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Описание
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows={3}
+              value={taskData.description}
+              onChange={handleInputChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="due_date"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Срок выполнения
+              </label>
+              <input
+                type="date"
+                name="due_date"
+                id="due_date"
+                value={taskData.due_date}
+                onChange={handleInputChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                required
+              />
             </div>
 
-            <div className="p-5">
-              <form onSubmit={handleLocalUpdateSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="edit_user_id"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Сотрудник
-                    </label>
-                    <select
-                      id="edit_user_id"
-                      name="user_id"
-                      value={localEditTaskData.user_id}
-                      onChange={handleLocalEditInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    >
-                      <option value="">Выберите сотрудника</option>
-                      {users
-                        .filter((user) => user.role === "employee")
-                        .map((user) => (
-                          <option key={user.id} value={user.id}>
-                            {user.email} ({user.department || "Без отдела"})
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="edit_plan_id"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      План адаптации
-                    </label>
-                    <select
-                      id="edit_plan_id"
-                      name="plan_id"
-                      value={localEditTaskData.plan_id}
-                      onChange={handleLocalEditInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    >
-                      <option value="">Выберите план</option>
-                      {plans.map((plan) => (
-                        <option key={plan.id} value={plan.id}>
-                          {plan.title} ({plan.role})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="edit_title"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Название задачи
-                    </label>
-                    <input
-                      type="text"
-                      id="edit_title"
-                      name="title"
-                      value={localEditTaskData.title}
-                      onChange={handleLocalEditInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="edit_priority"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Приоритет
-                    </label>
-                    <select
-                      id="edit_priority"
-                      name="priority"
-                      value={localEditTaskData.priority}
-                      onChange={handleLocalEditInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                      <option value="low">Низкий</option>
-                      <option value="medium">Средний</option>
-                      <option value="high">Высокий</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="edit_deadline"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Срок выполнения
-                    </label>
-                    <input
-                      type="date"
-                      id="edit_deadline"
-                      name="deadline"
-                      value={localEditTaskData.deadline}
-                      onChange={handleLocalEditInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="edit_status"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Статус
-                    </label>
-                    <select
-                      id="edit_status"
-                      name="status"
-                      value={localEditTaskData.status}
-                      onChange={handleLocalEditInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                      <option value="pending">В очереди</option>
-                      <option value="in_progress">В процессе</option>
-                      <option value="completed">Завершено</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="edit_description"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Описание
-                  </label>
-                  <textarea
-                    id="edit_description"
-                    name="description"
-                    value={localEditTaskData.description || ""}
-                    onChange={handleLocalEditInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm min-h-[100px]"
-                  />
-                </div>
-
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditTaskModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    disabled={isUpdatingTask}
-                  >
-                    {isUpdatingTask ? "Сохранение..." : "Сохранить задачу"}
-                  </button>
-                </div>
-              </form>
+            <div>
+              <label
+                htmlFor="priority"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Приоритет
+              </label>
+              <select
+                id="priority"
+                name="priority"
+                value={taskData.priority}
+                onChange={handleInputChange}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              >
+                <option value="low">Низкий</option>
+                <option value="medium">Средний</option>
+                <option value="high">Высокий</option>
+              </select>
             </div>
           </div>
-        </div>
-      </div>
+
+          <div>
+            <label
+              htmlFor="assignee_id"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Назначить сотруднику
+            </label>
+            <select
+              id="assignee_id"
+              name="assignee_id"
+              value={taskData.assignee_id || ""}
+              onChange={handleInputChange}
+              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              required
+            >
+              <option value="">Выберите сотрудника</option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.name || employee.email}
+                </option>
+              ))}
+            </select>
+          </div>
+        </form>
+      </Modal>
     );
-  };
+  }
 
   if (isLoading) {
     return (
@@ -1398,11 +1223,47 @@ export default function ManagerDashboard() {
       )}
 
       {/* Модальные окна */}
-      <TaskModal />
-      <PlanModal />
-      <EditPlanModal />
-      <DeletePlanModal />
-      <EditTaskModal />
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onSave={(taskData) => {
+          console.log("Task saved:", taskData);
+        }}
+        employees={users}
+        selectedTask={null}
+      />
+      <PlanModal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+        onSave={(planData) => {
+          console.log("Plan saved:", planData);
+        }}
+      />
+      <EditPlanModal
+        isOpen={isEditPlanModalOpen}
+        onClose={() => setIsEditPlanModalOpen(false)}
+        onSave={(planData) => {
+          console.log("Plan updated:", planData);
+        }}
+        plan={editingPlan}
+      />
+      <DeletePlanModal
+        isOpen={isDeletePlanModalOpen}
+        onClose={() => setIsDeletePlanModalOpen(false)}
+        onDelete={() => {
+          console.log("Plan deleted");
+        }}
+        plan={planToDelete}
+      />
+      <EditTaskModal
+        isOpen={isEditTaskModalOpen}
+        onClose={() => setIsEditTaskModalOpen(false)}
+        onSave={(taskData) => {
+          console.log("Task updated:", taskData);
+        }}
+        task={editingTask}
+        employees={users}
+      />
 
       {/* Раздел управления задачами */}
       <div className="bg-white p-6 rounded-lg shadow-md">
@@ -1442,7 +1303,7 @@ export default function ManagerDashboard() {
             {taskSearchQuery && (
               <button
                 onClick={() => setTaskSearchQuery("")}
-                className="bg-gray-100 px-3 py-2 border-t border-r border-b border-gray-300"
+                className="bg-gray-100 px-3 py-2 border-т border-r border-b border-gray-300"
                 title="Очистить поиск"
               >
                 <XMarkIcon className="h-5 w-5 text-gray-500" />
@@ -1855,7 +1716,7 @@ export default function ManagerDashboard() {
 
                       {/* Описание задачи - если есть */}
                       {task.description && (
-                        <div className="mb-3 border-t pt-2">
+                        <div className="mb-3 border-т pt-2">
                           <p
                             className="text-sm text-gray-600 line-clamp-2"
                             title={task.description}

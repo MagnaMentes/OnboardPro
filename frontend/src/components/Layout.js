@@ -97,7 +97,10 @@ export default function Layout() {
   function handleLogout() {
     localStorage.removeItem("token");
     setUser(null);
-    navigate("/login");
+    // Добавляем принудительное обновление страницы после перенаправления
+    navigate("/login", { replace: true });
+    // Перезагрузка страницы для полного сброса состояния приложения
+    window.location.reload();
   }
 
   // Фильтрация навигационных элементов по роли пользователя
