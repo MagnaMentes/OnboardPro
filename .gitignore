@@ -6,3 +6,7 @@ node_modules/
 venv/
 .DS_Store
 .onboardpro_backlog.md
+# Исключаем файлы логов
+backend/logs/*.log
+logs/
+*.log
