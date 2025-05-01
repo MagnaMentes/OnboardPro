@@ -124,36 +124,6 @@ export default function Login() {
             {isLoading ? "Выполняется вход..." : "Войти"}
           </button>
         </form>
-
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Демо аккаунты:</p>
-          <div className="flex justify-center gap-4 mt-2">
-            <div className="border p-2 rounded">
-              <p>
-                <strong>HR:</strong> test@onboardpro.com
-              </p>
-              <p>
-                <strong>Пароль:</strong> test123
-              </p>
-            </div>
-            <div className="border p-2 rounded">
-              <p>
-                <strong>Менеджер:</strong> manager@onboardpro.com
-              </p>
-              <p>
-                <strong>Пароль:</strong> test123
-              </p>
-            </div>
-            <div className="border p-2 rounded">
-              <p>
-                <strong>Сотрудник:</strong> employee@onboardpro.com
-              </p>
-              <p>
-                <strong>Пароль:</strong> test123
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
       <footer className="fixed bottom-0 w-full bg-blue-600 text-white text-center py-4 shadow-inner">

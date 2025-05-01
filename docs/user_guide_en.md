@@ -14,10 +14,11 @@ OnboardPro is a web application designed to optimize the employee onboarding pro
 
 ## Getting Started
 1. Open the application at http://localhost:3000
-2. Log in with your credentials:
-   - HR: test@onboardpro.com / test123
-   - Manager: manager@onboardpro.com / test123
-   - Employee: employee@onboardpro.com / test123
+2. Log in with the credentials provided by your system administrator or HR manager
+3. After logging in, you will be automatically directed to the dashboard corresponding to your role:
+   - HR: HR Dashboard
+   - Manager: Manager Dashboard
+   - Employee: Dashboard
 
 ## User Roles
 - **HR**: Full access to all features
@@ -40,4 +41,4 @@ OnboardPro is a web application designed to optimize the employee onboarding pro
 
 ## Troubleshooting
 - If you experience login issues, ensure you are using the correct credentials
-- For technical support, please contact your system administrator 
+- For technical support, please contact your system administrator
