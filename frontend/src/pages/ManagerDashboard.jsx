@@ -8,6 +8,9 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   ArrowPathIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  QueueListIcon,
 } from "@heroicons/react/24/outline";
 import { getApiBaseUrl } from "../config/api";
 import { ToastContainer, toast } from "react-toastify";
@@ -458,7 +461,16 @@ export default function ManagerDashboard() {
 
   const getUserEmailById = (userId) => {
     const user = users.find((u) => u.id === userId);
-    return user ? user.email : `Пользователь #${userId}`;
+    if (!user) return `Пользователь #${userId}`;
+
+    // Используем имя и фамилию если они доступны, иначе email
+    if (user.first_name || user.last_name) {
+      const fullName = [user.last_name, user.first_name]
+        .filter(Boolean)
+        .join(" ");
+      return fullName || user.email;
+    }
+    return user.email;
   };
 
   const getPlanTitleById = (planId) => {
@@ -1596,155 +1608,293 @@ export default function ManagerDashboard() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => toggleSortDirection("title")}
-                  >
-                    <div className="flex items-center">
-                      Задача {renderSortIcon("title")}
-                    </div>
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  >
-                    <div className="flex items-center">Сотрудник</div>
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  >
-                    <div className="flex items-center">План</div>
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => toggleSortDirection("priority")}
-                  >
-                    <div className="flex items-center">
-                      Приоритет {renderSortIcon("priority")}
-                    </div>
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => toggleSortDirection("deadline")}
-                  >
-                    <div className="flex items-center">
-                      Срок {renderSortIcon("deadline")}
-                    </div>
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => toggleSortDirection("status")}
-                  >
-                    <div className="flex items-center">
-                      Статус {renderSortIcon("status")}
-                    </div>
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Действия
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAndSortedTasks.map((task) => (
-                  <tr key={task.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {task.title}
+          <>
+            {/* Таблица для средних и больших экранов */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => toggleSortDirection("title")}
+                    >
+                      <div className="flex items-center">
+                        Задача {renderSortIcon("title")}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {task.description}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      <div className="flex items-center">Сотрудник</div>
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      <div className="flex items-center">План</div>
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer whitespace-nowrap"
+                      onClick={() => toggleSortDirection("status")}
+                    >
+                      <div className="flex items-center justify-center">
+                        <span>Статус</span> {renderSortIcon("status")}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {getUserEmailById(task.user_id)}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer whitespace-nowrap"
+                      onClick={() => toggleSortDirection("deadline")}
+                    >
+                      <div className="flex items-center justify-center">
+                        <span>Срок</span> {renderSortIcon("deadline")}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {getPlanTitleById(task.plan_id)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                        ${
-                          task.priority === "high"
-                            ? "bg-red-100 text-red-800"
-                            : task.priority === "medium"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {task.priority === "high"
-                          ? "Высокий"
-                          : task.priority === "medium"
-                          ? "Средний"
-                          : "Низкий"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatDate(task.deadline)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                        ${
-                          task.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : task.status === "in-progress"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {task.status === "completed"
-                          ? "Завершено"
-                          : task.status === "in-progress"
-                          ? "В процессе"
-                          : "В очереди"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        {userRole === "hr" && (
-                          <>
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center"
+                    >
+                      Действия
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredAndSortedTasks.map((task) => (
+                    <tr key={task.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-3">
+                        <div className="flex items-center">
+                          <span
+                            className={`mr-2 inline-block w-2 h-2 rounded-full flex-shrink-0
+                            ${
+                              task.priority === "high"
+                                ? "bg-red-500"
+                                : task.priority === "medium"
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                            }`}
+                            title={
+                              task.priority === "high"
+                                ? "Высокий приоритет"
+                                : task.priority === "medium"
+                                ? "Средний приоритет"
+                                : "Низкий приоритет"
+                            }
+                          ></span>
+                          <div className="text-sm font-medium text-gray-900 max-w-xs break-words">
+                            {task.title}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div
+                          className="text-sm text-gray-900 whitespace-nowrap"
+                          title={getUserEmailById(task.user_id)}
+                        >
+                          {getUserEmailById(task.user_id)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div
+                          className="text-sm text-gray-900 max-w-[150px] truncate"
+                          title={getPlanTitleById(task.plan_id)}
+                        >
+                          {getPlanTitleById(task.plan_id)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        {/* Для десктопа отображаем текст, а для планшетов (< 971px) отображаем иконки */}
+                        <div className="hidden lg:inline-block">
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                            ${
+                              task.status === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : task.status === "in_progress"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {task.status === "completed"
+                              ? "Завершено"
+                              : task.status === "in_progress"
+                              ? "В процессе"
+                              : "В очереди"}
+                          </span>
+                        </div>
+
+                        <div className="lg:hidden flex justify-center">
+                          {task.status === "completed" ? (
+                            <CheckCircleIcon
+                              className="h-5 w-5 text-green-600"
+                              title="Завершено"
+                            />
+                          ) : task.status === "in_progress" ? (
+                            <ClockIcon
+                              className="h-5 w-5 text-blue-600"
+                              title="В процессе"
+                            />
+                          ) : (
+                            <QueueListIcon
+                              className="h-5 w-5 text-gray-500"
+                              title="В очереди"
+                            />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <div className="text-sm text-gray-900 whitespace-nowrap">
+                          {formatDate(task.deadline)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-center">
+                        <div className="flex justify-center space-x-1">
+                          {userRole === "hr" && (
                             <button
                               onClick={() => handleEditTask(task)}
-                              className="text-blue-600 hover:text-blue-900 focus:outline-none mr-2"
+                              className="text-blue-600 hover:text-blue-900 focus:outline-none p-1 hover:bg-blue-50 rounded-full"
                               title="Редактировать задачу"
                             >
-                              <PencilIcon className="h-5 w-5" />
+                              <PencilIcon className="h-4 w-4" />
                             </button>
-                          </>
+                          )}
+                          <button
+                            onClick={() => handleDeleteTask(task.id)}
+                            className="text-red-600 hover:text-red-900 focus:outline-none p-1 hover:bg-red-50 rounded-full"
+                            title="Удалить задачу"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Карточки для мобильных устройств */}
+            <div className="md:hidden mt-4">
+              <div className="grid grid-cols-1 gap-4">
+                {filteredAndSortedTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="bg-white shadow-sm border border-gray-200 rounded-lg relative hover:shadow-md transition duration-150"
+                  >
+                    {/* Заголовок с приоритетом */}
+                    <div className="flex justify-between items-center border-b px-4 py-2">
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`inline-block w-3 h-3 rounded-full
+                  ${
+                    task.priority === "high"
+                      ? "bg-red-500"
+                      : task.priority === "medium"
+                      ? "bg-yellow-500"
+                      : "bg-green-500"
+                  }`}
+                          title={
+                            task.priority === "high"
+                              ? "Высокий приоритет"
+                              : task.priority === "medium"
+                              ? "Средний приоритет"
+                              : "Низкий приоритет"
+                          }
+                        ></span>
+                        <h3
+                          className="text-base font-medium text-gray-800 truncate"
+                          title={task.title}
+                        >
+                          {task.title}
+                        </h3>
+                      </div>
+                      {/* Кнопки действий прямо в заголовке карточки */}
+                      <div className="flex space-x-1">
+                        {userRole === "hr" && (
+                          <button
+                            onClick={() => handleEditTask(task)}
+                            className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50"
+                            title="Редактировать задачу"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
                         )}
                         <button
                           onClick={() => handleDeleteTask(task.id)}
-                          className="text-red-600 hover:text-red-900 focus:outline-none"
+                          className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50"
                           title="Удалить задачу"
                         >
-                          <TrashIcon className="h-5 w-5" />
+                          <TrashIcon className="h-4 w-4" />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+
+                    {/* Основное содержимое карточки */}
+                    <div className="p-4">
+                      {/* Информация о сотруднике и плане */}
+                      <div className="mb-3">
+                        <div className="flex items-start mb-1">
+                          <span className="text-xs text-gray-500 font-medium w-20">
+                            Сотрудник:
+                          </span>
+                          <span className="text-xs text-gray-700 break-all">
+                            {getUserEmailById(task.user_id)}
+                          </span>
+                        </div>
+                        <div className="flex items-start">
+                          <span className="text-xs text-gray-500 font-medium w-20">
+                            План:
+                          </span>
+                          <span className="text-xs text-gray-700 break-all">
+                            {getPlanTitleById(task.plan_id)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Описание задачи - если есть */}
+                      {task.description && (
+                        <div className="mb-3 border-t pt-2">
+                          <p
+                            className="text-sm text-gray-600 line-clamp-2"
+                            title={task.description}
+                          >
+                            {task.description}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Статус и срок выполнения */}
+                      <div className="flex justify-between items-center mt-3 text-xs">
+                        <div className="flex items-center">
+                          {task.status === "completed" ? (
+                            <span className="flex items-center text-green-700">
+                              <CheckCircleIcon className="h-4 w-4 mr-1" />
+                              Завершено
+                            </span>
+                          ) : task.status === "in_progress" ? (
+                            <span className="flex items-center text-blue-700">
+                              <ClockIcon className="h-4 w-4 mr-1" />В процессе
+                            </span>
+                          ) : (
+                            <span className="flex items-center text-gray-700">
+                              <QueueListIcon className="h-4 w-4 mr-1" />В
+                              очереди
+                            </span>
+                          )}
+                        </div>
+
+                        <span className="text-gray-500">
+                          Срок: {formatDate(task.deadline)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
