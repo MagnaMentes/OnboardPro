@@ -6,11 +6,16 @@
 
 // Получаем базовый URL API
 export const getApiBaseUrl = () => {
-  // Если приложение запущено локально, используем localhost
-  // Иначе используем значение из переменной окружения или пустую строку (относительный путь)
-  return window.location.hostname === "localhost"
-    ? "http://localhost:8000"
-    : process.env.REACT_APP_API_URL || "";
+  // Когда приложение запущено в браузере, нужно использовать доступный извне URL
+  // Вместо docker-имени "backend" используем то же имя хоста, что и у фронтенда
+  if (window.location.hostname === "localhost") {
+    return "http://localhost:8000"; // Для локальной разработки
+  } else if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL; // Конфигурация из переменных окружения
+  } else {
+    // Если развернуто на сервере - используем тот же хост, но на порту 8000
+    return `${window.location.protocol}//${window.location.hostname}:8000`;
+  }
 };
 
 /**

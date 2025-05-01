@@ -10,7 +10,9 @@ import {
   ChartBarIcon,
   Bars3Icon,
   XMarkIcon,
+  WifiIcon,
 } from "@heroicons/react/24/outline";
+import webSocketService from "../services/WebSocketService";
 
 const navItems = [
   {
@@ -54,6 +56,7 @@ const navItems = [
 export default function Layout() {
   const [user, setUser] = useState(null);
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -70,6 +73,25 @@ export default function Layout() {
         // и пользователь будет перенаправлен на страницу логина
       });
   }, [navigate]);
+
+  // Отслеживаем статус подключения WebSocket
+  useEffect(() => {
+    // Функция для проверки статуса WebSocket соединения
+    const checkWebSocketStatus = () => {
+      setWsConnected(webSocketService.isConnected);
+    };
+
+    // Проверяем статус при загрузке
+    checkWebSocketStatus();
+
+    // Создаем интервал для периодической проверки
+    const intervalId = setInterval(checkWebSocketStatus, 5000);
+
+    // Очищаем интервал при размонтировании компонента
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
 
   // Функция выхода
   function handleLogout() {
@@ -89,6 +111,12 @@ export default function Layout() {
         <div className="container py-4 flex justify-between items-center">
           <Link to="/dashboard" className="text-xl font-bold flex items-center">
             <span>OnboardPro</span>
+            {wsConnected && (
+              <span className="ml-2 flex items-center text-xs text-green-300 bg-blue-700 px-2 py-1 rounded-full">
+                <WifiIcon className="h-3 w-3 mr-1" />
+                Real-time
+              </span>
+            )}
           </Link>
 
           {/* Навигация для десктопа (≥1280px) - иконки + текст */}

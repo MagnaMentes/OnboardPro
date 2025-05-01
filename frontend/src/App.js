@@ -11,7 +11,12 @@ import Integrations from "./pages/Integrations";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <Routes>
         {/* Публичные маршруты */}
         <Route path="/login" element={<Login />} />

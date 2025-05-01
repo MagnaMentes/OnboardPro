@@ -28,11 +28,24 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - REACT_APP_API_URL=http://backend:8000
+      - REACT_APP_API_URL=http://nginx:80
     command: npm start
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./logs/nginx:/var/log/nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
     restart: unless-stopped
 
 volumes:

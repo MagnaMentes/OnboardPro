@@ -165,140 +165,237 @@ const AnalyticsChart = ({
 
   // Создание и обновление графика
   useEffect(() => {
-    if (!chartRef.current) return;
-
-    if (chartInstance.current) {
-      chartInstance.current.destroy();
+    // Защитное условие с расширенной проверкой DOM-элементов
+    if (!chartRef.current || !chartRef.current.parentElement) {
+      console.log(
+        "[AnalyticsChart] DOM element is not ready or already unmounted"
+      );
+      return;
     }
 
-    // Обновляем стили для графиков
-    const dynamicOptions = {
-      line: {
-        tension: 0.4,
-        borderWidth: isResponsive ? 2 : 3,
-        pointRadius: isResponsive || optimizedData.labels.length > 20 ? 0 : 3,
-        pointHoverRadius: 4,
-        spanGaps: true,
-        animation: {
-          duration: 800,
-          easing: "easeInOutQuart",
-        },
-      },
-      bar: {
-        barPercentage: optimizedData.labels.length > 10 ? 0.9 : 0.8,
-        categoryPercentage: optimizedData.labels.length > 10 ? 0.8 : 0.9,
-        animation: {
-          duration: 800,
-          easing: "easeInOutQuart",
-        },
-      },
-      pie: {
-        animation: {
-          duration: 1000,
-          easing: "easeInOutQuart",
-        },
-        cutout: "10%",
-        radius: "90%",
-      },
-      doughnut: {
-        animation: {
-          duration: 1000,
-          easing: "easeInOutQuart",
-        },
-        cutout: "50%",
-        radius: "90%",
-      },
-    };
+    // Проверяем наличие данных перед созданием или обновлением графика
+    if (
+      !optimizedData.labels ||
+      !optimizedData.datasets ||
+      optimizedData.labels.length === 0 ||
+      optimizedData.datasets.length === 0
+    ) {
+      console.log("[AnalyticsChart] No data available for chart");
+      return;
+    }
 
-    const options = {
-      responsive: true,
-      maintainAspectRatio: !isResponsive,
-      aspectRatio: isResponsive ? 1 : 2,
-      plugins: {
-        legend: {
-          position: isResponsive ? "bottom" : "top",
-          labels: {
-            boxWidth: isResponsive ? 12 : 20,
-            font: {
-              size: isResponsive ? 10 : 14,
-              family: "Arial, sans-serif",
+    try {
+      // Дополнительная проверка getContext для canvas
+      const ctx = chartRef.current.getContext("2d");
+      if (!ctx) {
+        console.log("[AnalyticsChart] Canvas context is not available");
+        return;
+      }
+
+      // Если график уже существует, просто обновим данные вместо пересоздания
+      if (chartInstance.current) {
+        // Безопасное обновление данных, обернутое в try-catch
+        try {
+          chartInstance.current.data.labels = optimizedData.labels;
+          optimizedData.datasets.forEach((dataset, index) => {
+            if (chartInstance.current.data.datasets[index]) {
+              chartInstance.current.data.datasets[index].data = dataset.data;
+            }
+          });
+
+          // Отложенное обновление графика после рендеринга DOM
+          // Важно для предотвращения ошибок "ownerDocument"
+          setTimeout(() => {
+            if (
+              chartInstance.current &&
+              chartRef.current &&
+              chartRef.current.parentElement
+            ) {
+              try {
+                chartInstance.current.update("none"); // Используем 'none' для плавного обновления без анимации
+              } catch (error) {
+                console.error(
+                  "[AnalyticsChart] Ошибка при обновлении графика:",
+                  error
+                );
+                // При ошибке обновления уничтожаем и создаем заново
+                if (chartInstance.current) {
+                  chartInstance.current.destroy();
+                  chartInstance.current = null;
+                  // Перезапуск эффекта через 100ms, чтобы DOM успел обновиться
+                  setTimeout(() => {
+                    if (chartRef.current && chartRef.current.parentElement) {
+                      // Попытка пересоздать график
+                      initChart();
+                    }
+                  }, 100);
+                }
+              }
+            }
+          }, 0);
+
+          return; // Выходим из эффекта, если обновление выполнено
+        } catch (error) {
+          console.error(
+            "[AnalyticsChart] Ошибка при обновлении данных графика:",
+            error
+          );
+          if (chartInstance.current) {
+            chartInstance.current.destroy();
+            chartInstance.current = null;
+          }
+        }
+      }
+
+      // Функция для инициализации графика
+      const initChart = () => {
+        // Дополнительная проверка перед созданием графика
+        if (!chartRef.current || !chartRef.current.parentElement) {
+          return;
+        }
+
+        // Обновляем стили для графиков
+        const dynamicOptions = {
+          line: {
+            tension: 0.4,
+            borderWidth: isResponsive ? 2 : 3,
+            pointRadius:
+              isResponsive || optimizedData.labels.length > 20 ? 0 : 3,
+            pointHoverRadius: 4,
+            spanGaps: true,
+            animation: {
+              duration: 800,
+              easing: "easeInOutQuart",
             },
           },
-        },
-        title: {
-          display: true,
-          text: title,
-          font: {
-            size: isResponsive ? 16 : 20,
-            family: "Arial, sans-serif",
-            weight: "bold",
+          bar: {
+            barPercentage: optimizedData.labels.length > 10 ? 0.9 : 0.8,
+            categoryPercentage: optimizedData.labels.length > 10 ? 0.8 : 0.9,
+            animation: {
+              duration: 800,
+              easing: "easeInOutQuart",
+            },
           },
-          color: "#333",
-        },
-        tooltip: {
-          enabled: true,
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          titleFont: {
-            size: 14,
-            weight: "bold",
+          pie: {
+            animation: {
+              duration: 1000,
+              easing: "easeInOutQuart",
+            },
+            cutout: "10%",
+            radius: "90%",
           },
-          bodyFont: {
-            size: 12,
+          doughnut: {
+            animation: {
+              duration: 1000,
+              easing: "easeInOutQuart",
+            },
+            cutout: "50%",
+            radius: "90%",
           },
-          footerFont: {
-            size: 10,
-          },
-          padding: 10,
-          cornerRadius: 4,
-        },
-      },
-      scales:
-        type !== "pie" && type !== "doughnut"
-          ? {
-              x: {
-                ticks: {
-                  font: {
-                    size: isResponsive ? 10 : 12,
-                  },
-                  color: "#666",
-                },
-                grid: {
-                  color: "rgba(200, 200, 200, 0.2)",
+        };
+
+        const options = {
+          responsive: true,
+          maintainAspectRatio: !isResponsive,
+          aspectRatio: isResponsive ? 1 : 2,
+          plugins: {
+            legend: {
+              position: isResponsive ? "bottom" : "top",
+              labels: {
+                boxWidth: isResponsive ? 12 : 20,
+                font: {
+                  size: isResponsive ? 10 : 14,
+                  family: "Arial, sans-serif",
                 },
               },
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  font: {
-                    size: isResponsive ? 10 : 12,
-                  },
-                  color: "#666",
-                },
-                grid: {
-                  color: "rgba(200, 200, 200, 0.2)",
-                },
+            },
+            title: {
+              display: true,
+              text: title,
+              font: {
+                size: isResponsive ? 16 : 20,
+                family: "Arial, sans-serif",
+                weight: "bold",
               },
-            }
-          : undefined,
-      ...dynamicOptions[type],
-    };
+              color: "#333",
+            },
+            tooltip: {
+              enabled: true,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              titleFont: {
+                size: 14,
+                weight: "bold",
+              },
+              bodyFont: {
+                size: 12,
+              },
+              footerFont: {
+                size: 10,
+              },
+              padding: 10,
+              cornerRadius: 4,
+            },
+          },
+          scales:
+            type !== "pie" && type !== "doughnut"
+              ? {
+                  x: {
+                    ticks: {
+                      font: {
+                        size: isResponsive ? 10 : 12,
+                      },
+                      color: "#666",
+                    },
+                    grid: {
+                      color: "rgba(200, 200, 200, 0.2)",
+                    },
+                  },
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      font: {
+                        size: isResponsive ? 10 : 12,
+                      },
+                      color: "#666",
+                    },
+                    grid: {
+                      color: "rgba(200, 200, 200, 0.2)",
+                    },
+                  },
+                }
+              : undefined,
+          ...dynamicOptions[type],
+        };
 
-    chartInstance.current = new Chart(chartRef.current, {
-      type,
-      data: {
-        labels: optimizedData.labels,
-        datasets: optimizedData.datasets,
-      },
-      options,
-    });
+        try {
+          chartInstance.current = new Chart(chartRef.current, {
+            type,
+            data: {
+              labels: optimizedData.labels,
+              datasets: optimizedData.datasets,
+            },
+            options,
+          });
 
-    if (chartRef.current) {
-      setChartHeight(chartRef.current.height);
+          if (chartRef.current) {
+            setChartHeight(chartRef.current.height);
+          }
+        } catch (error) {
+          console.error("[AnalyticsChart] Ошибка при создании графика:", error);
+        }
+      };
+
+      // Инициализируем график
+      initChart();
+    } catch (error) {
+      console.error("[AnalyticsChart] Ошибка в useEffect графика:", error);
     }
 
     return () => {
+      // Очистка при размонтировании
       if (chartInstance.current) {
         chartInstance.current.destroy();
+        chartInstance.current = null;
       }
     };
   }, [
@@ -309,6 +406,16 @@ const AnalyticsChart = ({
     isResponsive,
     chartWidth,
   ]);
+
+  // Очистка при размонтировании компонента
+  useEffect(() => {
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+        chartInstance.current = null;
+      }
+    };
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();

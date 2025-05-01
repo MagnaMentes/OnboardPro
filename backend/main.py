@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Request, File, UploadFile
+from fastapi import FastAPI, Depends, HTTPException, status, Request, File, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from integrations import send_telegram_notification, create_calendar_event, import_workable_employees, handle_telegram_webhook, sync_calendar_task_status, sync_workable_candidate
+from websocket_manager import websocket_manager
 import secrets
 import string
 import re
@@ -79,14 +80,67 @@ def invalidate_analytics_cache(endpoint: Optional[str] = None) -> None:
             analytics_versions[key] += 1
 
 
+# Улучшим систему управления кэшем для гарантии актуальности данных после перезагрузки
+
+# Глобальные переменные для управления кэшем
+_analytics_cache = {}
+_analytics_cache_timestamp = {}
+_analytics_global_version = 0  # Глобальная версия для всей аналитики
+
+
+def invalidate_analytics_cache():
+    """Полная инвалидация кэша для аналитических данных"""
+    global _analytics_cache, _analytics_cache_timestamp, _analytics_global_version, analytics_versions
+    _analytics_cache.clear()
+    _analytics_cache_timestamp.clear()
+
+    # Увеличиваем глобальную версию, чтобы все новые запросы получали свежие данные
+    _analytics_global_version += 1
+
+    # Инкрементируем версии для всех эндпоинтов
+    for key in analytics_versions:
+        analytics_versions[key] += 1
+
+    print(
+        f"Кэш аналитики был инвалидирован (версия: {_analytics_global_version})")
+
+
+def get_cached_analytics(cache_key, max_age_seconds=5):  # Уменьшаем время жизни кэша
+    """Получение кэшированных данных аналитики, если они не устарели"""
+    current_time = time.time()
+    if cache_key in _analytics_cache and cache_key in _analytics_cache_timestamp:
+        cache_age = current_time - _analytics_cache_timestamp[cache_key]
+
+        # Проверяем как возраст кэша, так и его версию
+        if cache_age < max_age_seconds and _analytics_cache[cache_key].get("metadata", {}).get("version", 0) == _analytics_global_version:
+            return _analytics_cache[cache_key]
+    return None
+
+
+def set_analytics_cache(cache_key, data):
+    """Сохранение данных аналитики в кэш с версией"""
+    global _analytics_cache, _analytics_cache_timestamp
+
+    # Добавляем текущую глобальную версию к метаданным, если их еще нет
+    if "metadata" not in data:
+        data["metadata"] = {}
+
+    data["metadata"]["version"] = _analytics_global_version
+    data["metadata"]["cached_at"] = datetime.now().isoformat()
+
+    _analytics_cache[cache_key] = data
+    _analytics_cache_timestamp[cache_key] = time.time()
+
+
 app = FastAPI()
 
 # Настройка CORS с явным указанием разрешенных источников
 app.add_middleware(
     CORSMiddleware,
     # Разрешаем запросы с фронтенд сервера и из Docker-сети
-    allow_origins=["http://localhost:3000",
-                   "http://127.0.0.1:3000", "http://frontend:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost",
+                   "http://127.0.0.1:3000", "http://127.0.0.1",
+                   "http://frontend:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -574,6 +628,24 @@ async def create_task(
     # Инвалидируем кэш аналитики при создании новой задачи
     invalidate_analytics_cache()
 
+    # Получаем полные данные о задаче для отправки через WebSocket
+    task_data = {
+        "id": db_task.id,
+        "title": db_task.title,
+        "description": db_task.description,
+        "status": db_task.status,
+        "priority": db_task.priority,
+        "user_id": db_task.user_id,
+        "plan_id": db_task.plan_id
+    }
+
+    # Отправляем оповещение о создании задачи через WebSocket
+    await websocket_manager.notify_task_status_change(task_data)
+
+    # Обновляем аналитику в реальном времени
+    analytics_data = await get_analytics_data_for_websocket()
+    await websocket_manager.broadcast_analytics_update(analytics_data)
+
     return db_task
 
 
@@ -642,12 +714,36 @@ async def update_task_status(
         raise HTTPException(
             status_code=403, detail="Not authorized to update this task")
 
+    # Запоминаем предыдущее состояние для логирования
+    previous_status = task.status
+
     task.status = status
     db.commit()
     db.refresh(task)
 
     # Инвалидируем кэш аналитики при изменении статуса задачи
     invalidate_analytics_cache()
+
+    # Получаем полные данные о задаче для отправки через WebSocket
+    task_data = {
+        "id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "status": task.status,
+        "priority": task.priority,
+        "user_id": task.user_id,
+        "plan_id": task.plan_id,
+        "previous_status": previous_status  # Добавляем информацию о предыдущем статусе
+    }
+
+    # Отправляем оповещение о изменении статуса задачи через WebSocket
+    await websocket_manager.notify_task_status_change(task_data)
+
+    # Всегда отправляем обновление аналитики при любом изменении статуса
+    # Получаем свежие данные аналитики
+    analytics_data = await get_analytics_data_for_websocket()
+    # Отправляем через WebSocket HR пользователям
+    await websocket_manager.broadcast_analytics_update(analytics_data)
 
     return task
 
@@ -672,11 +768,27 @@ async def delete_task(
             detail="Task not found"
         )
 
+    # Сохраняем некоторые данные задачи перед удалением для уведомлений
+    task_data = {
+        "id": task.id,
+        "title": task.title,
+        "user_id": task.user_id,
+        "status": "deleted",  # Устанавливаем специальный статус для удаления
+        "priority": task.priority
+    }
+
     db.delete(task)
     db.commit()
 
     # Инвалидируем кэш аналитики при удалении задачи
     invalidate_analytics_cache()
+
+    # Отправляем оповещение о удалении задачи через WebSocket
+    await websocket_manager.notify_task_status_change(task_data)
+
+    # Обновляем аналитику в реальном времени
+    analytics_data = await get_analytics_data_for_websocket()
+    await websocket_manager.broadcast_analytics_update(analytics_data)
 
     return {"message": "Task deleted successfully"}
 
@@ -960,6 +1072,8 @@ async def get_analytics_summary(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     department: Optional[str] = None,
+    refresh: bool = False,  # Новый параметр для принудительного обновления
+    timestamp: Optional[str] = None,  # Используется для обхода кэша браузера
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
@@ -968,20 +1082,23 @@ async def get_analytics_summary(
         raise HTTPException(
             status_code=403, detail="Only HR can view analytics")
 
-    # Проверяем кэш перед выполнением запроса
-    cache_params = {
-        "start_date": start_date.isoformat() if start_date else None,
-        "end_date": end_date.isoformat() if end_date else None,
-        "department": department
-    }
+    # Пропускаем кэш, если запрошено принудительное обновление
+    if not refresh:
+        # Проверяем кэш перед выполнением запроса
+        cache_params = {
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
+            "department": department
+        }
 
-    # Пытаемся получить данные из кэша
-    cached_data = get_cached_data("analytics_summary", cache_params)
-    if cached_data:
-        # Если данные найдены в кэше, возвращаем их
-        return cached_data
+        # Пытаемся получить данные из кэша с учетом более короткого срока жизни
+        cached_data = get_cached_analytics(generate_cache_key(
+            "analytics_summary", cache_params), max_age_seconds=2)
+        if cached_data:
+            # Если данные найдены в кэше и не устарели, возвращаем их
+            return cached_data
 
-    # Если кэш не найден, выполняем запрос к БД
+    # Если кэш не найден или запрошено обновление, выполняем запрос к БД
     # Базовый запрос для задач
     task_query = db.query(models.Task)
     completed_task_query = db.query(models.Task).filter(
@@ -1046,8 +1163,37 @@ async def get_analytics_summary(
             "completed": priority_query.filter(models.Task.status == "completed").count()
         }
 
+    # Расчет NPS (Net Promoter Score) из отзывов, если есть
+    nps = 0
+    try:
+        # Предполагаем, что у отзывов есть поле rating или можно вычислить NPS как-то иначе
+        # Это просто пример - адаптируйте под свою схему данных
+        ratings_query = db.query(func.avg(models.Feedback.rating)) \
+            .filter(models.Feedback.rating.isnot(None))
+
+        if department:
+            ratings_query = ratings_query.join(models.User, models.Feedback.recipient_id == models.User.id) \
+                .filter(models.User.department == department)
+
+        if start_date:
+            ratings_query = ratings_query.filter(
+                models.Feedback.created_at >= start_date)
+        if end_date:
+            ratings_query = ratings_query.filter(
+                models.Feedback.created_at <= end_date)
+
+        avg_rating = ratings_query.scalar() or 0
+
+        # Преобразуем среднюю оценку в NPS (-100 до 100)
+        nps = (avg_rating - 5) * 20  # Предполагая, что рейтинг от 0 до 10
+    except Exception:
+        # Если расчет не удался, оставляем NPS = 0
+        pass
+
     # Подготавливаем результат с метаданными версионирования
     timestamp = datetime.now().isoformat()
+    version = int(time.time() * 1000)  # Уникальная версия для каждого запроса
+
     result = {
         "task_stats": {
             "total": total_tasks,
@@ -1057,7 +1203,8 @@ async def get_analytics_summary(
         },
         "feedback_stats": {
             "total": total_feedback,
-            "avg_per_user": avg_feedback_per_user
+            "avg_per_user": avg_feedback_per_user,
+            "nps": nps
         },
         "filters_applied": {
             "start_date": start_date.isoformat() if start_date else None,
@@ -1066,12 +1213,21 @@ async def get_analytics_summary(
         },
         "metadata": {
             "generated_at": timestamp,
-            "version": analytics_versions.get("analytics_summary", 0)
+            "version": version,
+            "fresh_data": True,  # Флаг, указывающий на свежесть данных
+            "global_version": _analytics_global_version
         }
     }
 
-    # Сохраняем результат в кэш
-    cache_data("analytics_summary", cache_params, result)
+    # Сохраняем результат в кэш только если не было запроса на обновление
+    if not refresh:
+        cache_params = {
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
+            "department": department
+        }
+        set_analytics_cache(generate_cache_key(
+            "analytics_summary", cache_params), result)
 
     return result
 
@@ -1398,3 +1554,113 @@ async def get_user_analytics(
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+# WebSocket endpoint для подключения к серверу
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, token: str = None):
+    """WebSocket соединение с сервером для обновлений в реальном времени"""
+    # Проверка токена и получение информации о пользователе
+    if not token:
+        await websocket.close(code=1008, reason="Отсутствует токен авторизации")
+        return
+
+    try:
+        # Проверяем токен
+        payload = auth.verify_token(token)
+        email = payload.get("sub")
+
+        # Находим пользователя по email
+        db: Session = next(get_db())
+        user = db.query(models.User).filter(models.User.email == email).first()
+
+        if not user:
+            await websocket.close(code=1008, reason="Пользователь не найден")
+            return
+
+        # Подключаем пользователя к WebSocket
+        await websocket_manager.connect(websocket, user.id, user.role)
+
+        try:
+            # Бесконечный цикл для обработки сообщений
+            while True:
+                # Получаем сообщение от клиента
+                data = await websocket.receive_text()
+                message = json.loads(data)
+
+                # Обрабатываем сообщение
+                await websocket_manager.handle_client_message(websocket, message)
+        except WebSocketDisconnect:
+            # При разрыве соединения удаляем пользователя из менеджера
+            await websocket_manager.disconnect(websocket)
+        except Exception as e:
+            # Логирование ошибок
+            print(f"Ошибка WebSocket: {str(e)}")
+            await websocket_manager.disconnect(websocket)
+    except Exception as e:
+        # При ошибке авторизации закрываем соединение
+        print(f"Ошибка авторизации WebSocket: {str(e)}")
+        await websocket.close(code=1008, reason="Неверный токен авторизации")
+
+
+async def get_analytics_data_for_websocket() -> Dict[str, Any]:
+    """Получение аналитических данных для отправки через WebSocket"""
+    # Создаем новую сессию БД специально для этой функции и не используем кэш
+    db = next(get_db())
+
+    try:
+        # Базовый запрос для задач
+        task_query = db.query(models.Task)
+        completed_task_query = db.query(models.Task).filter(
+            models.Task.status == "completed")
+
+        # Получаем статистику по задачам
+        total_tasks = task_query.count()
+        completed_tasks = completed_task_query.count()
+        completion_rate = completed_tasks / total_tasks if total_tasks > 0 else 0
+
+        # Статистика по отзывам
+        total_feedback = db.query(models.Feedback).count()
+
+        # Средний рейтинг отзывов по пользователям
+        users_count = db.query(models.User).count()
+        avg_feedback_per_user = total_feedback / users_count if users_count > 0 else 0
+
+        # Статистика по приоритетам задач
+        priority_stats = {}
+        for priority in ["low", "medium", "high"]:
+            priority_query = task_query.filter(
+                models.Task.priority == priority)
+            priority_stats[priority] = {
+                "total": priority_query.count(),
+                "completed": priority_query.filter(models.Task.status == "completed").count()
+            }
+
+        # Формируем результат с версией и меткой времени
+        timestamp = datetime.now().isoformat()
+        version = int(time.time() * 1000)  # Используем миллисекунды как версию
+
+        result = {
+            "task_stats": {
+                "total": total_tasks,
+                "completed": completed_tasks,
+                "completion_rate": completion_rate,
+                "priority": priority_stats
+            },
+            "feedback_stats": {
+                "total": total_feedback,
+                "avg_per_user": avg_feedback_per_user
+            },
+            "metadata": {
+                "generated_at": timestamp,
+                "real_time_update": True,
+                "version": version
+            }
+        }
+
+        return result
+    except Exception as e:
+        print(f"Ошибка при получении аналитических данных: {str(e)}")
+        raise
+    finally:
+        db.close()

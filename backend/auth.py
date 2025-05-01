@@ -186,3 +186,31 @@ def authenticate_user(email: str, password: str, db: Session):
 
     print(f"[LOGIN] Успешный вход пользователя {email}, id={user.id}")
     return user
+
+
+def verify_token(token: str):
+    """
+    Проверяет JWT токен и возвращает payload без взаимодействия с БД
+    Используется для WebSocket аутентификации
+    """
+    try:
+        if not token or not token.strip():
+            print("[AUTH] Ошибка: Токен WebSocket пустой")
+            return None
+
+        # Расшифровка токена
+        print(f"[AUTH] Проверяем WebSocket токен: {token[:20]}...")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        # Валидация содержимого
+        email: str = payload.get("sub")
+        if email is None or not email.strip():
+            print(f"[AUTH] Ошибка: Email не найден в токене WebSocket или пустой")
+            return None
+
+        print(f"[AUTH] WebSocket токен верифицирован, email: {email}")
+        return payload
+
+    except JWTError as e:
+        print(f"[AUTH] WebSocket JWT ошибка: {e}")
+        return None

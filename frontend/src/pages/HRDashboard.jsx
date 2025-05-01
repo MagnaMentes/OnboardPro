@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { getApiBaseUrl } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
+import webSocketService from "../services/WebSocketService";
 import {
   UsersIcon,
   DocumentTextIcon,
@@ -19,6 +20,8 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowTrendingDownIcon,
   XMarkIcon,
+  BellAlertIcon,
+  WifiIcon,
 } from "@heroicons/react/24/outline";
 import AnalyticsChart from "../components/specific/AnalyticsChart";
 import CalendarView from "../components/specific/CalendarView";
@@ -57,10 +60,136 @@ export default function HRDashboard() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [activeTab, setActiveTab] = useState("analytics");
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [hasRealtimeUpdates, setHasRealtimeUpdates] = useState(false);
+  const [wsDisabled, setWsDisabled] = useState(false); // Флаг для отключения WebSocket
 
   useEffect(() => {
     localStorage.setItem("hrDashboardFilters", JSON.stringify(filters));
   }, [filters]);
+
+  // Функция для обновления аналитических данных с сервера с новой логикой объединения данных
+  const fetchUpdatedAnalytics = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const analyticsUrl = `http://localhost:8000/analytics/summary${
+        filters.startDate || filters.endDate || filters.department ? "?" : ""
+      }${filters.startDate ? `start_date=${filters.startDate}T00:00:00&` : ""}${
+        filters.endDate ? `end_date=${filters.endDate}T23:59:59&` : ""
+      }${
+        filters.department
+          ? `department=${encodeURIComponent(filters.department)}`
+          : ""
+      }`.replace(/&$/, "");
+
+      const taskAnalyticsUrl = `http://localhost:8000/analytics/tasks${
+        filters.startDate || filters.endDate || filters.department ? "?" : ""
+      }${filters.startDate ? `start_date=${filters.startDate}T00:00:00&` : ""}${
+        filters.endDate ? `end_date=${filters.endDate}T23:59:59&` : ""
+      }${
+        filters.department
+          ? `department=${encodeURIComponent(filters.department)}`
+          : ""
+      }`.replace(/&$/, "");
+
+      // Добавляем timestamp для предотвращения кэширования браузером
+      const timeStamp = new Date().getTime();
+      const analyticsUrlWithTimestamp = `${analyticsUrl}${
+        analyticsUrl.includes("?") ? "&" : "?"
+      }timestamp=${timeStamp}`;
+      const taskAnalyticsUrlWithTimestamp = `${taskAnalyticsUrl}${
+        taskAnalyticsUrl.includes("?") ? "&" : "?"
+      }timestamp=${timeStamp}`;
+
+      // Запрос на обновление аналитики с дополнительным заголовком для пропуска кэша
+      const analyticsResponse = await fetch(analyticsUrlWithTimestamp, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      });
+
+      if (analyticsResponse.ok) {
+        const analyticsData = await analyticsResponse.json();
+        // Сохраняем предыдущее состояние для последующей проверки обновлений
+        const previousAnalyticsState = analytics;
+
+        // Объединяем существующие локальные данные с серверными
+        setAnalytics((prev) => {
+          // Если данные с сервера пришли с метаданными о реальном времени, принимаем их полностью
+          if (
+            analyticsData.metadata &&
+            analyticsData.metadata.real_time_update
+          ) {
+            return analyticsData;
+          }
+
+          // Если есть предыдущие данные, сравниваем и берем наиболее актуальные
+          if (prev && prev.task_stats) {
+            // Проверяем, какие данные более актуальны по версии или времени
+            const serverDataIsNewer =
+              analyticsData.metadata &&
+              prev.metadata &&
+              (analyticsData.metadata.version > prev.metadata.version ||
+                new Date(analyticsData.metadata.generated_at) >
+                  new Date(prev.metadata.generated_at));
+
+            if (serverDataIsNewer) {
+              return analyticsData;
+            } else {
+              // Сохраняем локальные обновления, но объединяем с новыми данными с сервера
+              return {
+                ...analyticsData,
+                task_stats: {
+                  ...analyticsData.task_stats,
+                  // Используем локальное значение для счетчиков, если оно отличается
+                  total:
+                    prev.task_stats.total !== analyticsData.task_stats.total
+                      ? prev.task_stats.total
+                      : analyticsData.task_stats.total,
+                  completed:
+                    prev.task_stats.completed !==
+                    analyticsData.task_stats.completed
+                      ? prev.task_stats.completed
+                      : analyticsData.task_stats.completed,
+                  completion_rate:
+                    prev.task_stats.total > 0
+                      ? prev.task_stats.completed / prev.task_stats.total
+                      : 0,
+                },
+              };
+            }
+          }
+
+          // Если предыдущих данных нет, просто используем новые
+          return analyticsData;
+        });
+
+        setHasRealtimeUpdates(true);
+      }
+
+      // Обновляем аналитику задач
+      const taskAnalyticsResponse = await fetch(taskAnalyticsUrlWithTimestamp, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      });
+
+      if (taskAnalyticsResponse.ok) {
+        const taskAnalyticsData = await taskAnalyticsResponse.json();
+        setTaskAnalytics(taskAnalyticsData);
+      }
+
+      setLastUpdate(new Date());
+    } catch (error) {
+      console.error("Ошибка при обновлении аналитики:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -103,37 +232,48 @@ export default function HRDashboard() {
           throw new Error("Не авторизован");
         }
 
-        let analyticsUrl = "http://localhost:8000/analytics/summary";
-        let taskAnalyticsUrl = "http://localhost:8000/analytics/tasks";
-        let userAnalyticsUrl = "http://localhost:8000/analytics/users";
+        // Генерируем уникальный timestamp для предотвращения кэширования
+        const timestamp = new Date().getTime();
 
-        const queryParams = [];
+        // Создаем URL с параметром refresh=true для принудительного обновления данных и timestamp для обхода кэша браузера
+        let analyticsUrl = `http://localhost:8000/analytics/summary?refresh=true&_t=${timestamp}`;
+        let taskAnalyticsUrl = `http://localhost:8000/analytics/tasks?_t=${timestamp}`;
+        let userAnalyticsUrl = `http://localhost:8000/analytics/users?_t=${timestamp}`;
 
+        // Добавляем фильтры к URL, если они указаны
         if (filters.startDate) {
-          queryParams.push(`start_date=${filters.startDate}T00:00:00`);
+          analyticsUrl += `&start_date=${filters.startDate}T00:00:00`;
+          taskAnalyticsUrl += `&start_date=${filters.startDate}T00:00:00`;
+          userAnalyticsUrl += `&start_date=${filters.startDate}T00:00:00`;
         }
 
         if (filters.endDate) {
-          queryParams.push(`end_date=${filters.endDate}T23:59:59`);
+          analyticsUrl += `&end_date=${filters.endDate}T23:59:59`;
+          taskAnalyticsUrl += `&end_date=${filters.endDate}T23:59:59`;
+          userAnalyticsUrl += `&end_date=${filters.endDate}T23:59:59`;
         }
 
         if (filters.department) {
-          queryParams.push(
-            `department=${encodeURIComponent(filters.department)}`
-          );
+          analyticsUrl += `&department=${encodeURIComponent(
+            filters.department
+          )}`;
+          taskAnalyticsUrl += `&department=${encodeURIComponent(
+            filters.department
+          )}`;
+          userAnalyticsUrl += `&department=${encodeURIComponent(
+            filters.department
+          )}`;
         }
 
-        if (queryParams.length > 0) {
-          analyticsUrl += `?${queryParams.join("&")}`;
-          taskAnalyticsUrl += `?${queryParams.join("&")}`;
-          userAnalyticsUrl += `?${queryParams.join("&")}`;
-        }
+        // Добавляем заголовки для предотвращения кэширования
+        const headers = {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        };
 
-        const analyticsResponse = await fetch(analyticsUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const analyticsResponse = await fetch(analyticsUrl, { headers });
 
         if (!analyticsResponse.ok) {
           throw new Error("Ошибка при загрузке аналитики");
@@ -173,9 +313,7 @@ export default function HRDashboard() {
           }
 
           const prevAnalyticsResponse = await fetch(prevAnalyticsUrl, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers,
           });
 
           if (prevAnalyticsResponse.ok) {
@@ -187,45 +325,38 @@ export default function HRDashboard() {
         }
 
         const taskAnalyticsResponse = await fetch(taskAnalyticsUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers,
         });
-
         if (!taskAnalyticsResponse.ok) {
           throw new Error("Ошибка при загрузке аналитики по задачам");
         }
-
         const taskAnalyticsData = await taskAnalyticsResponse.json();
         setTaskAnalytics(taskAnalyticsData);
 
         const userAnalyticsResponse = await fetch(userAnalyticsUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers,
         });
-
         if (!userAnalyticsResponse.ok) {
           throw new Error("Ошибка при загрузке аналитики по пользователям");
         }
-
         const userAnalyticsData = await userAnalyticsResponse.json();
         setUserAnalytics(userAnalyticsData);
 
-        const tasksResponse = await fetch("http://localhost:8000/tasks", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        // Загружаем также актуальный список задач
+        const tasksResponse = await fetch(
+          `http://localhost:8000/tasks?_t=${timestamp}`,
+          { headers }
+        );
         if (!tasksResponse.ok) {
           throw new Error("Ошибка при загрузке задач");
         }
-
         const tasksData = await tasksResponse.json();
         setTasks(tasksData);
 
         setLastUpdate(new Date());
+        console.log(
+          "Данные успешно загружены с принудительным обновлением при перезагрузке страницы"
+        );
       } catch (err) {
         setError(err.message);
         toast.error(`Ошибка: ${err.message}`);
@@ -237,6 +368,228 @@ export default function HRDashboard() {
 
     fetchData();
   }, [filters, isRefreshing]);
+
+  // Инициализация WebSocket соединения
+  useEffect(() => {
+    if (wsDisabled) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    // Инициализация WebSocket соединения
+    webSocketService
+      .connect(token)
+      .then(() => {
+        setWsConnected(true);
+        toast.success("Подключение к серверу обновлений установлено");
+
+        // После подключения запрашиваем актуальные данные аналитики
+        webSocketService.requestAnalyticsUpdate();
+      })
+      .catch((error) => {
+        console.error("Ошибка подключения к WebSocket:", error);
+        toast.error(
+          "Не удалось установить соединение для обновлений в реальном времени"
+        );
+      });
+
+    // Обработчик обновления аналитики, отдающий приоритет данным реального времени
+    const handleAnalyticsUpdate = (data) => {
+      console.log("Получено обновление аналитики:", data);
+      if (data.data) {
+        // Добавляем метку, что это данные реального времени
+        const updatedData = {
+          ...data.data,
+          metadata: {
+            ...(data.data.metadata || {}),
+            real_time_update: true,
+            generated_at: new Date().toISOString(),
+          },
+        };
+        setAnalytics(updatedData);
+        setHasRealtimeUpdates(true);
+        setLastUpdate(new Date());
+        toast.info("Получены новые аналитические данные", {
+          autoClose: 2000,
+          icon: <WifiIcon className="h-5 w-5 text-blue-500" />,
+        });
+      }
+    };
+
+    // Обработчик обновления статуса задачи с улучшенной логикой кэширования
+    const handleTaskStatusChanged = (data) => {
+      console.log("Изменение статуса задачи:", data);
+
+      if (!data || !data.data) return;
+
+      let taskWasInProgress = false;
+      let taskWasCompleted = false;
+      let taskWasDeleted = data.data.status === "deleted";
+
+      // Обрабатываем удаление задачи
+      if (taskWasDeleted) {
+        // Находим задачу перед удалением для определения её статуса
+        setTasks((prevTasks) => {
+          const taskToRemove = prevTasks.find(
+            (task) => task.id === data.data.id
+          );
+          const wasCompleted =
+            taskToRemove && taskToRemove.status === "completed";
+
+          // Обновляем счетчики аналитики при удалении
+          setAnalytics((prev) => {
+            if (!prev || !prev.task_stats) return prev;
+
+            const updatedStats = { ...prev.task_stats };
+            const newTotal = Math.max(0, updatedStats.total - 1);
+            let newCompleted = updatedStats.completed;
+
+            // Если удаляем завершенную задачу, уменьшаем счетчик завершенных
+            if (wasCompleted) {
+              newCompleted = Math.max(0, updatedStats.completed - 1);
+            }
+
+            // Рассчитываем новый процент выполнения
+            const newCompletionRate =
+              newTotal > 0 ? newCompleted / newTotal : 0;
+
+            return {
+              ...prev,
+              task_stats: {
+                ...updatedStats,
+                total: newTotal,
+                completed: newCompleted,
+                completion_rate: newCompletionRate,
+              },
+              metadata: {
+                ...(prev.metadata || {}),
+                updated_locally: true,
+                generated_at: new Date().toISOString(),
+              },
+            };
+          });
+
+          // Возвращаем отфильтрованный массив задач
+          return prevTasks.filter((task) => task.id !== data.data.id);
+        });
+      } else {
+        // Изменение статуса задачи
+        // Обновляем список задач локально при изменении статуса
+        setTasks((prevTasks) => {
+          // Проверяем предыдущее состояние задачи до обновления
+          const oldTask = prevTasks.find((task) => task.id === data.data.id);
+          if (oldTask) {
+            taskWasInProgress = oldTask.status === "in_progress";
+            taskWasCompleted = oldTask.status === "completed";
+          }
+
+          // Обновляем статус задачи
+          return prevTasks.map((task) =>
+            task.id === data.data.id
+              ? { ...task, status: data.data.status }
+              : task
+          );
+        });
+
+        // Немедленно обновляем счетчики для лучшего UX
+        setAnalytics((prev) => {
+          if (!prev || !prev.task_stats) return prev;
+
+          const updatedStats = { ...prev.task_stats };
+          const total = updatedStats.total;
+
+          // Если задача завершена и она ранее НЕ была завершена
+          if (data.data.status === "completed" && !taskWasCompleted) {
+            const newCompleted = updatedStats.completed + 1;
+            const newCompletionRate = newCompleted / total;
+
+            return {
+              ...prev,
+              task_stats: {
+                ...updatedStats,
+                completed: newCompleted,
+                completion_rate: newCompletionRate,
+              },
+              metadata: {
+                ...(prev.metadata || {}),
+                updated_locally: true,
+                generated_at: new Date().toISOString(),
+              },
+            };
+          }
+          // Если задача переведена из завершенных в другой статус
+          else if (data.data.status !== "completed" && taskWasCompleted) {
+            const newCompleted = Math.max(0, updatedStats.completed - 1);
+            const newCompletionRate = newCompleted / total;
+
+            return {
+              ...prev,
+              task_stats: {
+                ...updatedStats,
+                completed: newCompleted,
+                completion_rate: newCompletionRate,
+              },
+              metadata: {
+                ...(prev.metadata || {}),
+                updated_locally: true,
+                generated_at: new Date().toISOString(),
+              },
+            };
+          }
+
+          return prev; // Если статус не изменился или не влияет на счетчики
+        });
+      }
+
+      // Запрашиваем обновление аналитических данных с увеличенной задержкой
+      // чтобы дать серверу время обновить данные
+      const token = localStorage.getItem("token");
+      if (token) {
+        // Сначала отправляем запрос на обновление через WebSocket
+        webSocketService.requestAnalyticsUpdate();
+
+        // Увеличиваем задержку перед запросом с сервера для гарантии актуальности данных
+        setTimeout(fetchUpdatedAnalytics, 3000);
+      }
+    };
+
+    // Обработчик для пользовательских уведомлений
+    const handleNotification = (data) => {
+      if (data.message) {
+        toast.info(data.message, {
+          icon: <BellAlertIcon className="h-5 w-5 text-blue-500" />,
+        });
+      }
+    };
+
+    // Обработчик ошибок WebSocket
+    const handleError = (data) => {
+      console.error("Ошибка WebSocket:", data.message);
+      toast.error(`Ошибка соединения: ${data.message}`);
+      setWsConnected(false);
+    };
+
+    // Регистрация обработчиков
+    webSocketService.onAnalyticsUpdate(handleAnalyticsUpdate);
+    webSocketService.onTaskStatusChanged(handleTaskStatusChanged);
+    webSocketService.onNotification(handleNotification);
+    webSocketService.onError(handleError);
+
+    // Отключение при размонтировании компонента
+    return () => {
+      webSocketService.removeListener(
+        "analytics_update",
+        handleAnalyticsUpdate
+      );
+      webSocketService.removeListener(
+        "task_status_changed",
+        handleTaskStatusChanged
+      );
+      webSocketService.removeListener("user_notification", handleNotification);
+      webSocketService.removeListener("error", handleError);
+      webSocketService.disconnect();
+    };
+  }, [wsDisabled]);
 
   const handleFilterChange = (newFilters) => {
     setFilters((prev) => ({
@@ -761,13 +1114,15 @@ export default function HRDashboard() {
       />
       <div>
         <div className="flex flex-wrap justify-between items-center">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-600">
-              Панель HR
-            </h2>
-            <p className="mt-1 text-sm sm:text-base text-gray-500">
-              Аналитика и управление процессами адаптации сотрудников
-            </p>
+          <div className="flex items-center">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-blue-600">
+                Панель HR
+              </h2>
+              <p className="mt-1 text-sm sm:text-base text-gray-500">
+                Аналитика и управление процессами адаптации сотрудников
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -782,6 +1137,7 @@ export default function HRDashboard() {
             {lastUpdate && (
               <span className="hidden sm:inline-block text-xs text-gray-500 mr-3">
                 Обновлено: {formatDate(lastUpdate)}
+                {hasRealtimeUpdates && " (real-time)"}
               </span>
             )}
             <button
@@ -810,13 +1166,6 @@ export default function HRDashboard() {
       </div>
 
       {showFiltersPanel && <FilterPanel />}
-
-      {isCached && (
-        <div className="p-2 bg-green-50 border border-green-200 rounded-md text-xs sm:text-sm text-green-700">
-          Данные загружены из кэша (версия: {analytics?.metadata?.version}). Для
-          получения самых актуальных данных нажмите "Обновить".
-        </div>
-      )}
 
       {dataWasTruncated && (
         <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-md flex items-center">
