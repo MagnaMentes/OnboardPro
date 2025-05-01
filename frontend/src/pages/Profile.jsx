@@ -1012,9 +1012,12 @@ export default function Profile() {
               <button
                 className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
                 onClick={() => {
-                  // Выход из системы - в реальном приложении здесь будет логика выхода
+                  // Полноценный выход из системы
                   localStorage.removeItem("token");
-                  navigate("/login");
+                  setUser(null); // Сброс состояния пользователя
+                  navigate("/login", { replace: true });
+                  // Перезагрузка страницы для полного сброса состояния приложения
+                  window.location.reload();
                 }}
               >
                 <svg
