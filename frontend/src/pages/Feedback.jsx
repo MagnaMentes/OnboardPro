@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
 import { getApiBaseUrl } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
-import {
-  PaperAirplaneIcon,
-  UserIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { PaperAirplaneIcon, UserIcon } from "@heroicons/react/24/outline";
+import Modal from "../components/common/Modal"; // Импортируем универсальный компонент модального окна
 
 export default function Feedback() {
   // Устанавливаем заголовок страницы
@@ -20,6 +17,13 @@ export default function Feedback() {
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState({
+    recipient_id: "",
+    rating: 0,
+    feedback_text: "",
+    visibility: "public",
+  });
+  const [currentFeedback, setCurrentFeedback] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -119,6 +123,17 @@ export default function Feedback() {
     setError(null);
   };
 
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFeedbackForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveFeedback = () => {
+    // Логика сохранения отзыва
+    console.log("Saving feedback:", feedbackForm);
+    closeModal();
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("ru-RU", {
@@ -160,97 +175,137 @@ export default function Feedback() {
       </div>
 
       {/* Модальное окно с формой отправки отзыва */}
-      {isModalOpen && (
-        <div className="fixed inset-0 overflow-y-auto z-50">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title={currentFeedback ? "Редактировать отзыв" : "Добавить отзыв"}
+        footer={
+          <>
+            <button
+              type="button"
               onClick={closeModal}
-            ></div>
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveFeedback}
+              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              {currentFeedback ? "Сохранить изменения" : "Добавить отзыв"}
+            </button>
+          </>
+        }
+      >
+        <form className="space-y-6">
+          <div>
+            <label
+              htmlFor="recipient"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Получатель отзыва
+            </label>
+            <select
+              id="recipient"
+              name="recipient_id"
+              value={feedbackForm.recipient_id || ""}
+              onChange={handleFormChange}
+              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              required
+            >
+              <option value="">Выберите сотрудника</option>
+              {users
+                .filter((u) => u.id !== currentFeedback?.id) // Исключаем себя из списка
+                .map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name || user.email}
+                  </option>
+                ))}
+            </select>
+          </div>
 
-            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-md sm:w-full z-10">
-              <div className="bg-blue-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Отправить обратную связь
-                </h3>
+          <div>
+            <label
+              htmlFor="rating"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Оценка
+            </label>
+            <div className="mt-1 flex items-center">
+              {[1, 2, 3, 4, 5].map((star) => (
                 <button
+                  key={star}
                   type="button"
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-500"
+                  onClick={() =>
+                    setFeedbackForm({ ...feedbackForm, rating: star })
+                  }
+                  className="focus:outline-none"
                 >
-                  <XMarkIcon className="h-6 w-6" />
+                  <svg
+                    className={`h-8 w-8 ${
+                      star <= feedbackForm.rating
+                        ? "text-yellow-400"
+                        : "text-gray-300"
+                    }`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
                 </button>
-              </div>
-
-              {error && (
-                <div className="mt-2 mx-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                  <strong className="font-bold">Ошибка!</strong>
-                  <span className="block sm:inline"> {error}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
-                <div>
-                  <label
-                    htmlFor="recipient"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Получатель
-                  </label>
-                  <select
-                    id="recipient"
-                    value={selectedUser}
-                    onChange={(e) => setSelectedUser(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="">Выберите получателя</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.email} ({user.role})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="message"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Сообщение
-                  </label>
-                  <textarea
-                    id="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
-                    required
-                  />
-                </div>
-
-                <div className="flex justify-end mt-6 space-x-3">
-                  <button
-                    type="button"
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    onClick={closeModal}
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                  >
-                    <PaperAirplaneIcon className="w-4 h-4 mr-2" />
-                    {isSubmitting ? "Отправляется..." : "Отправить"}
-                  </button>
-                </div>
-              </form>
+              ))}
+              <span className="ml-2 text-sm text-gray-500">
+                {feedbackForm.rating}/5
+              </span>
             </div>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label
+              htmlFor="feedback_text"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Текст отзыва
+            </label>
+            <div className="mt-1">
+              <textarea
+                id="feedback_text"
+                name="feedback_text"
+                rows={4}
+                value={feedbackForm.feedback_text}
+                onChange={handleFormChange}
+                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                placeholder="Поделитесь вашим опытом работы с этим сотрудником..."
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="visibility"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Видимость отзыва
+            </label>
+            <select
+              id="visibility"
+              name="visibility"
+              value={feedbackForm.visibility}
+              onChange={handleFormChange}
+              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            >
+              <option value="public">Публичный (видят все)</option>
+              <option value="private">
+                Приватный (видит только получатель и HR)
+              </option>
+              <option value="hr_only">Только для HR</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
 
       {/* Список отзывов */}
       <div className="space-y-4">

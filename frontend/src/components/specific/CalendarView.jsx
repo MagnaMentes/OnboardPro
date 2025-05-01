@@ -15,6 +15,7 @@ import {
   DevicePhoneMobileIcon,
 } from "@heroicons/react/24/outline";
 import debounce from "lodash/debounce";
+import Modal from "../common/Modal";
 
 const EVENT_TYPES = {
   task: { title: "Задача", color: "#3B82F6" },
@@ -609,207 +610,186 @@ export default function CalendarView({ tasks, departments = [] }) {
       )}
 
       {selectedEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-lg font-medium text-gray-800">
-                {isEditing ? "Редактирование задачи" : "Детали события"}
-              </h3>
-              <button
-                onClick={closeEventModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-4">
-              {isEditing ? (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Название задачи
-                    </label>
-                    <input
-                      type="text"
-                      value={editData.title}
-                      onChange={(e) =>
-                        setEditData({ ...editData, title: e.target.value })
-                      }
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Описание
-                    </label>
-                    <textarea
-                      value={editData.description}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          description: e.target.value,
-                        })
-                      }
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      rows={3}
-                    ></textarea>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Приоритет
-                    </label>
-                    <select
-                      value={editData.priority}
-                      onChange={(e) =>
-                        setEditData({ ...editData, priority: e.target.value })
-                      }
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="low">Низкий</option>
-                      <option value="medium">Средний</option>
-                      <option value="high">Высокий</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Статус
-                    </label>
-                    <select
-                      value={editData.status}
-                      onChange={(e) =>
-                        setEditData({ ...editData, status: e.target.value })
-                      }
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="not_started">Не начата</option>
-                      <option value="in_progress">В процессе</option>
-                      <option value="completed">Завершена</option>
-                      <option value="blocked">Заблокирована</option>
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="text-lg font-medium">
-                      {selectedEvent.title}
-                    </h4>
-                    <p className="text-sm text-gray-500">
-                      {new Date(selectedEvent.start).toLocaleString("ru-RU", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-
-                  {selectedEvent.description && (
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700">
-                        Описание:
-                      </h5>
-                      <p className="text-sm text-gray-600">
-                        {selectedEvent.description}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500">
-                        Тип:
-                      </h5>
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: EVENT_TYPES[selectedEvent.type].color }}
-                      >
-                        {EVENT_TYPES[selectedEvent.type].title}
-                      </p>
-                    </div>
-
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500">
-                        Приоритет:
-                      </h5>
-                      <p
-                        className="text-sm font-medium"
-                        style={{
-                          color: PRIORITIES[selectedEvent.priority]?.color,
-                        }}
-                      >
-                        {PRIORITIES[selectedEvent.priority]?.title ||
-                          "Не указан"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500">
-                        Отдел:
-                      </h5>
-                      <p className="text-sm">
-                        {selectedEvent.department || "Не указан"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <h5 className="text-xs font-medium text-gray-500">
-                        Статус:
-                      </h5>
-                      <p className="text-sm">
-                        {selectedEvent.status === "not_started" && "Не начата"}
-                        {selectedEvent.status === "in_progress" && "В процессе"}
-                        {selectedEvent.status === "completed" && "Завершена"}
-                        {selectedEvent.status === "blocked" && "Заблокирована"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 border-t flex justify-end space-x-2">
-              {isEditing ? (
-                <>
-                  <button
-                    onClick={closeEventModal}
-                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
-                    disabled={isLoading}
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    onClick={saveTaskChanges}
-                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      "Сохранение..."
-                    ) : (
-                      <>
-                        <CheckIcon className="h-4 w-4 mr-1" />
-                        Сохранить
-                      </>
-                    )}
-                  </button>
-                </>
-              ) : (
+        <Modal
+          isOpen={selectedEvent !== null}
+          onClose={closeEventModal}
+          title={isEditing ? "Редактирование задачи" : "Детали события"}
+          variant="info"
+          footer={
+            isEditing ? (
+              <>
                 <button
-                  onClick={enableEditMode}
-                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
+                  onClick={closeEventModal}
+                  className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                  disabled={isLoading}
                 >
-                  <PencilSquareIcon className="h-4 w-4 mr-1" />
-                  Редактировать
+                  Отмена
                 </button>
-              )}
+                <button
+                  onClick={saveTaskChanges}
+                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    "Сохранение..."
+                  ) : (
+                    <>
+                      <CheckIcon className="h-4 w-4 mr-1" />
+                      Сохранить
+                    </>
+                  )}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={enableEditMode}
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
+              >
+                <PencilSquareIcon className="h-4 w-4 mr-1" />
+                Редактировать
+              </button>
+            )
+          }
+        >
+          {isEditing ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Название задачи
+                </label>
+                <input
+                  type="text"
+                  value={editData.title}
+                  onChange={(e) =>
+                    setEditData({ ...editData, title: e.target.value })
+                  }
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Описание
+                </label>
+                <textarea
+                  value={editData.description}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      description: e.target.value,
+                    })
+                  }
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  rows={3}
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Приоритет
+                </label>
+                <select
+                  value={editData.priority}
+                  onChange={(e) =>
+                    setEditData({ ...editData, priority: e.target.value })
+                  }
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="low">Низкий</option>
+                  <option value="medium">Средний</option>
+                  <option value="high">Высокий</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Статус
+                </label>
+                <select
+                  value={editData.status}
+                  onChange={(e) =>
+                    setEditData({ ...editData, status: e.target.value })
+                  }
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="not_started">Не начата</option>
+                  <option value="in_progress">В процессе</option>
+                  <option value="completed">Завершена</option>
+                  <option value="blocked">Заблокирована</option>
+                </select>
+              </div>
             </div>
-          </div>
-        </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-lg font-medium">{selectedEvent.title}</h4>
+                <p className="text-sm text-gray-500">
+                  {new Date(selectedEvent.start).toLocaleString("ru-RU", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+
+              {selectedEvent.description && (
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700">
+                    Описание:
+                  </h5>
+                  <p className="text-sm text-gray-600">
+                    {selectedEvent.description}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <h5 className="text-xs font-medium text-gray-500">Тип:</h5>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: EVENT_TYPES[selectedEvent.type].color }}
+                  >
+                    {EVENT_TYPES[selectedEvent.type].title}
+                  </p>
+                </div>
+
+                <div>
+                  <h5 className="text-xs font-medium text-gray-500">
+                    Приоритет:
+                  </h5>
+                  <p
+                    className="text-sm font-medium"
+                    style={{
+                      color: PRIORITIES[selectedEvent.priority]?.color,
+                    }}
+                  >
+                    {PRIORITIES[selectedEvent.priority]?.title || "Не указан"}
+                  </p>
+                </div>
+
+                <div>
+                  <h5 className="text-xs font-medium text-gray-500">Отдел:</h5>
+                  <p className="text-sm">
+                    {selectedEvent.department || "Не указан"}
+                  </p>
+                </div>
+
+                <div>
+                  <h5 className="text-xs font-medium text-gray-500">Статус:</h5>
+                  <p className="text-sm">
+                    {selectedEvent.status === "not_started" && "Не начата"}
+                    {selectedEvent.status === "in_progress" && "В процессе"}
+                    {selectedEvent.status === "completed" && "Завершена"}
+                    {selectedEvent.status === "blocked" && "Заблокирована"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
       )}
 
       <div className="mt-4 pt-3 border-t border-gray-200">

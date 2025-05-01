@@ -17,6 +17,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getApiBaseUrl } from "../config/api"; // Импортируем функцию для получения базового API URL
 import usePageTitle from "../utils/usePageTitle";
+import Modal from "../components/common/Modal"; // Обновленный импорт модального окна
 
 const Profiles = () => {
   // Устанавливаем заголовок страницы
@@ -55,6 +56,9 @@ const Profiles = () => {
     middle_name: "",
     phone: "",
   });
+
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -561,6 +565,74 @@ const Profiles = () => {
     );
   };
 
+  // Рендер футера для модальных окон с кнопками действий
+  const renderCreateFooter = () => (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsCreateModalOpen(false)}
+        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+      >
+        Отмена
+      </button>
+      <button
+        type="submit"
+        form="create-user-form"
+        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+      >
+        Создать
+      </button>
+    </>
+  );
+
+  const renderEditFooter = () => (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsEditModalOpen(false)}
+        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+      >
+        Отмена
+      </button>
+      <button
+        type="submit"
+        form="edit-user-form"
+        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+      >
+        Сохранить
+      </button>
+    </>
+  );
+
+  const renderDeleteFooter = () => (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsDeleteModalOpen(false)}
+        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+      >
+        Отмена
+      </button>
+      <button
+        type="button"
+        onClick={handleDeleteUser}
+        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+      >
+        Удалить
+      </button>
+    </>
+  );
+
+  const renderResetPasswordFooter = () => (
+    <button
+      type="button"
+      onClick={() => setResetPasswordInfo(null)}
+      className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+    >
+      Закрыть
+    </button>
+  );
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -689,514 +761,558 @@ const Profiles = () => {
       </div>
 
       {/* Модальное окно создания пользователя */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 overflow-y-auto z-50">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
-              onClick={() => setIsCreateModalOpen(false)}
-            ></div>
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Добавить нового пользователя"
+        footer={renderCreateFooter()}
+      >
+        <form
+          id="create-user-form"
+          onSubmit={handleCreateUser}
+          className="space-y-4"
+        >
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
 
-            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full z-10">
-              <div className="bg-blue-50 px-4 py-3 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-blue-900">
-                  Добавить нового пользователя
-                </h3>
-              </div>
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Пароль
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
 
-              <form onSubmit={handleCreateUser} className="px-5 py-5 space-y-4">
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
+          <div>
+            <label
+              htmlFor="role"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Роль
+            </label>
+            <select
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="employee">Сотрудник</option>
+              <option value="manager">Менеджер</option>
+              <option value="hr">HR</option>
+            </select>
+          </div>
 
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Пароль
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="first_name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Имя
+              </label>
+              <input
+                type="text"
+                id="first_name"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
 
-                <div>
-                  <label
-                    htmlFor="role"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Роль
-                  </label>
-                  <select
-                    id="role"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="employee">Сотрудник</option>
-                    <option value="manager">Менеджер</option>
-                    <option value="hr">HR</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="department"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Отдел
-                  </label>
-                  <input
-                    type="text"
-                    id="department"
-                    name="department"
-                    value={formData.department}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="first_name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Имя
-                  </label>
-                  <input
-                    type="text"
-                    id="first_name"
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="last_name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Фамилия
-                  </label>
-                  <input
-                    type="text"
-                    id="last_name"
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="middle_name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Отчество
-                  </label>
-                  <input
-                    type="text"
-                    id="middle_name"
-                    name="middle_name"
-                    value={formData.middle_name}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Телефон
-                  </label>
-                  <input
-                    type="text"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="+380 XX XXX XX XX"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="photo"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Фотография
-                  </label>
-                  <div className="flex items-center space-x-4">
-                    <input
-                      type="file"
-                      id="photo"
-                      name="photo"
-                      ref={fileInputRef}
-                      onChange={handlePhotoChange}
-                      accept="image/*"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    {photoPreview && (
-                      <div className="relative">
-                        <img
-                          src={photoPreview}
-                          alt="Preview"
-                          className="h-16 w-16 object-cover rounded-md border border-gray-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={removePhotoPreview}
-                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
-                        >
-                          <XCircleIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Создать
-                  </button>
-                </div>
-              </form>
+            <div>
+              <label
+                htmlFor="last_name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Фамилия
+              </label>
+              <input
+                type="text"
+                id="last_name"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
             </div>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="middle_name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Отчество
+              </label>
+              <input
+                type="text"
+                id="middle_name"
+                name="middle_name"
+                value={formData.middle_name}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="phone"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Телефон
+              </label>
+              <input
+                type="text"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="+380 XX XXX XX XX"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="department"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Отдел
+            </label>
+            <input
+              type="text"
+              id="department"
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="photo"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Фотография
+            </label>
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <label
+                  htmlFor="photo"
+                  className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  <PhotoIcon className="h-5 w-5 mr-2" />
+                  Выбрать фото
+                </label>
+                <input
+                  type="file"
+                  id="photo"
+                  name="photo"
+                  ref={fileInputRef}
+                  onChange={handlePhotoChange}
+                  accept="image/*"
+                  className="sr-only"
+                />
+              </div>
+
+              {photoPreview && (
+                <div className="relative">
+                  <img
+                    src={photoPreview}
+                    alt="Preview"
+                    className="h-16 w-16 object-cover rounded-md border border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={removePhotoPreview}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    <XCircleIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </form>
+      </Modal>
 
       {/* Модальное окно редактирования пользователя */}
-      {isEditModalOpen && currentUser && (
-        <div className="fixed inset-0 overflow-y-auto z-50">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
-              onClick={() => setIsEditModalOpen(false)}
-            ></div>
+      {currentUser && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title="Редактирование данных пользователя"
+          footer={renderEditFooter()}
+        >
+          <form
+            id="edit-user-form"
+            onSubmit={handleUpdateUser}
+            className="space-y-4"
+          >
+            <div>
+              <label
+                htmlFor="edit-email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Email
+              </label>
+              <input
+                type="email"
+                id="edit-email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
 
-            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full z-10">
-              <div className="bg-blue-50 px-4 py-3 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-blue-900">
-                  Редактировать данные пользователя
-                </h3>
+            <div>
+              <label
+                htmlFor="edit-role"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Роль
+              </label>
+              <select
+                id="edit-role"
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              >
+                <option value="employee">Сотрудник</option>
+                <option value="manager">Менеджер</option>
+                <option value="hr">HR</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="edit-first_name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Имя
+                </label>
+                <input
+                  type="text"
+                  id="edit-first_name"
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
               </div>
 
-              <form onSubmit={handleUpdateUser} className="px-5 py-5 space-y-4">
-                <div>
-                  <label
-                    htmlFor="edit-email"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="edit-email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
+              <div>
+                <label
+                  htmlFor="edit-last_name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Фамилия
+                </label>
+                <input
+                  type="text"
+                  id="edit-last_name"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
 
-                <div>
-                  <label
-                    htmlFor="edit-role"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Роль
-                  </label>
-                  <select
-                    id="edit-role"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="employee">Сотрудник</option>
-                    <option value="manager">Менеджер</option>
-                    <option value="hr">HR</option>
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="edit-middle_name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Отчество
+                </label>
+                <input
+                  type="text"
+                  id="edit-middle_name"
+                  name="middle_name"
+                  value={formData.middle_name}
+                  onChange={handleChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
 
-                <div>
-                  <label
-                    htmlFor="edit-department"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Отдел
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-department"
-                    name="department"
-                    value={formData.department}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
+              <div>
+                <label
+                  htmlFor="edit-phone"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Телефон
+                </label>
+                <input
+                  type="text"
+                  id="edit-phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="+380 XX XXX XX XX"
+                />
+              </div>
+            </div>
 
-                <div>
-                  <label
-                    htmlFor="edit-first_name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Имя
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-first_name"
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
+            <div>
+              <label
+                htmlFor="edit-department"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Отдел
+              </label>
+              <input
+                type="text"
+                id="edit-department"
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
 
-                <div>
-                  <label
-                    htmlFor="edit-last_name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Фамилия
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-last_name"
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="edit-middle_name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Отчество
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-middle_name"
-                    name="middle_name"
-                    value={formData.middle_name}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="edit-phone"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Телефон
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="+380 XX XXX XX XX"
-                  />
-                </div>
-
-                <div>
+            <div>
+              <label
+                htmlFor="edit-photo"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Фотография
+              </label>
+              <div className="flex items-center space-x-4">
+                <div className="flex-1">
                   <label
                     htmlFor="edit-photo"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
                   >
-                    Фотография
+                    <PhotoIcon className="h-5 w-5 mr-2" />
+                    {currentUser.photo ? "Изменить фото" : "Добавить фото"}
                   </label>
-                  <div className="flex items-center space-x-4">
-                    <input
-                      type="file"
-                      id="edit-photo"
-                      name="photo"
-                      ref={fileInputRef}
-                      onChange={handlePhotoChange}
-                      accept="image/*"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    {photoPreview && (
-                      <div className="relative">
-                        <img
-                          src={photoPreview}
-                          alt="Preview"
-                          className="h-16 w-16 object-cover rounded-md border border-gray-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={removePhotoPreview}
-                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
-                        >
-                          <XCircleIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    type="file"
+                    id="edit-photo"
+                    name="photo"
+                    ref={fileInputRef}
+                    onChange={handlePhotoChange}
+                    accept="image/*"
+                    className="sr-only"
+                  />
                 </div>
 
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Сохранить
-                  </button>
-                </div>
-              </form>
+                {photoPreview && (
+                  <div className="relative">
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="h-16 w-16 object-cover rounded-md border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={removePhotoPreview}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <XCircleIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          </form>
+        </Modal>
       )}
 
       {/* Модальное окно подтверждения удаления */}
-      {isDeleteModalOpen && currentUser && (
-        <div className="fixed inset-0 overflow-y-auto z-50">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
-              onClick={() => setIsDeleteModalOpen(false)}
-            ></div>
-
-            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full z-10">
-              <div className="bg-red-50 px-4 py-3 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-red-900">
-                  Подтвердите удаление пользователя
-                </h3>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <p className="text-sm text-gray-500">
-                  Вы уверены, что хотите удалить пользователя{" "}
-                  <strong>{currentUser.email}</strong>? Это действие нельзя
-                  отменить.
-                </p>
-
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsDeleteModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDeleteUser}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  >
-                    Удалить
-                  </button>
-                </div>
-              </div>
-            </div>
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Подтверждение удаления пользователя"
+        variant="danger"
+        size="sm"
+        footer={renderDeleteFooter()}
+      >
+        {currentUser && (
+          <div className="space-y-4">
+            <p className="text-gray-500">
+              Вы уверены, что хотите удалить пользователя{" "}
+              <strong className="text-gray-900">{currentUser.email}</strong>?
+            </p>
+            <p className="text-sm text-red-500 font-medium">
+              Это действие нельзя отменить!
+            </p>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Модальное окно с информацией о сброшенном пароле */}
-      {resetPasswordInfo && (
-        <div className="fixed inset-0 overflow-y-auto z-50">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
-              onClick={() => setResetPasswordInfo(null)}
-            ></div>
+      <Modal
+        isOpen={!!resetPasswordInfo}
+        onClose={() => setResetPasswordInfo(null)}
+        title="Временный пароль"
+        variant="success"
+        size="md"
+        footer={renderResetPasswordFooter()}
+      >
+        {resetPasswordInfo && (
+          <div className="space-y-4">
+            <p className="text-gray-500">
+              Временный пароль для пользователя{" "}
+              <strong className="text-gray-900">
+                {resetPasswordInfo.email}
+              </strong>{" "}
+              успешно сгенерирован:
+            </p>
 
-            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full z-10">
-              <div className="bg-purple-50 px-4 py-3 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-purple-900">
-                  Временный пароль
-                </h3>
-              </div>
+            <div className="bg-gray-50 p-4 rounded-md border border-gray-200 font-mono text-center">
+              <span className="text-lg font-medium text-gray-800">
+                {resetPasswordInfo.password}
+              </span>
+            </div>
 
-              <div className="p-6 space-y-4">
-                <p className="text-sm text-gray-500 mb-2">
-                  Временный пароль для пользователя{" "}
-                  <strong>{resetPasswordInfo.email}</strong> успешно
-                  сгенерирован:
-                </p>
+            <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200">
+              <p className="text-yellow-700 text-sm">
+                <strong>Важно:</strong> Этот пароль отображается только один
+                раз. Сохраните его и передайте пользователю безопасным способом.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
 
-                <div className="bg-gray-50 p-3 rounded-md border border-gray-200 font-mono text-center">
-                  <span className="text-lg font-medium text-gray-800">
-                    {resetPasswordInfo.password}
-                  </span>
-                </div>
-
-                <div className="bg-yellow-50 p-3 rounded-md">
-                  <p className="text-yellow-700 text-sm">
-                    <strong>Важно:</strong> Этот пароль отображается только один
-                    раз. Сохраните его и передайте пользователю безопасным
-                    способом.
-                  </p>
-                </div>
-
-                <div className="mt-6 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setResetPasswordInfo(null)}
-                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+      {/* Обновленное модальное окно профиля */}
+      {selectedUser && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={`Профиль: ${selectedUser.name}`}
+          footer={
+            <>
+              <button
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Закрыть
+              </button>
+              {userRole === "admin" && (
+                <button
+                  className="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  onClick={() => {
+                    /* редактировать пользователя */
+                  }}
+                >
+                  Редактировать
+                </button>
+              )}
+            </>
+          }
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+            <div>
+              <img
+                src={selectedUser.avatar_url || "/placeholder-avatar.jpg"}
+                alt={selectedUser.name}
+                className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-blue-100"
+              />
+              <div className="text-center mt-4">
+                <h3 className="text-lg font-semibold">{selectedUser.name}</h3>
+                <p className="text-gray-600">{selectedUser.email}</p>
+                <div className="mt-2">
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-sm ${
+                      selectedUser.role === "employee"
+                        ? "bg-green-100 text-green-800"
+                        : selectedUser.role === "manager"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-purple-100 text-purple-800"
+                    }`}
                   >
-                    Закрыть
-                  </button>
+                    {selectedUser.role === "employee"
+                      ? "Сотрудник"
+                      : selectedUser.role === "manager"
+                      ? "Менеджер"
+                      : "Администратор"}
+                  </span>
                 </div>
               </div>
             </div>
+
+            <div>
+              <dl className="space-y-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">
+                    Должность
+                  </dt>
+                  <dd className="mt-1 text-md">
+                    {selectedUser.position || "Не указана"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Телефон</dt>
+                  <dd className="mt-1 text-md">
+                    {selectedUser.phone || "Не указан"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Отдел</dt>
+                  <dd className="mt-1 text-md">
+                    {selectedUser.department || "Не указан"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">
+                    Дата начала работы
+                  </dt>
+                  <dd className="mt-1 text-md">
+                    {selectedUser.start_date
+                      ? new Date(selectedUser.start_date).toLocaleDateString()
+                      : "Не указана"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            {selectedUser.bio && (
+              <div className="col-span-1 md:col-span-2">
+                <h4 className="font-medium text-gray-700 mb-2">О сотруднике</h4>
+                <p className="text-gray-600">{selectedUser.bio}</p>
+              </div>
+            )}
           </div>
-        </div>
+        </Modal>
       )}
 
       <ToastContainer position="bottom-right" />

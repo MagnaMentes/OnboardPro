@@ -600,3 +600,338 @@
 2025-05-01 08:02:19,191 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
 2025-05-01 08:02:49,188 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
 2025-05-01 08:03:19,190 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:32:15,551 - websocket_manager - INFO - WebSocketManager инициализирован
+2025-05-01 12:35:25,144 - websocket_manager - INFO - WebSocketManager инициализирован
+2025-05-01 12:39:09,119 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 12:39:09,120 - websocket_manager - ERROR - Ошибка при отправке личного сообщения: 
+2025-05-01 12:39:09,121 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 12:39:09,121 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=None, role=None
+2025-05-01 12:39:09,142 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 12:39:09,154 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:39:09,161 - websocket_manager - INFO - Отправлены свежие данные аналитики пользователю 1
+2025-05-01 12:39:39,147 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:39:40,818 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 12:39:40,821 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:39:40,822 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 12:39:46,170 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 12:39:46,171 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:39:46,171 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 12:39:50,849 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 12:39:50,850 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:39:53,488 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 12:39:53,819 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 12:39:53,820 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 12:39:53,824 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:39:53,826 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 12:40:00,875 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 12:40:00,876 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:40:00,877 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 12:40:02,833 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 12:40:02,834 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:40:04,356 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 12:40:04,358 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:40:23,822 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:40:53,825 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:41:23,824 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:41:53,824 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:42:23,823 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:42:53,824 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:42:54,668 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 12:42:56,500 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 12:42:56,503 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 12:42:56,516 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:42:56,516 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 12:42:59,286 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 12:43:02,372 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 12:43:02,395 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 12:43:02,407 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:43:02,408 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 12:43:12,890 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 12:43:17,903 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 12:43:17,905 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 12:43:47,909 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:44:17,910 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:44:48,352 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:44:59,964 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 12:45:17,557 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 12:45:17,559 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 12:45:17,566 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 12:45:17,568 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 12:45:48,350 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:46:18,351 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:46:48,353 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:47:18,354 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:47:50,351 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:48:50,354 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:49:50,358 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:50:50,354 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:51:50,356 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:52:50,354 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:53:50,353 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:54:50,360 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:55:50,386 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:56:50,387 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:57:50,384 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:58:33,839 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:58:47,597 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:59:17,597 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 12:59:47,597 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:00:17,598 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:00:47,599 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:01:17,598 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:01:47,598 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:02:17,599 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:02:47,600 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:03:17,601 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:03:47,600 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:04:17,600 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:04:47,602 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:05:17,602 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:05:47,600 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:06:17,603 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:06:48,385 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:07:18,389 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:07:50,389 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:08:50,394 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:09:34,527 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:09:47,603 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:10:18,392 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:10:48,392 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:11:50,397 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:12:41,756 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:12:47,605 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:13:00,574 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 13:13:04,295 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 13:13:04,297 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 13:13:04,306 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 13:13:04,307 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 13:13:06,849 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 13:13:09,182 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 13:13:09,183 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 13:13:09,200 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 13:13:09,201 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 13:13:39,190 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:14:09,189 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:14:39,190 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:15:09,190 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:15:39,394 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:16:09,394 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:16:50,398 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:17:50,395 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:18:30,104 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:18:39,191 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:19:09,192 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:19:39,396 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:20:09,397 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:20:50,399 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:21:50,399 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:22:50,403 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:23:31,919 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:23:39,194 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:23:41,484 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 13:24:36,049 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 13:24:36,052 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 13:24:36,054 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 13:24:36,055 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 13:25:06,002 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 13:25:06,257 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 13:25:06,259 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 13:25:06,261 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 13:25:06,262 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 13:25:08,427 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 13:25:08,520 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 13:25:08,522 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 13:25:08,524 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 13:25:08,524 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 13:25:12,054 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 13:25:17,058 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 13:25:17,059 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 13:25:47,403 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:26:17,401 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:26:47,401 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:27:17,402 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:27:49,658 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:27:53,462 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 13:36:05,650 - integrations - INFO - Начало импорта сотрудников из Workable
+2025-05-01 13:36:05,651 - integrations - ERROR - Отсутствует API ключ Workable
+2025-05-01 13:36:05,651 - integrations - ERROR - Ошибка при импорте из Workable: 500: Workable API key not found in environment
+2025-05-01 13:36:11,653 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 13:36:11,656 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 13:36:11,659 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 13:36:11,659 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 13:36:15,142 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 13:36:20,152 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 13:36:20,153 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 13:36:50,156 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:37:20,160 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:37:50,156 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:38:20,159 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:38:50,157 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:39:20,157 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:39:50,158 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:40:20,158 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:40:50,158 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:41:20,389 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:41:50,395 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:42:50,395 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 13:43:06,850 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:34:03,895 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:34:03,952 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:34:03,992 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:34:03,994 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:34:05,650 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:34:05,788 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:34:05,794 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:34:05,797 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:34:05,798 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:34:14,783 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 14:34:14,784 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:34:14,785 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:34:21,799 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 14:34:21,800 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:34:21,800 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:34:24,848 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:34:25,026 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:34:25,029 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:34:25,032 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:34:25,032 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:34:27,220 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:34:32,225 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:34:32,225 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:35:02,228 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:35:14,195 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 14:35:19,072 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 14:35:32,230 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:36:02,229 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:36:32,229 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:37:02,236 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:37:32,237 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:38:02,233 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:38:32,232 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:39:02,237 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:39:32,237 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:40:02,237 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:40:07,084 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:40:18,004 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:40:18,009 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:40:18,013 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:40:18,014 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:40:20,346 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:40:25,358 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:40:25,360 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:40:26,750 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:40:33,104 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:40:33,113 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:40:33,116 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:40:33,117 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:40:36,229 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:40:41,237 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:40:41,238 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:40:51,081 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:40:51,084 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:40:51,084 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:40:51,097 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:40:51,097 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:41:21,085 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:41:51,086 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:42:21,086 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:42:51,086 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:43:21,085 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:43:51,085 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:44:21,086 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:44:51,086 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:45:21,085 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:45:51,085 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:46:21,085 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:46:51,086 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:47:21,086 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:47:51,087 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:48:21,086 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:48:51,088 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:49:21,085 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:49:51,086 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:50:21,088 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:50:51,085 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:51:21,085 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:51:51,072 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:51:51,846 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:51:52,079 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:51:52,084 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:51:52,088 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:51:52,089 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:51:53,277 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:52:06,295 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:52:06,297 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:52:06,300 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:52:06,300 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:52:36,298 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:53:06,297 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:53:36,297 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:54:06,298 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:54:36,298 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:55:06,298 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:55:36,297 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:56:06,300 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:56:31,879 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:56:32,102 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:56:32,108 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:56:32,123 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:56:32,123 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:56:37,326 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 14:58:45,013 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 14:58:45,017 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 14:58:45,024 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 14:58:45,025 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 14:59:15,018 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 14:59:45,022 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:00:15,019 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:00:45,019 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:01:15,018 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:01:45,020 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:02:15,018 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:02:45,019 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:03:15,019 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:03:45,018 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:04:15,021 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:04:37,097 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 15:04:46,660 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 15:04:46,662 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 15:04:46,663 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 15:04:46,663 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 15:04:55,260 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-01 15:05:06,854 - websocket_manager - INFO - Новое WebSocket соединение: user_id=1, role=hr
+2025-05-01 15:05:06,856 - websocket_manager - INFO - Отправлены кэшированные данные аналитики для HR пользователя 1
+2025-05-01 15:05:06,859 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 15:05:06,859 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 15:05:14,822 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 15:05:14,823 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 15:05:14,823 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 15:05:20,460 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 15:05:20,460 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 15:05:20,460 - websocket_manager - INFO - Отправлены кэшированные данные аналитики пользователю 1
+2025-05-01 15:05:23,281 - websocket_manager - INFO - Отправлено обновление аналитики для 1 HR пользователей
+2025-05-01 15:05:23,282 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-01 15:05:36,854 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:06:06,857 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:06:36,858 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:07:06,856 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:07:36,857 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:08:06,857 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:08:36,857 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:09:06,858 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:09:36,857 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:10:06,857 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:10:36,861 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:11:06,857 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:11:36,851 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:12:06,846 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:12:36,846 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:13:06,846 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:13:36,846 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:14:06,845 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:14:36,846 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:15:07,345 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:15:37,344 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:16:50,342 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:17:50,345 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-01 15:18:50,341 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
