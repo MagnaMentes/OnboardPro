@@ -37,9 +37,14 @@ class WebSocketService {
         const wsProtocol =
           window.location.protocol === "https:" ? "wss:" : "ws:";
 
-        // ВАЖНОЕ ИСПРАВЛЕНИЕ: явно указываем бэкенд-сервер с портом 8000
-        // Это необходимо, так как WebSocket должен подключаться к бэкенд-серверу напрямую, а не через Nginx
-        const wsUrl = `${wsProtocol}//localhost:8000/ws`;
+        // Используем относительный путь или window.location.host для работы в Docker
+        // вместо жестко заданного localhost:8000
+        const host = window.location.host.includes(":")
+          ? window.location.host.split(":")[0] // Если есть порт в хосте, берём только имя хоста
+          : window.location.host;
+
+        // Используем относительный URL для работы как в контейнере, так и локально
+        const wsUrl = `${wsProtocol}//${host}:8000/ws`;
 
         console.log("[WebSocket] Попытка подключения к WebSocket");
         console.log("[WebSocket] URL соединения (без токена):", wsUrl);

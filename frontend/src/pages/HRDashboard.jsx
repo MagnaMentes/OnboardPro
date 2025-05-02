@@ -155,6 +155,11 @@ export default function HRDashboard() {
                     analyticsData.task_stats.completed
                       ? prev.task_stats.completed
                       : analyticsData.task_stats.completed,
+                  in_progress:
+                    prev.task_stats.in_progress !==
+                    analyticsData.task_stats.in_progress
+                      ? prev.task_stats.in_progress
+                      : analyticsData.task_stats.in_progress,
                   completion_rate:
                     prev.task_stats.total > 0
                       ? prev.task_stats.completed / prev.task_stats.total
@@ -353,6 +358,24 @@ export default function HRDashboard() {
         const tasksData = await tasksResponse.json();
         setTasks(tasksData);
 
+        // Исправление: обновляем аналитику, чтобы счетчик задач в процессе соответствовал реальному количеству
+        setAnalytics((prevAnalytics) => {
+          if (!prevAnalytics || !prevAnalytics.task_stats) return prevAnalytics;
+
+          // Подсчитываем фактическое количество задач в процессе из полученных данных
+          const inProgressTasksCount = tasksData.filter(
+            (task) => task.status === "in_progress"
+          ).length;
+
+          return {
+            ...prevAnalytics,
+            task_stats: {
+              ...prevAnalytics.task_stats,
+              in_progress: inProgressTasksCount,
+            },
+          };
+        });
+
         setLastUpdate(new Date());
         console.log(
           "Данные успешно загружены с принудительным обновлением при перезагрузке страницы"
@@ -407,6 +430,26 @@ export default function HRDashboard() {
           },
         };
         setAnalytics(updatedData);
+
+        // Обработка детальной информации о задачах в процессе, если она есть
+        if (
+          updatedData.task_stats &&
+          updatedData.task_stats.in_progress_tasks_details
+        ) {
+          // Обновляем список задач, чтобы карточка со статистикой обновилась
+          setTasks((prevTasks) => {
+            // Находим все задачи, кроме тех, что в процессе
+            const filteredTasks = prevTasks.filter(
+              (task) => task.status !== "in_progress"
+            );
+            // Добавляем обновленные задачи в процессе
+            return [
+              ...filteredTasks,
+              ...updatedData.task_stats.in_progress_tasks_details,
+            ];
+          });
+        }
+
         setHasRealtimeUpdates(true);
         setLastUpdate(new Date());
         toast.info("Получены новые аналитические данные", {
@@ -425,6 +468,7 @@ export default function HRDashboard() {
       let taskWasInProgress = false;
       let taskWasCompleted = false;
       let taskWasDeleted = data.data.status === "deleted";
+      let taskIsNowInProgress = data.data.status === "in_progress";
 
       // Обрабатываем удаление задачи
       if (taskWasDeleted) {
@@ -433,6 +477,12 @@ export default function HRDashboard() {
           const taskToRemove = prevTasks.find(
             (task) => task.id === data.data.id
           );
+
+          // Проверяем, была ли удаляемая задача в процессе
+          if (taskToRemove && taskToRemove.status === "in_progress") {
+            taskWasInProgress = true;
+          }
+
           const wasCompleted =
             taskToRemove && taskToRemove.status === "completed";
 
@@ -443,10 +493,16 @@ export default function HRDashboard() {
             const updatedStats = { ...prev.task_stats };
             const newTotal = Math.max(0, updatedStats.total - 1);
             let newCompleted = updatedStats.completed;
+            let newInProgress = updatedStats.in_progress;
 
             // Если удаляем завершенную задачу, уменьшаем счетчик завершенных
             if (wasCompleted) {
               newCompleted = Math.max(0, updatedStats.completed - 1);
+            }
+
+            // Если удаляем задачу в процессе, уменьшаем счетчик задач в процессе
+            if (taskWasInProgress) {
+              newInProgress = Math.max(0, updatedStats.in_progress - 1);
             }
 
             // Рассчитываем новый процент выполнения
@@ -459,6 +515,7 @@ export default function HRDashboard() {
                 ...updatedStats,
                 total: newTotal,
                 completed: newCompleted,
+                in_progress: newInProgress,
                 completion_rate: newCompletionRate,
               },
               metadata: {
@@ -497,6 +554,16 @@ export default function HRDashboard() {
 
           const updatedStats = { ...prev.task_stats };
           const total = updatedStats.total;
+          let newInProgress = updatedStats.in_progress;
+
+          // Обновляем счетчик задач в процессе
+          if (taskIsNowInProgress && !taskWasInProgress) {
+            // Задача переведена в статус "в процессе"
+            newInProgress = updatedStats.in_progress + 1;
+          } else if (!taskIsNowInProgress && taskWasInProgress) {
+            // Задача переведена из статуса "в процессе" в другой статус
+            newInProgress = Math.max(0, updatedStats.in_progress - 1);
+          }
 
           // Если задача завершена и она ранее НЕ была завершена
           if (data.data.status === "completed" && !taskWasCompleted) {
@@ -507,6 +574,7 @@ export default function HRDashboard() {
               ...prev,
               task_stats: {
                 ...updatedStats,
+                in_progress: newInProgress,
                 completed: newCompleted,
                 completion_rate: newCompletionRate,
               },
@@ -526,8 +594,24 @@ export default function HRDashboard() {
               ...prev,
               task_stats: {
                 ...updatedStats,
+                in_progress: newInProgress,
                 completed: newCompleted,
                 completion_rate: newCompletionRate,
+              },
+              metadata: {
+                ...(prev.metadata || {}),
+                updated_locally: true,
+                generated_at: new Date().toISOString(),
+              },
+            };
+          }
+          // Если изменение касается только счетчика задач в процессе
+          else if (newInProgress !== updatedStats.in_progress) {
+            return {
+              ...prev,
+              task_stats: {
+                ...updatedStats,
+                in_progress: newInProgress,
               },
               metadata: {
                 ...(prev.metadata || {}),
@@ -539,17 +623,6 @@ export default function HRDashboard() {
 
           return prev; // Если статус не изменился или не влияет на счетчики
         });
-      }
-
-      // Запрашиваем обновление аналитических данных с увеличенной задержкой
-      // чтобы дать серверу время обновить данные
-      const token = localStorage.getItem("token");
-      if (token) {
-        // Сначала отправляем запрос на обновление через WebSocket
-        webSocketService.requestAnalyticsUpdate();
-
-        // Увеличиваем задержку перед запросом с сервера для гарантии актуальности данных
-        setTimeout(fetchUpdatedAnalytics, 3000);
       }
     };
 
@@ -1101,8 +1174,6 @@ export default function HRDashboard() {
 
   const prevFeedbackStats = previousAnalytics?.feedback_stats;
 
-  const inProgressTasks = tasks.filter((task) => task.status === "in_progress");
-
   const dataWasTruncated = taskAnalytics?.metadata?.truncated;
 
   return (
@@ -1433,9 +1504,10 @@ export default function HRDashboard() {
 
                 <StatCard
                   title="Задачи в процессе"
-                  value={inProgressTasks.length}
+                  value={taskStats.in_progress || 0}
                   icon={ClockIcon}
                   color="yellow"
+                  prevValue={prevTaskStats?.in_progress}
                 />
               </div>
 
