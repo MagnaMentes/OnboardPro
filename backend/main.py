@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request, File, UploadFile, WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocketState
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +14,11 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from integrations import send_telegram_notification, create_calendar_event, import_workable_employees, handle_telegram_webhook, sync_calendar_task_status, sync_workable_candidate
 from websocket_manager import websocket_manager
+# Импортируем роутеры API
+from api.task_templates import router as task_templates_router
+from api.portal import router as portal_router
+# Добавляем импорт нового роутера аналитики
+from api.analytics import router as analytics_router, invalidate_analytics_cache, _analytics_global_version, generate_cache_key, get_cached_analytics, set_analytics_cache, cache_data, get_cached_data
 import secrets
 import string
 import re
@@ -21,118 +27,33 @@ import shutil
 import hashlib
 import time
 import json
-from fastapi.responses import FileResponse
+import traceback
+from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 import uuid
 
-# Простая реализация кэша в памяти
-analytics_cache = {}
-analytics_versions = {}
-CACHE_EXPIRATION_TIME = 300  # 5 минут в секундах
-
-# Функция для генерации ключа кэша на основе параметров запроса
-
-
-def generate_cache_key(endpoint: str, params: Dict[str, Any]) -> str:
-    # Сортируем параметры для консистентности ключа
-    sorted_params = sorted([(k, str(v))
-                           for k, v in params.items() if v is not None])
-    params_str = json.dumps(sorted_params)
-    # Создаем хеш для получения короткого ключа
-    key = hashlib.md5(f"{endpoint}:{params_str}".encode()).hexdigest()
-    return key
-
-# Функция для проверки и получения данных из кэша
-
-
-def get_cached_data(endpoint: str, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    key = generate_cache_key(endpoint, params)
-    if key in analytics_cache:
-        cache_time, version, data = analytics_cache[key]
-        # Проверяем срок действия кэша
-        if time.time() - cache_time < CACHE_EXPIRATION_TIME:
-            # Проверяем, не устарела ли версия данных
-            endpoint_version = analytics_versions.get(endpoint, 0)
-            if version >= endpoint_version:
-                return data
-    return None
-
-# Функция для сохранения данных в кэше
-
-
-def cache_data(endpoint: str, params: Dict[str, Any], data: Dict[str, Any]) -> None:
-    key = generate_cache_key(endpoint, params)
-    # Получаем текущую версию эндпоинта или создаем новую
-    version = analytics_versions.get(endpoint, 0)
-    analytics_cache[key] = (time.time(), version, data)
-
-# Функция для инвалидации кэша при изменениях
-
-
-def invalidate_analytics_cache(endpoint: Optional[str] = None) -> None:
-    if endpoint:
-        # Инкрементируем версию только для указанного эндпоинта
-        current_version = analytics_versions.get(endpoint, 0)
-        analytics_versions[endpoint] = current_version + 1
-    else:
-        # Инкрементируем версии для всех эндпоинтов
-        for key in analytics_versions:
-            analytics_versions[key] += 1
-
-
-# Улучшим систему управления кэшем для гарантии актуальности данных после перезагрузки
-
-# Глобальные переменные для управления кэшем
-_analytics_cache = {}
-_analytics_cache_timestamp = {}
-_analytics_global_version = 0  # Глобальная версия для всей аналитики
-
-
-def invalidate_analytics_cache():
-    """Полная инвалидация кэша для аналитических данных"""
-    global _analytics_cache, _analytics_cache_timestamp, _analytics_global_version, analytics_versions
-    _analytics_cache.clear()
-    _analytics_cache_timestamp.clear()
-
-    # Увеличиваем глобальную версию, чтобы все новые запросы получали свежие данные
-    _analytics_global_version += 1
-
-    # Инкрементируем версии для всех эндпоинтов
-    for key in analytics_versions:
-        analytics_versions[key] += 1
-
-    print(
-        f"Кэш аналитики был инвалидирован (версия: {_analytics_global_version})")
-
-
-def get_cached_analytics(cache_key, max_age_seconds=5):  # Уменьшаем время жизни кэша
-    """Получение кэшированных данных аналитики, если они не устарели"""
-    current_time = time.time()
-    if cache_key in _analytics_cache and cache_key in _analytics_cache_timestamp:
-        cache_age = current_time - _analytics_cache_timestamp[cache_key]
-
-        # Проверяем как возраст кэша, так и его версию
-        if cache_age < max_age_seconds and _analytics_cache[cache_key].get("metadata", {}).get("version", 0) == _analytics_global_version:
-            return _analytics_cache[cache_key]
-    return None
-
-
-def set_analytics_cache(cache_key, data):
-    """Сохранение данных аналитики в кэш с версией"""
-    global _analytics_cache, _analytics_cache_timestamp
-
-    # Добавляем текущую глобальную версию к метаданным, если их еще нет
-    if "metadata" not in data:
-        data["metadata"] = {}
-
-    data["metadata"]["version"] = _analytics_global_version
-    data["metadata"]["cached_at"] = datetime.now().isoformat()
-
-    _analytics_cache[cache_key] = data
-    _analytics_cache_timestamp[cache_key] = time.time()
-
-
 app = FastAPI()
+
+# Обработчик ошибок для предотвращения выбрасывания ошибок до CORS
+
+
+@app.middleware("http")
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as e:
+        # Логируем ошибку
+        print(f"Ошибка запроса: {str(e)}")
+        # Возвращаем стандартный ответ с ошибкой, но с корректными CORS заголовками
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Internal server error"},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            },
+        )
 
 # Настройка CORS с явным указанием разрешенных источников
 app.add_middleware(
@@ -140,7 +61,7 @@ app.add_middleware(
     # Разрешаем запросы с фронтенд сервера и из Docker-сети
     allow_origins=["http://localhost:3000", "http://localhost",
                    "http://127.0.0.1:3000", "http://127.0.0.1",
-                   "http://frontend:3000"],
+                   "http://frontend:3000", "http://localhost:8000", "*"],  # Добавляем "*" для отладки
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -149,6 +70,15 @@ app.add_middleware(
 
 # Монтирование директории static для раздачи фотографий
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Регистрируем API эндпоинты для шаблонов задач
+app.include_router(task_templates_router)
+
+# Регистрируем API эндпоинты для портала кандидатов
+app.include_router(portal_router, prefix="/api")
+
+# Регистрируем API эндпоинты для аналитики
+app.include_router(analytics_router)  # Добавляем роутер аналитики
 
 
 @app.get("/health")
@@ -327,6 +257,13 @@ class AnalyticsResponse(BaseModel):
 
 class PasswordUpdate(BaseModel):
     password: str
+
+
+class PortalTokenResponse(BaseModel):
+    """Модель ответа с токеном доступа к порталу кандидата"""
+    token: str
+    expires_at: str  # ISO-формат даты и времени истечения срока действия токена
+    candidate_id: int
 
 
 # Генерация случайного пароля
@@ -1364,8 +1301,11 @@ async def get_task_analytics(
         department_stats[dept]["completion_rate"] = completed / \
             total if total > 0 else 0
 
-    # Подготавливаем результат с метаданными версионирования
+    # Подготавливаем результат с метаданными
     timestamp = datetime.now().isoformat()
+    # Используем миллисекунды как версию вместо analytics_versions
+    version = int(time.time() * 1000)
+
     result = {
         "tasks": tasks_data,
         "summary": {
@@ -1382,8 +1322,10 @@ async def get_task_analytics(
         },
         "metadata": {
             "generated_at": timestamp,
-            "version": analytics_versions.get("analytics_tasks", 0),
-            "truncated": len(tasks_data) > MAX_TASKS_IN_RESPONSE
+            "version": version,  # Используем время как версию вместо analytics_versions
+            "truncated": len(tasks_data) > MAX_TASKS_IN_RESPONSE,
+            # Используем глобальную версию из модуля аналитики
+            "global_version": _analytics_global_version
         }
     }
 
@@ -1526,6 +1468,9 @@ async def get_user_analytics(
         len(users_with_onboarding) if users_with_onboarding else 0
 
     # Формируем результат
+    timestamp = datetime.now().isoformat()
+    version = int(time.time() * 1000)  # Используем миллисекунды как версию
+
     result = {
         "users": users_data,
         "summary": {
@@ -1539,8 +1484,10 @@ async def get_user_analytics(
             "department": department
         },
         "metadata": {
-            "generated_at": datetime.now().isoformat(),
-            "version": analytics_versions.get("analytics_users", 0)
+            "generated_at": timestamp,
+            "version": version,  # Используем время как версию вместо analytics_versions
+            # Используем глобальную версию из модуля аналитики
+            "global_version": _analytics_global_version
         }
     }
 
@@ -1562,45 +1509,144 @@ async def websocket_endpoint(websocket: WebSocket, token: str = None):
     """WebSocket соединение с сервером для обновлений в реальном времени"""
     # Проверка токена и получение информации о пользователе
     if not token:
-        await websocket.close(code=1008, reason="Отсутствует токен авторизации")
+        try:
+            await websocket.accept()
+            await websocket.send_text(json.dumps({"type": "error", "message": "Отсутствует токен авторизации"}))
+            await websocket.close(code=1008)
+        except Exception as e:
+            print(f"Ошибка при закрытии соединения без токена: {str(e)}")
         return
 
     try:
+        print(f"[AUTH] Проверяем WebSocket токен: {token[:20]}...")
         # Проверяем токен
         payload = auth.verify_token(token)
         email = payload.get("sub")
+        print(f"[AUTH] WebSocket токен верифицирован, email: {email}")
 
         # Находим пользователя по email
         db: Session = next(get_db())
-        user = db.query(models.User).filter(models.User.email == email).first()
-
-        if not user:
-            await websocket.close(code=1008, reason="Пользователь не найден")
-            return
-
-        # Подключаем пользователя к WebSocket
-        await websocket_manager.connect(websocket, user.id, user.role)
-
         try:
+            user = db.query(models.User).filter(
+                models.User.email == email).first()
+
+            if not user:
+                # Принимаем соединение перед отправкой ошибки
+                await websocket.accept()
+                await websocket.send_text(json.dumps({"type": "error", "message": "Пользователь не найден"}))
+                await websocket.close(code=1008)
+                return
+
+            # Сначала принимаем соединение
+            await websocket.accept()
+            print(f"[WebSocket] Соединение с {email} успешно установлено")
+
+            # Отправляем подтверждение установки соединения
+            await websocket.send_text(json.dumps({
+                "type": "connection_established",
+                "user_id": user.id,
+                "role": user.role,
+                "timestamp": int(time.time() * 1000),
+                "server_version": _analytics_global_version
+            }))
+
+            # Подключаем пользователя к WebSocket менеджеру
+            await websocket_manager.connect(websocket, user.id, user.role)
+
+            # Немедленно отправляем текущую аналитику
+            if user.role == "hr":
+                try:
+                    analytics_data = await get_analytics_data_for_websocket()
+                    await websocket.send_text(json.dumps({
+                        "type": "analytics_update",
+                        "data": analytics_data,
+                        "timestamp": int(time.time() * 1000)
+                    }))
+                except Exception as e:
+                    print(
+                        f"Ошибка при отправке начальных аналитических данных: {str(e)}")
+
             # Бесконечный цикл для обработки сообщений
             while True:
-                # Получаем сообщение от клиента
-                data = await websocket.receive_text()
-                message = json.loads(data)
+                try:
+                    # Получаем сообщение от клиента или ожидаем отключения
+                    data = await websocket.receive_text()
+                    message = json.loads(data)
 
-                # Обрабатываем сообщение
-                await websocket_manager.handle_client_message(websocket, message)
-        except WebSocketDisconnect:
-            # При разрыве соединения удаляем пользователя из менеджера
-            await websocket_manager.disconnect(websocket)
+                    # Если это пинг, сразу отвечаем пингом
+                    if message.get("type") == "ping":
+                        await websocket.send_text(json.dumps({
+                            "type": "pong",
+                            "timestamp": message.get("timestamp", int(time.time() * 1000))
+                        }))
+                    else:
+                        # Обрабатываем другие типы сообщений
+                        await websocket_manager.handle_client_message(websocket, message)
+
+                except WebSocketDisconnect:
+                    # При разрыве соединения удаляем пользователя из менеджера
+                    await websocket_manager.disconnect(websocket)
+                    print(f"[WebSocket] Клиент {email} отключился")
+                    break
+
+                except ConnectionClosedError:
+                    # Если соединение уже закрыто
+                    await websocket_manager.disconnect(websocket)
+                    print(f"[WebSocket] Клиент {email} - соединение закрыто")
+                    break
+
+                except Exception as e:
+                    # Логирование ошибок
+                    print(f"Ошибка обработки сообщения WebSocket: {str(e)}")
+                    traceback.print_exc()  # Выводим полный стек ошибки для отладки
+                    # Если соединение ещё активно, отправляем сообщение об ошибке
+                    if websocket.client_state == WebSocketState.CONNECTED:
+                        try:
+                            await websocket.send_text(json.dumps({
+                                "type": "error",
+                                "message": f"Ошибка обработки сообщения: {str(e)}",
+                                "timestamp": int(time.time() * 1000)
+                            }))
+                        except:
+                            # Игнорируем ошибки при отправке сообщения об ошибке
+                            break
+                    else:
+                        break
+
         except Exception as e:
-            # Логирование ошибок
-            print(f"Ошибка WebSocket: {str(e)}")
-            await websocket_manager.disconnect(websocket)
+            print(f"Ошибка при работе с БД или WebSocket: {str(e)}")
+            traceback.print_exc()
+            if websocket.client_state == WebSocketState.CONNECTED:
+                try:
+                    await websocket.send_text(json.dumps({
+                        "type": "error",
+                        "message": f"Ошибка сервера: {str(e)}",
+                        "timestamp": int(time.time() * 1000)
+                    }))
+                except:
+                    pass  # Игнорируем ошибки при отправке сообщения об ошибке
+        finally:
+            db.close()
+
     except Exception as e:
-        # При ошибке авторизации закрываем соединение
+        # При ошибке авторизации отправляем сообщение об ошибке
         print(f"Ошибка авторизации WebSocket: {str(e)}")
-        await websocket.close(code=1008, reason="Неверный токен авторизации")
+        traceback.print_exc()
+        try:
+            # Если соединение еще не принято, принимаем его перед отправкой сообщения
+            if websocket.client_state == WebSocketState.CONNECTING:
+                await websocket.accept()
+
+            if websocket.client_state == WebSocketState.CONNECTED:
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "message": "Ошибка авторизации: неверный токен",
+                    "timestamp": int(time.time() * 1000)
+                }))
+                await websocket.close(code=1008)
+        except Exception as close_err:
+            print(f"Ошибка при закрытии соединения: {str(close_err)}")
+            traceback.print_exc()
 
 
 async def get_analytics_data_for_websocket() -> Dict[str, Any]:
@@ -1611,13 +1657,42 @@ async def get_analytics_data_for_websocket() -> Dict[str, Any]:
     try:
         # Базовый запрос для задач
         task_query = db.query(models.Task)
+
+        # Запросы для разных статусов задач
         completed_task_query = db.query(models.Task).filter(
             models.Task.status == "completed")
+        in_progress_task_query = db.query(models.Task).filter(
+            models.Task.status == "in_progress")
+        pending_task_query = db.query(models.Task).filter(
+            models.Task.status == "pending")
 
         # Получаем статистику по задачам
         total_tasks = task_query.count()
         completed_tasks = completed_task_query.count()
+        in_progress_tasks = in_progress_task_query.count()
+        pending_tasks = pending_task_query.count()
+
         completion_rate = completed_tasks / total_tasks if total_tasks > 0 else 0
+
+        # Получаем список задач в процессе с более детальной информацией
+        in_progress_tasks_details = []
+        tasks_in_progress = in_progress_task_query.all()
+
+        for task in tasks_in_progress:
+            # Получаем информацию о пользователе-исполнителе
+            assignee = db.query(models.User).filter(
+                models.User.id == task.user_id).first()
+
+            in_progress_tasks_details.append({
+                "id": task.id,
+                "title": task.title,
+                "priority": task.priority,
+                "created_at": task.created_at.isoformat() if task.created_at else None,
+                "deadline": task.deadline.isoformat() if task.deadline else None,
+                "assignee_name": f"{assignee.first_name} {assignee.last_name}".strip() if assignee and assignee.first_name and assignee.last_name else assignee.email if assignee else "Неизвестно",
+                "assignee_id": task.user_id,
+                "department": assignee.department if assignee else "Неизвестно"
+            })
 
         # Статистика по отзывам
         total_feedback = db.query(models.Feedback).count()
@@ -1633,7 +1708,9 @@ async def get_analytics_data_for_websocket() -> Dict[str, Any]:
                 models.Task.priority == priority)
             priority_stats[priority] = {
                 "total": priority_query.count(),
-                "completed": priority_query.filter(models.Task.status == "completed").count()
+                "completed": priority_query.filter(models.Task.status == "completed").count(),
+                "in_progress": priority_query.filter(models.Task.status == "in_progress").count(),
+                "pending": priority_query.filter(models.Task.status == "pending").count()
             }
 
         # Формируем результат с версией и меткой времени
@@ -1644,8 +1721,12 @@ async def get_analytics_data_for_websocket() -> Dict[str, Any]:
             "task_stats": {
                 "total": total_tasks,
                 "completed": completed_tasks,
+                "in_progress": in_progress_tasks,
+                "pending": pending_tasks,
                 "completion_rate": completion_rate,
-                "priority": priority_stats
+                "priority": priority_stats,
+                # Добавляем детальную информацию о задачах в процессе
+                "in_progress_tasks_details": in_progress_tasks_details
             },
             "feedback_stats": {
                 "total": total_feedback,
@@ -1661,6 +1742,59 @@ async def get_analytics_data_for_websocket() -> Dict[str, Any]:
         return result
     except Exception as e:
         print(f"Ошибка при получении аналитических данных: {str(e)}")
-        raise
+        traceback.print_exc()  # Выводим полный стек ошибки для отладки
+        return {
+            "error": str(e),
+            "metadata": {
+                "generated_at": datetime.now().isoformat(),
+                "error": True
+            }
+        }
     finally:
         db.close()
+
+
+@app.post("/api/portal/generate-token/{user_id}", response_model=PortalTokenResponse)
+async def generate_portal_token(
+    user_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(auth.get_db)
+):
+    """
+    Создаёт токен для доступа к порталу кандидата.
+    Доступно только для HR и менеджеров.
+    """
+    # Проверяем права доступа (только HR и менеджеры)
+    if current_user.role not in ["hr", "manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Только HR и менеджеры могут создавать токены для портала кандидатов"
+        )
+
+    # Проверяем существование пользователя
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден"
+        )
+
+    # Если пользователь еще не имеет роли candidate, устанавливаем её
+    if user.role != "candidate":
+        user.role = "candidate"
+        db.commit()
+        db.refresh(user)
+        print(f"[PORTAL] Пользователю {user.email} установлена роль candidate")
+
+    # Создаем токен для доступа к порталу
+    token = auth.create_portal_token(user.id)
+
+    # Расшифровываем токен для получения времени истечения срока действия
+    payload = auth.verify_portal_token(token)
+    expires_at = datetime.fromtimestamp(payload["exp"]).isoformat()
+
+    return {
+        "token": token,
+        "expires_at": expires_at,
+        "candidate_id": user.id
+    }

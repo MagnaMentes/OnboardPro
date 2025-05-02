@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -15,7 +15,8 @@ class User(Base):
     middle_name = Column(String, nullable=True)  # Отчество
     phone = Column(String, nullable=True)       # Номер телефона
     role = Column(String, default="employee")  # employee, manager, hr
-    department = Column(String, nullable=True)
+    # Добавлен индекс для поля department
+    department = Column(String, nullable=True, index=True)
     telegram_id = Column(String, nullable=True)
     # Флаг для блокировки пользователя
     disabled = Column(Boolean, default=False)
@@ -40,11 +41,37 @@ class OnboardingPlan(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class TaskTemplate(Base):
+    __tablename__ = "task_templates"
+    id = Column(Integer, primary_key=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    priority = Column(String, nullable=False, index=True)  # low, medium, high
+    duration_days = Column(Integer, nullable=False)
+    # роль, для которой предназначен шаблон
+    role = Column(String, nullable=False, index=True)
+    # отдел, для которого предназначен шаблон
+    department = Column(String, nullable=False, index=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(),
+                        onupdate=func.now())
+
+    tasks = relationship("Task", back_populates="template")
+
+    # Создаем композитный индекс по role и department для быстрой фильтрации
+    __table_args__ = (
+        Index('ix_task_templates_role_department', 'role', 'department'),
+    )
+
+
 class Task(Base):
     __tablename__ = "tasks"
     id = Column(Integer, primary_key=True)
-    plan_id = Column(Integer, ForeignKey("plans.id"))
+    # Отдельный индекс для plan_id
+    plan_id = Column(Integer, ForeignKey("plans.id"), index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    template_id = Column(Integer, ForeignKey(
+        "task_templates.id"), nullable=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     priority = Column(String, nullable=False, index=True)
@@ -56,6 +83,14 @@ class Task(Base):
     # Используем lazy="joined" для автоматической загрузки связанного пользователя
     # при запросе задач, что решает проблему N+1
     assignee = relationship("User", back_populates="tasks", lazy="joined")
+    template = relationship(
+        "TaskTemplate", back_populates="tasks", lazy="joined")
+
+    # Добавляем составной индекс для оптимизации запросов по плану, статусу и дедлайну
+    __table_args__ = (
+        Index('ix_tasks_plan_status_deadline',
+              'plan_id', 'status', 'deadline'),
+    )
 
 
 class Feedback(Base):
