@@ -289,6 +289,7 @@ The `validate_db_models.py` tool allows you to:
 ### React Component Issues
 
 - **Infinite update loop in Manager Dashboard**: If the page becomes unresponsive and navigation stops working:
+
   1. Check browser console for `Maximum update depth exceeded` errors
   2. Verify dependency arrays in useEffect hooks, removing state variables that change during the effect
   3. Ensure proper props are passed to modal components with correct names

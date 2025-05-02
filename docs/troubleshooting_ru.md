@@ -158,17 +158,17 @@ const TaskModal = () => {
 const TaskModal = () => {
   // Хуки всегда вызываются в начале компонента
   const [localData, setLocalData] = useState(...);
-  
+
   // Синхронизация с внешним состоянием
   useEffect(() => {
     if (isTaskModalOpen) {
       setLocalData(...);
     }
   }, [isTaskModalOpen]);
-  
+
   // Возврат null для скрытия модального окна
   if (!isTaskModalOpen) return null;
-  
+
   // Рендер содержимого компонента...
 };
 ```
@@ -188,9 +188,7 @@ const TaskModal = () => {
 
 ```json
 {
-  "plugins": [
-    "react-hooks"
-  ],
+  "plugins": ["react-hooks"],
   "rules": {
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn"
@@ -262,7 +260,9 @@ const handleLogout = () => {
 const AuthContext = React.createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("token")
+  );
 
   const login = (token) => {
     localStorage.setItem("token", token);
@@ -287,7 +287,7 @@ export const AuthProvider = ({ children }) => {
 ```javascript
 const ProtectedRoute = ({ element }) => {
   const { isAuthenticated } = useContext(AuthContext);
-  
+
   return isAuthenticated ? element : <Navigate to="/login" replace />;
 };
 ```
@@ -303,7 +303,7 @@ useEffect(() => {
       navigate("/login");
     }
   };
-  
+
   window.addEventListener("storage", handleStorageChange);
   return () => window.removeEventListener("storage", handleStorageChange);
 }, [navigate]);
@@ -344,8 +344,8 @@ useEffect(() => {
   onSave={(taskData) => {
     console.log("Task saved:", taskData);
   }}
-  employees={users}  // неправильное имя параметра
-  selectedTask={null}  // неправильное имя параметра
+  employees={users} // неправильное имя параметра
+  selectedTask={null} // неправильное имя параметра
   // отсутствовал параметр plans
 />
 ```
@@ -415,7 +415,7 @@ interface TaskModalProps {
   users: User[];
   plans: Plan[];
   onSave: (taskData: any) => void;
-  mode: 'create' | 'edit' | 'view';
+  mode: "create" | "edit" | "view";
 }
 ```
 
@@ -429,7 +429,7 @@ TaskModal.propTypes = {
   users: PropTypes.array.isRequired,
   plans: PropTypes.array.isRequired,
   onSave: PropTypes.func.isRequired,
-  mode: PropTypes.oneOf(['create', 'edit', 'view']).isRequired,
+  mode: PropTypes.oneOf(["create", "edit", "view"]).isRequired,
 };
 ```
 
