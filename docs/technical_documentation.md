@@ -286,6 +286,21 @@ The `validate_db_models.py` tool allows you to:
   2. Verify that the `photo` field is correctly defined in the model and exists in the database
   3. If necessary, apply a migration to add the field: `alembic upgrade head`
 
+### React Component Issues
+
+- **Infinite update loop in Manager Dashboard**: If the page becomes unresponsive and navigation stops working:
+  1. Check browser console for `Maximum update depth exceeded` errors
+  2. Verify dependency arrays in useEffect hooks, removing state variables that change during the effect
+  3. Ensure proper props are passed to modal components with correct names
+  4. Validate that all required props are provided to components
+  5. Fix component parameter mismatches between declaration and usage
+
+- **Modal component errors**:
+  1. Ensure React hooks are called at the top level, not inside conditionals
+  2. Verify that the component receives all required props
+  3. Check for circular dependencies in component state updates
+  4. Use React Developer Tools to inspect component props and state
+
 ### Logs
 
 - Backend logs: `docker-compose logs backend`

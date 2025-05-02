@@ -38,6 +38,7 @@ export default function TaskModal({
   const [error, setError] = useState(null);
 
   // Инициализация формы при открытии модального окна
+  // ИСПРАВЛЕНО: Удалена зависимость от isOpen, чтобы избежать бесконечного цикла
   useEffect(() => {
     if (task && (mode === "edit" || mode === "view")) {
       setFormData({
@@ -63,7 +64,7 @@ export default function TaskModal({
         status: "pending",
       });
     }
-  }, [task, isOpen, mode, plans]);
+  }, [task, mode, plans]);
 
   // Обработчик изменения полей формы
   const handleInputChange = (e) => {

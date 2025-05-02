@@ -1229,8 +1229,10 @@ export default function ManagerDashboard() {
         onSave={(taskData) => {
           console.log("Task saved:", taskData);
         }}
-        employees={users}
-        selectedTask={null}
+        users={users}
+        plans={plans}
+        task={null}
+        mode="create"
       />
       <PlanModal
         isOpen={isPlanModalOpen}
@@ -1263,6 +1265,7 @@ export default function ManagerDashboard() {
         }}
         task={editingTask}
         employees={users}
+        plans={plans}
       />
 
       {/* Раздел управления задачами */}

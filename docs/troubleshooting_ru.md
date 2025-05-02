@@ -310,3 +310,133 @@ useEffect(() => {
 ```
 
 4. **Разделение логики аутентификации** - выделить логику аутентификации в отдельный сервисный слой для лучшей поддержки кода
+
+## Проблема с навигацией в панели менеджера (Manager Dashboard)
+
+### Описание проблемы
+
+**Дата обнаружения:** 2 мая 2025 г.
+
+**Симптомы:**
+
+- Невозможно покинуть страницу Manager Dashboard
+- Нажатие на пункты навигации не приводит к переходу на другие страницы
+- В консоли браузера ошибка: `TaskModal.jsx:56 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.`
+- Интерфейс становится неотзывчивым при открытии страницы Manager Dashboard
+
+**Причина:**
+Выявлены две взаимосвязанные проблемы:
+
+1. В компоненте `TaskModal.jsx` хук `useEffect` включал в массив зависимостей параметр `isOpen`, что приводило к бесконечному циклу обновлений, когда модальное окно открывалось или закрывалось:
+
+```javascript
+useEffect(() => {
+  // логика инициализации формы
+}, [task, isOpen, mode, plans]);
+```
+
+2. В компоненте `ManagerDashboard.jsx` при вызове компонентов модальных окон передавались неправильные параметры:
+
+```javascript
+<TaskModal
+  isOpen={isTaskModalOpen}
+  onClose={() => setIsTaskModalOpen(false)}
+  onSave={(taskData) => {
+    console.log("Task saved:", taskData);
+  }}
+  employees={users}  // неправильное имя параметра
+  selectedTask={null}  // неправильное имя параметра
+  // отсутствовал параметр plans
+/>
+```
+
+Эти проблемы создавали бесконечный цикл обновлений, который перегружал JavaScript Event Loop, блокируя работу навигации и делая невозможным переход на другие страницы.
+
+### Решение
+
+Мы выполнили следующие изменения для решения проблемы:
+
+1. **Исправили хук useEffect в компоненте TaskModal.jsx**:
+
+```javascript
+// Было
+useEffect(() => {
+  // логика инициализации формы
+}, [task, isOpen, mode, plans]);
+
+// Стало
+useEffect(() => {
+  // логика инициализации формы
+}, [task, mode, plans]);
+```
+
+2. **Исправили передачу параметров в ManagerDashboard.jsx**:
+
+```javascript
+// Исправленные параметры для TaskModal
+<TaskModal
+  isOpen={isTaskModalOpen}
+  onClose={() => setIsTaskModalOpen(false)}
+  onSave={(taskData) => {
+    console.log("Task saved:", taskData);
+  }}
+  users={users}  // исправлено
+  plans={plans}  // добавлено
+  task={null}    // исправлено
+  mode="create"  // добавлено для ясности
+/>
+
+// Добавлены отсутствующие параметры для EditTaskModal
+<EditTaskModal
+  // ...существующие параметры...
+  employees={users}
+  plans={plans}  // добавлено
+/>
+```
+
+### Результат
+
+После внесенных изменений:
+
+- Навигация между страницами работает корректно
+- Отсутствуют ошибки в консоли браузера
+- Модальные окна открываются и закрываются без зависаний
+- Улучшена производительность страницы Manager Dashboard
+
+### Рекомендации для дальнейшей оптимизации
+
+1. **Внедрение TypeScript** для строгой типизации параметров компонентов:
+
+```typescript
+interface TaskModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  task: Task | null;
+  users: User[];
+  plans: Plan[];
+  onSave: (taskData: any) => void;
+  mode: 'create' | 'edit' | 'view';
+}
+```
+
+2. **Использование prop-types** для проверки параметров компонентов в проектах без TypeScript:
+
+```javascript
+TaskModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  task: PropTypes.object,
+  users: PropTypes.array.isRequired,
+  plans: PropTypes.array.isRequired,
+  onSave: PropTypes.func.isRequired,
+  mode: PropTypes.oneOf(['create', 'edit', 'view']).isRequired,
+};
+```
+
+3. **Внедрение eslint-plugin-react-hooks** для автоматического обнаружения проблем с зависимостями хуков:
+
+```bash
+npm install eslint-plugin-react-hooks --save-dev
+```
+
+4. **Рефакторинг компонентов** для уменьшения количества параметров и улучшения повторного использования
