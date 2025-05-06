@@ -935,3 +935,61 @@
 2025-05-01 15:16:50,342 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
 2025-05-01 15:17:50,345 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
 2025-05-01 15:18:50,341 - websocket_manager - INFO - Получено сообщение типа 'ping' от пользователя 1 с ролью hr
+2025-05-06 12:17:41,519 - websocket_manager - INFO - WebSocketManager инициализирован
+2025-05-06 12:20:07,400 - websocket_manager - INFO - WebSocketManager инициализирован
+2025-05-06 12:20:56,838 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 12:20:56,839 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 12:20:56,853 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-06 12:44:02,204 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 12:44:07,466 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 12:44:07,466 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 13:03:03,848 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 13:03:03,849 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 13:03:03,858 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 13:03:03,861 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-06 13:03:28,308 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 13:03:33,316 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 13:03:33,317 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 13:03:38,371 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 13:03:38,381 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 13:03:38,382 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 13:03:38,397 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-06 13:16:40,961 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 14:05:08,398 - websocket_manager - INFO - WebSocketManager инициализирован
+2025-05-06 14:36:50,964 - websocket_manager - INFO - WebSocketManager инициализирован
+2025-05-06 14:37:19,936 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 14:37:19,936 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 14:37:19,956 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-06 14:37:25,045 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 14:37:30,060 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 14:37:30,060 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 14:37:40,509 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 14:52:51,410 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 14:52:51,411 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 14:52:51,421 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-06 14:52:54,747 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 14:52:59,755 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 14:52:59,756 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 14:55:48,369 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 14:59:18,847 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 14:59:18,847 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 14:59:18,872 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-06 14:59:26,155 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 14:59:31,164 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 14:59:31,164 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 15:01:25,537 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 15:19:50,814 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 15:19:50,815 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 15:19:50,823 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-06 15:20:00,166 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 15:20:05,173 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 15:20:05,175 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 15:34:22,190 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 15:43:06,125 - websocket_manager - INFO - WebSocketManager инициализирован
+2025-05-06 15:47:28,282 - websocket_manager - INFO - WebSocketManager инициализирован
+2025-05-06 15:49:11,326 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 15:49:11,326 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr
+2025-05-06 15:49:11,345 - websocket_manager - INFO - Получено сообщение типа 'request_analytics_update' от пользователя 1 с ролью hr
+2025-05-06 15:49:15,527 - websocket_manager - INFO - WebSocket соединение закрыто: user_id=1, role=hr
+2025-05-06 15:49:20,532 - websocket_manager - INFO - WebSocket соединение уже принято: user_id=1, role=hr
+2025-05-06 15:49:20,533 - websocket_manager - INFO - Новое WebSocket соединение установлено: user_id=1, role=hr

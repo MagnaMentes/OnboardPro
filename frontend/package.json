@@ -12,6 +12,7 @@
     "@fullcalendar/timegrid": "^6.1.17",
     "@headlessui/react": "^2.2.2",
     "@heroicons/react": "^2.2.0",
+    "@tanstack/react-query": "^5.28.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^14.2.1",
@@ -19,6 +20,8 @@
     "axios": "^1.9.0",
     "chart.js": "^4.4.9",
     "react": "^18.2.0",
+    "react-beautiful-dnd": "^13.1.1",
+    "react-datepicker": "^8.3.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
     "react-scripts": "5.0.1",
@@ -51,8 +54,10 @@
     ]
   },
   "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",
+    "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "^3.4.1"
   }
 }

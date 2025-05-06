@@ -23,11 +23,16 @@ import {
   AdjustmentsVerticalIcon,
   QueueListIcon,
   PencilIcon,
+  DocumentDuplicateIcon,
+  ChevronDownIcon,
+  ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Modal from "../components/common/Modal"; // Импорт универсального компонента модального окна
 import TaskModal from "../components/TaskModal"; // Импорт компонента TaskModal
+import PlanForm from "../components/specific/PlanForm"; // Импорт компонента PlanForm
+import TaskTemplateForm from "../components/specific/TaskTemplateForm"; // Импорт компонента TaskTemplateForm
 
 export default function ManagerDashboard() {
   // Устанавливаем заголовок страницы
@@ -47,26 +52,28 @@ export default function ManagerDashboard() {
     priority: "medium",
     deadline: new Date().toISOString().split("T")[0],
   });
-  const [newPlan, setNewPlan] = useState({
-    title: "",
-    description: "",
-    role: "employee",
-  });
-  const [editingPlan, setEditingPlan] = useState(null);
-  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
-  const [isEditingPlan, setIsEditingPlan] = useState(false);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
-  const [isEditPlanModalOpen, setIsEditPlanModalOpen] = useState(false);
-  const [isDeletePlanModalOpen, setIsDeletePlanModalOpen] = useState(false);
-  const [planToDelete, setPlanToDelete] = useState(null);
 
-  // Новые состояния для редактирования задачи
+  // Состояния для управления планами и шаблонами
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [isTaskTemplateModalOpen, setIsTaskTemplateModalOpen] = useState(false);
+  const [isTemplatesListOpen, setIsTemplatesListOpen] = useState(false);
+  const [isEditingPlan, setIsEditingPlan] = useState(false);
+  const [isEditingTemplate, setIsEditingTemplate] = useState(false);
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [templates, setTemplates] = useState([]);
+  const [isDeletePlanModalOpen, setIsDeletePlanModalOpen] = useState(false);
+  const [isDeleteTemplateModalOpen, setIsDeleteTemplateModalOpen] =
+    useState(false);
+  const [planToDelete, setPlanToDelete] = useState(null);
+  const [templateToDelete, setTemplateToDelete] = useState(null);
+
+  // Прочие состояния
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [isUpdatingTask, setIsUpdatingTask] = useState(false);
-
-  // Новые состояния для фильтрации и сортировки задач
   const [taskStatusFilter, setTaskStatusFilter] = useState("all");
   const [taskPriorityFilter, setTaskPriorityFilter] = useState("all");
   const [taskUserFilter, setTaskUserFilter] = useState("all");
@@ -125,6 +132,21 @@ export default function ManagerDashboard() {
         }
         const tasksData = await tasksResponse.json();
         setTasks(tasksData);
+
+        // Получаем список всех шаблонов задач
+        if (userData.role === "HR" || userData.role === "hr") {
+          const templatesResponse = await fetch(
+            `${apiBaseUrl}/api/task_templates`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          if (!templatesResponse.ok) {
+            throw new Error("Ошибка при получении списка шаблонов задач");
+          }
+          const templatesData = await templatesResponse.json();
+          setTemplates(templatesData);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -155,6 +177,29 @@ export default function ManagerDashboard() {
       console.log("Список задач обновлен из базы данных:", tasksData);
     } catch (err) {
       console.error("Ошибка при обновлении списка задач:", err);
+      toast.error(err.message);
+    }
+  };
+
+  // Функция для обновления списка шаблонов задач
+  const refreshTemplatesFromDatabase = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await fetch(`${apiBaseUrl}/api/task_templates`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error("Ошибка при получении списка шаблонов");
+      }
+
+      const templatesData = await response.json();
+      setTemplates(templatesData);
+      toast.success("Список шаблонов успешно обновлен");
+    } catch (err) {
+      console.error("Ошибка при обновлении списка шаблонов:", err);
       toast.error(err.message);
     }
   };
@@ -279,28 +324,8 @@ export default function ManagerDashboard() {
     });
   };
 
-  // Обработчики планов
-  const handlePlanInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewPlan((prev) => {
-      const updatedPlan = { ...prev };
-      updatedPlan[name] = value;
-      return updatedPlan;
-    });
-  };
-
-  const handleEditPlanInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditingPlan((prev) => {
-      const updatedPlan = { ...prev };
-      updatedPlan[name] = value;
-      return updatedPlan;
-    });
-  };
-
-  const handlePlanSubmit = async (e) => {
-    e.preventDefault();
-    setIsCreatingPlan(true);
+  // Обработчик для создания нового плана через форму
+  const handleCreatePlan = async (planData) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -313,38 +338,31 @@ export default function ManagerDashboard() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newPlan),
+        body: JSON.stringify(planData),
       });
 
       if (!response.ok) {
-        throw new Error("Ошибка при создании плана");
+        throw new Error("Ошибка при создании плана адаптации");
       }
 
       const createdPlan = await response.json();
       setPlans((prev) => [...prev, createdPlan]);
-      setNewPlan({
-        title: "",
-        description: "",
-        role: "employee",
-      });
-      setError(null);
+      toast.success(`План "${createdPlan.title}" успешно создан`);
       setIsPlanModalOpen(false);
+
+      return createdPlan;
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsCreatingPlan(false);
+      console.error("Ошибка при создании плана:", err);
+      toast.error(err.message);
+      throw err;
     }
   };
 
-  const handleEditPlan = (plan) => {
-    setEditingPlan({ ...plan });
-    setIsEditPlanModalOpen(true);
-  };
-
-  const handleUpdatePlan = async (e) => {
-    e.preventDefault();
-    setIsEditingPlan(true);
+  // Обработчик для обновления плана через форму
+  const handleUpdatePlan = async (planData) => {
     try {
+      if (!editingPlan) return;
+
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("Не авторизован");
@@ -356,11 +374,7 @@ export default function ManagerDashboard() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title: editingPlan.title,
-          description: editingPlan.description,
-          role: editingPlan.role,
-        }),
+        body: JSON.stringify(planData),
       });
 
       if (!response.ok) {
@@ -370,24 +384,25 @@ export default function ManagerDashboard() {
 
       const updatedPlan = await response.json();
 
-      // Обновление локального состояния
       setPlans((prev) =>
         prev.map((plan) => (plan.id === updatedPlan.id ? updatedPlan : plan))
       );
 
-      // Проверка, что данные действительно обновились
-      console.log("План успешно обновлен в базе данных:", updatedPlan);
       toast.success(`План "${updatedPlan.title}" успешно обновлен`);
+      setEditingPlan(null);
+      setIsPlanModalOpen(false);
 
-      setError(null);
-      setIsEditPlanModalOpen(false);
+      return updatedPlan;
     } catch (err) {
       console.error("Ошибка при обновлении плана:", err);
       toast.error(err.message);
-      setError(err.message);
-    } finally {
-      setIsEditingPlan(false);
+      throw err;
     }
+  };
+
+  const handleEditPlan = (plan) => {
+    setEditingPlan(plan);
+    setIsPlanModalOpen(true);
   };
 
   const openDeletePlanModal = (plan) => {
@@ -424,9 +439,6 @@ export default function ManagerDashboard() {
 
       // Удаление из локального состояния
       setPlans((prev) => prev.filter((plan) => plan.id !== planToDelete.id));
-
-      // Проверка, что план действительно удалился из базы
-      console.log(`План с ID ${planToDelete.id} успешно удален из базы данных`);
       toast.success(`План "${planToDelete.title}" успешно удален`);
 
       setIsDeletePlanModalOpen(false);
@@ -438,6 +450,134 @@ export default function ManagerDashboard() {
     }
   };
 
+  // Функции для работы с шаблонами задач
+  const handleCreateTemplate = async (templateData) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Не авторизован");
+      }
+
+      const response = await fetch(`${apiBaseUrl}/api/task_templates`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(templateData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Ошибка при создании шаблона задачи");
+      }
+
+      const createdTemplate = await response.json();
+      setTemplates((prev) => [...prev, createdTemplate]);
+      toast.success(`Шаблон "${createdTemplate.title}" успешно создан`);
+      setIsTaskTemplateModalOpen(false);
+
+      return createdTemplate;
+    } catch (err) {
+      console.error("Ошибка при создании шаблона:", err);
+      toast.error(err.message);
+      throw err;
+    }
+  };
+
+  const handleUpdateTemplate = async (templateData) => {
+    try {
+      if (!editingTemplate) return;
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Не авторизован");
+      }
+
+      const response = await fetch(
+        `${apiBaseUrl}/api/task_templates/${editingTemplate.id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(templateData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Ошибка при обновлении шаблона");
+      }
+
+      const updatedTemplate = await response.json();
+
+      setTemplates((prev) =>
+        prev.map((tmpl) =>
+          tmpl.id === updatedTemplate.id ? updatedTemplate : tmpl
+        )
+      );
+
+      toast.success(`Шаблон "${updatedTemplate.title}" успешно обновлен`);
+      setEditingTemplate(null);
+      setIsTaskTemplateModalOpen(false);
+
+      return updatedTemplate;
+    } catch (err) {
+      console.error("Ошибка при обновлении шаблона:", err);
+      toast.error(err.message);
+      throw err;
+    }
+  };
+
+  const handleEditTemplate = (template) => {
+    setEditingTemplate(template);
+    setIsTaskTemplateModalOpen(true);
+  };
+
+  const openDeleteTemplateModal = (template) => {
+    setTemplateToDelete(template);
+    setIsDeleteTemplateModalOpen(true);
+  };
+
+  const handleDeleteTemplate = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Не авторизован");
+      }
+
+      const response = await fetch(
+        `${apiBaseUrl}/api/task_templates/${templateToDelete.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Ошибка при удалении шаблона");
+      }
+
+      // Удаление из локального состояния
+      setTemplates((prev) =>
+        prev.filter((tmpl) => tmpl.id !== templateToDelete.id)
+      );
+      toast.success(`Шаблон "${templateToDelete.title}" успешно удален`);
+
+      setIsDeleteTemplateModalOpen(false);
+      setTemplateToDelete(null);
+    } catch (err) {
+      console.error("Ошибка при удалении шаблона:", err);
+      toast.error(err.message);
+      setError(err.message);
+    }
+  };
+
+  // Функции для работы с задачами
   const handleDeleteTask = async (taskId) => {
     try {
       const token = localStorage.getItem("token");
@@ -503,9 +643,10 @@ export default function ManagerDashboard() {
 
       const plansData = await plansResponse.json();
       setPlans(plansData);
-      console.log("Список планов обновлен из базы данных:", plansData);
+      toast.success("Список планов успешно обновлен");
     } catch (err) {
       console.error("Ошибка при обновлении списка планов:", err);
+      toast.error(err.message);
     }
   };
 
@@ -526,677 +667,6 @@ export default function ManagerDashboard() {
     setEditingTask(taskWithFormattedDate);
     setIsEditTaskModalOpen(true);
   };
-
-  // Компонент PlanModal с использованием нового компонента Modal
-  function PlanModal({ isOpen, onClose, onSave }) {
-    const [planData, setPlanData] = useState({
-      title: "",
-      description: "",
-      role: "employee",
-    });
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    const handleInputChange = (e) => {
-      const { name, value } = e.target;
-      setPlanData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    };
-
-    const handleSubmit = async () => {
-      if (!planData.title) {
-        setError("Название плана обязательно");
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        await onSave(planData);
-        onClose();
-      } catch (error) {
-        setError(error.message || "Не удалось сохранить план");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    return (
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        title="Создать новый план адаптации"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Отмена
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              ) : null}
-              Создать план
-            </button>
-          </>
-        }
-      >
-        <form className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Название плана
-            </label>
-            <input
-              type="text"
-              name="title"
-              id="title"
-              value={planData.title}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Описание
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={3}
-              value={planData.description}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Роль сотрудника
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={planData.role}
-              onChange={handleInputChange}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              <option value="employee">Сотрудник</option>
-              <option value="manager">Менеджер</option>
-              <option value="admin">Администратор</option>
-              <option value="hr">HR</option>
-            </select>
-          </div>
-        </form>
-      </Modal>
-    );
-  }
-
-  // Компонент EditPlanModal с использованием нового компонента Modal
-  function EditPlanModal({ isOpen, onClose, onSave, plan }) {
-    const [planData, setPlanData] = useState({
-      title: plan?.title || "",
-      description: plan?.description || "",
-      role: plan?.role || "employee",
-    });
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-      if (plan) {
-        setPlanData({
-          title: plan.title || "",
-          description: plan.description || "",
-          role: plan.role || "employee",
-        });
-      }
-    }, [plan]);
-
-    const handleInputChange = (e) => {
-      const { name, value } = e.target;
-      setPlanData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    };
-
-    const handleSubmit = async () => {
-      if (!planData.title) {
-        setError("Название плана обязательно");
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        await onSave(planData);
-        onClose();
-      } catch (error) {
-        setError(error.message || "Не удалось сохранить план");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    return (
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        title="Редактировать план адаптации"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Отмена
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              ) : null}
-              Сохранить изменения
-            </button>
-          </>
-        }
-      >
-        <form className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Название плана
-            </label>
-            <input
-              type="text"
-              name="title"
-              id="title"
-              value={planData.title}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Описание
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={3}
-              value={planData.description}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Роль сотрудника
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={planData.role}
-              onChange={handleInputChange}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              <option value="employee">Сотрудник</option>
-              <option value="manager">Менеджер</option>
-              <option value="admin">Администратор</option>
-              <option value="hr">HR</option>
-            </select>
-          </div>
-        </form>
-      </Modal>
-    );
-  }
-
-  // Компонент DeletePlanModal с использованием нового компонента Modal
-  function DeletePlanModal({ isOpen, onClose, onDelete, plan }) {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    const handleDelete = async () => {
-      setIsLoading(true);
-      try {
-        await onDelete();
-        onClose();
-      } catch (error) {
-        setError(error.message || "Не удалось удалить план");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    return (
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        title="Удаление плана адаптации"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Отмена
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              ) : null}
-              Удалить
-            </button>
-          </>
-        }
-      >
-        <div className="mt-2">
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-          <p className="text-sm text-gray-500">
-            Вы действительно хотите удалить план "{plan?.title}"? Это действие
-            нельзя отменить, и все задачи, связанные с этим планом, также будут
-            удалены.
-          </p>
-        </div>
-      </Modal>
-    );
-  }
-
-  // Компонент EditTaskModal с использованием нового компонента Modal
-  function EditTaskModal({ isOpen, onClose, onSave, task, employees }) {
-    const [taskData, setTaskData] = useState({
-      title: task?.title || "",
-      description: task?.description || "",
-      due_date: task?.due_date || new Date().toISOString().split("T")[0],
-      priority: task?.priority || "medium",
-      assignee_id: task?.assignee_id || "",
-    });
-
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-      if (task) {
-        setTaskData({
-          title: task.title || "",
-          description: task.description || "",
-          due_date: task.due_date || new Date().toISOString().split("T")[0],
-          priority: task.priority || "medium",
-          assignee_id: task.assignee_id || "",
-        });
-      }
-    }, [task]);
-
-    const handleInputChange = (e) => {
-      const { name, value } = e.target;
-      setTaskData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    };
-
-    const handleSubmit = async () => {
-      if (!taskData.title || !taskData.due_date || !taskData.assignee_id) {
-        setError("Заполните все обязательные поля");
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        await onSave(taskData);
-        onClose();
-      } catch (error) {
-        setError(error.message || "Не удалось обновить задачу");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    return (
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        title="Редактировать задачу"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Отмена
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              ) : null}
-              Сохранить изменения
-            </button>
-          </>
-        }
-      >
-        <form className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Название задачи
-            </label>
-            <input
-              type="text"
-              name="title"
-              id="title"
-              value={taskData.title}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Описание
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={3}
-              value={taskData.description}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="due_date"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Срок выполнения
-              </label>
-              <input
-                type="date"
-                name="due_date"
-                id="due_date"
-                value={taskData.due_date}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                required
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="priority"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Приоритет
-              </label>
-              <select
-                id="priority"
-                name="priority"
-                value={taskData.priority}
-                onChange={handleInputChange}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-              >
-                <option value="low">Низкий</option>
-                <option value="medium">Средний</option>
-                <option value="high">Высокий</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="assignee_id"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Назначить сотруднику
-            </label>
-            <select
-              id="assignee_id"
-              name="assignee_id"
-              value={taskData.assignee_id || ""}
-              onChange={handleInputChange}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-              required
-            >
-              <option value="">Выберите сотрудника</option>
-              {employees.map((employee) => (
-                <option key={employee.id} value={employee.id}>
-                  {employee.name || employee.email}
-                </option>
-              ))}
-            </select>
-          </div>
-        </form>
-      </Modal>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -1226,47 +696,191 @@ export default function ManagerDashboard() {
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
-        onSave={(taskData) => {
-          console.log("Task saved:", taskData);
+        onSave={async (taskData) => {
+          try {
+            const token = localStorage.getItem("token");
+            if (!token) throw new Error("Не авторизован");
+
+            const response = await fetch(`${apiBaseUrl}/tasks`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(taskData),
+            });
+
+            if (!response.ok) {
+              throw new Error("Ошибка при создании задачи");
+            }
+
+            const createdTask = await response.json();
+            setTasks((prev) => [...prev, createdTask]);
+            toast.success("Задача успешно создана");
+            setIsTaskModalOpen(false);
+          } catch (err) {
+            toast.error(err.message);
+          }
         }}
         users={users}
         plans={plans}
         task={null}
         mode="create"
       />
-      <PlanModal
-        isOpen={isPlanModalOpen}
-        onClose={() => setIsPlanModalOpen(false)}
-        onSave={(planData) => {
-          console.log("Plan saved:", planData);
-        }}
-      />
-      <EditPlanModal
-        isOpen={isEditPlanModalOpen}
-        onClose={() => setIsEditPlanModalOpen(false)}
-        onSave={(planData) => {
-          console.log("Plan updated:", planData);
-        }}
-        plan={editingPlan}
-      />
-      <DeletePlanModal
-        isOpen={isDeletePlanModalOpen}
-        onClose={() => setIsDeletePlanModalOpen(false)}
-        onDelete={() => {
-          console.log("Plan deleted");
-        }}
-        plan={planToDelete}
-      />
-      <EditTaskModal
+
+      {/* Модальное окно для редактирования задачи */}
+      <TaskModal
         isOpen={isEditTaskModalOpen}
         onClose={() => setIsEditTaskModalOpen(false)}
-        onSave={(taskData) => {
-          console.log("Task updated:", taskData);
+        onSave={async (taskData) => {
+          try {
+            if (!editingTask) return;
+
+            const token = localStorage.getItem("token");
+            if (!token) throw new Error("Не авторизован");
+
+            const response = await fetch(
+              `${apiBaseUrl}/tasks/${editingTask.id}`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(taskData),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("Ошибка при обновлении задачи");
+            }
+
+            const updatedTask = await response.json();
+            setTasks((prev) =>
+              prev.map((task) =>
+                task.id === updatedTask.id ? updatedTask : task
+              )
+            );
+            toast.success("Задача успешно обновлена");
+            setIsEditTaskModalOpen(false);
+          } catch (err) {
+            toast.error(err.message);
+          }
         }}
-        task={editingTask}
-        employees={users}
+        users={users}
         plans={plans}
+        task={editingTask}
+        mode="edit"
       />
+
+      {/* Модальное окно для плана адаптации */}
+      <Modal
+        isOpen={isPlanModalOpen}
+        onClose={() => {
+          setIsPlanModalOpen(false);
+          setEditingPlan(null);
+        }}
+        title={
+          editingPlan
+            ? "Редактирование плана адаптации"
+            : "Создание плана адаптации"
+        }
+        size="lg"
+      >
+        <PlanForm
+          onPlanCreated={editingPlan ? handleUpdatePlan : handleCreatePlan}
+          editPlan={editingPlan}
+          onCancel={() => {
+            setIsPlanModalOpen(false);
+            setEditingPlan(null);
+          }}
+        />
+      </Modal>
+
+      {/* Модальное окно для шаблона задачи */}
+      <Modal
+        isOpen={isTaskTemplateModalOpen}
+        onClose={() => {
+          setIsTaskTemplateModalOpen(false);
+          setEditingTemplate(null);
+        }}
+        title={
+          editingTemplate
+            ? "Редактирование шаблона задачи"
+            : "Создание шаблона задачи"
+        }
+      >
+        <TaskTemplateForm
+          onTemplateCreated={
+            editingTemplate ? handleUpdateTemplate : handleCreateTemplate
+          }
+          editTemplate={editingTemplate}
+          onCancel={() => {
+            setIsTaskTemplateModalOpen(false);
+            setEditingTemplate(null);
+          }}
+        />
+      </Modal>
+
+      {/* Диалог подтверждения удаления плана */}
+      <Modal
+        isOpen={isDeletePlanModalOpen}
+        onClose={() => setIsDeletePlanModalOpen(false)}
+        title="Удаление плана адаптации"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsDeletePlanModalOpen(false)}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={handleDeletePlan}
+              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Удалить
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-500">
+          Вы действительно хотите удалить план "{planToDelete?.title}"? Это
+          действие нельзя отменить.
+        </p>
+      </Modal>
+
+      {/* Диалог подтверждения удаления шаблона */}
+      <Modal
+        isOpen={isDeleteTemplateModalOpen}
+        onClose={() => setIsDeleteTemplateModalOpen(false)}
+        title="Удаление шаблона задачи"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsDeleteTemplateModalOpen(false)}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteTemplate}
+              className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Удалить
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-500">
+          Вы действительно хотите удалить шаблон "{templateToDelete?.title}"?
+          Это действие нельзя отменить.
+        </p>
+      </Modal>
 
       {/* Раздел управления задачами */}
       <div className="bg-white p-6 rounded-lg shadow-md">
@@ -1293,609 +907,311 @@ export default function ManagerDashboard() {
           </div>
         </div>
 
-        {/* Строка поиска и переключатель панели фильтров */}
-        <div className="flex flex-col md:flex-row md:justify-between mb-4 space-y-2 md:space-y-0">
-          <div className="flex items-center w-full md:w-auto">
-            <input
-              type="text"
-              placeholder="Поиск по названию или описанию..."
-              className="border border-gray-300 rounded-l px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={taskSearchQuery}
-              onChange={(e) => setTaskSearchQuery(e.target.value)}
-            />
-            {taskSearchQuery && (
-              <button
-                onClick={() => setTaskSearchQuery("")}
-                className="bg-gray-100 px-3 py-2 border-т border-r border-b border-gray-300"
-                title="Очистить поиск"
-              >
-                <XMarkIcon className="h-5 w-5 text-gray-500" />
-              </button>
-            )}
-          </div>
-          <button
+        {/* Фильтры для задач */}
+        <div className="mb-4">
+          <div
+            className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded cursor-pointer hover:bg-gray-100"
             onClick={() => setIsTaskFiltersVisible(!isTaskFiltersVisible)}
-            className="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 text-gray-700 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
-            <AdjustmentsVerticalIcon className="h-5 w-5 mr-2" />
-            Фильтры
-            {(taskStatusFilter !== "all" ||
-              taskPriorityFilter !== "all" ||
-              taskUserFilter !== "all" ||
-              taskPlanFilter !== "all") && (
-              <span className="inline-flex items-center justify-center ml-2 w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full">
-                {
-                  [
-                    taskStatusFilter !== "all",
-                    taskPriorityFilter !== "all",
-                    taskUserFilter !== "all",
-                    taskPlanFilter !== "all",
-                  ].filter(Boolean).length
-                }
+            <div className="flex items-center">
+              <AdjustmentsVerticalIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <span className="text-sm font-medium text-gray-700">
+                Фильтры и поиск
               </span>
-            )}
-          </button>
-        </div>
+            </div>
+            <ChevronDownIcon
+              className={`h-5 w-5 text-gray-500 transition-transform ${
+                isTaskFiltersVisible ? "transform rotate-180" : ""
+              }`}
+            />
+          </div>
 
-        {/* Панель фильтров */}
-        {isTaskFiltersVisible && (
-          <div className="bg-gray-50 p-4 mb-4 rounded border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label
-                  htmlFor="statusFilter"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Статус
-                </label>
-                <select
-                  id="statusFilter"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={taskStatusFilter}
-                  onChange={(e) => setTaskStatusFilter(e.target.value)}
-                >
-                  <option value="all">Все статусы</option>
-                  <option value="pending">В очереди</option>
-                  <option value="in-progress">В процессе</option>
-                  <option value="completed">Завершено</option>
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="priorityFilter"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Приоритет
-                </label>
-                <select
-                  id="priorityFilter"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={taskPriorityFilter}
-                  onChange={(e) => setTaskPriorityFilter(e.target.value)}
-                >
-                  <option value="all">Все приоритеты</option>
-                  <option value="low">Низкий</option>
-                  <option value="medium">Средний</option>
-                  <option value="high">Высокий</option>
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="userFilter"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Сотрудник
-                </label>
-                <select
-                  id="userFilter"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={taskUserFilter}
-                  onChange={(e) => setTaskUserFilter(e.target.value)}
-                >
-                  <option value="all">Все сотрудники</option>
-                  {users
-                    .filter((user) => user.role === "employee")
-                    .map((user) => (
+          {isTaskFiltersVisible && (
+            <div className="mt-3 p-3 border border-gray-200 rounded-md">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+                {/* Поиск задач */}
+                <div>
+                  <label
+                    htmlFor="taskSearch"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Поиск по названию/описанию
+                  </label>
+                  <input
+                    type="text"
+                    id="taskSearch"
+                    value={taskSearchQuery}
+                    onChange={(e) => setTaskSearchQuery(e.target.value)}
+                    placeholder="Введите текст для поиска"
+                    className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+
+                {/* Фильтр по статусу */}
+                <div>
+                  <label
+                    htmlFor="statusFilter"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Статус
+                  </label>
+                  <select
+                    id="statusFilter"
+                    value={taskStatusFilter}
+                    onChange={(e) => setTaskStatusFilter(e.target.value)}
+                    className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  >
+                    <option value="all">Все статусы</option>
+                    <option value="not_started">Не начата</option>
+                    <option value="in_progress">В работе</option>
+                    <option value="completed">Выполнена</option>
+                  </select>
+                </div>
+
+                {/* Фильтр по приоритету */}
+                <div>
+                  <label
+                    htmlFor="priorityFilter"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Приоритет
+                  </label>
+                  <select
+                    id="priorityFilter"
+                    value={taskPriorityFilter}
+                    onChange={(e) => setTaskPriorityFilter(e.target.value)}
+                    className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  >
+                    <option value="all">Все приоритеты</option>
+                    <option value="low">Низкий</option>
+                    <option value="medium">Средний</option>
+                    <option value="high">Высокий</option>
+                  </select>
+                </div>
+
+                {/* Фильтр по сотруднику */}
+                <div>
+                  <label
+                    htmlFor="userFilter"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Сотрудник
+                  </label>
+                  <select
+                    id="userFilter"
+                    value={taskUserFilter}
+                    onChange={(e) => setTaskUserFilter(e.target.value)}
+                    className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  >
+                    <option value="all">Все сотрудники</option>
+                    {users.map((user) => (
                       <option key={user.id} value={user.id}>
-                        {user.email}
+                        {user.first_name && user.last_name
+                          ? `${user.last_name} ${user.first_name}`
+                          : user.email}
                       </option>
                     ))}
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="planFilter"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  План адаптации
-                </label>
-                <select
-                  id="planFilter"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={taskPlanFilter}
-                  onChange={(e) => setTaskPlanFilter(e.target.value)}
-                >
-                  <option value="all">Все планы</option>
-                  {plans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end mt-4 space-x-2">
-              <button
-                onClick={resetTaskFilters}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Сбросить фильтры
-              </button>
-            </div>
-          </div>
-        )}
+                  </select>
+                </div>
 
-        {/* Информация о результатах после применения фильтров */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-sm text-gray-600">
-            Отображено {filteredAndSortedTasks.length} из {tasks.length} задач
-            {(taskStatusFilter !== "all" ||
-              taskPriorityFilter !== "all" ||
-              taskUserFilter !== "all" ||
-              taskPlanFilter !== "all" ||
-              taskSearchQuery) &&
-              " (применены фильтры)"}
-          </div>
-          <div className="text-sm text-gray-600">
-            Сортировка:{" "}
-            {taskSortField === "title"
-              ? "название"
-              : taskSortField === "deadline"
-              ? "срок"
-              : taskSortField === "priority"
-              ? "приоритет"
-              : taskSortField === "status"
-              ? "статус"
-              : ""}
-            {taskSortDirection === "asc"
-              ? " (по возрастанию)"
-              : " (по убыванию)"}
-          </div>
-        </div>
-
-        {filteredAndSortedTasks.length === 0 ? (
-          <div className="bg-gray-50 p-4 rounded">
-            <p className="text-gray-500">
-              {tasks.length === 0
-                ? "Нет активных задач"
-                : "Нет задач, соответствующих выбранным фильтрам"}
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Таблица для средних и больших экранов */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                      onClick={() => toggleSortDirection("title")}
-                    >
-                      <div className="flex items-center">
-                        Задача {renderSortIcon("title")}
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      <div className="flex items-center">Сотрудник</div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      <div className="flex items-center">План</div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer whitespace-nowrap"
-                      onClick={() => toggleSortDirection("status")}
-                    >
-                      <div className="flex items-center justify-center">
-                        <span>Статус</span> {renderSortIcon("status")}
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer whitespace-nowrap"
-                      onClick={() => toggleSortDirection("deadline")}
-                    >
-                      <div className="flex items-center justify-center">
-                        <span>Срок</span> {renderSortIcon("deadline")}
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center"
-                    >
-                      Действия
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAndSortedTasks.map((task) => (
-                    <tr key={task.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-3">
-                        <div className="flex items-center">
-                          <span
-                            className={`mr-2 inline-block w-2 h-2 rounded-full flex-shrink-0
-                            ${
-                              task.priority === "high"
-                                ? "bg-red-500"
-                                : task.priority === "medium"
-                                ? "bg-yellow-500"
-                                : "bg-green-500"
-                            }`}
-                            title={
-                              task.priority === "high"
-                                ? "Высокий приоритет"
-                                : task.priority === "medium"
-                                ? "Средний приоритет"
-                                : "Низкий приоритет"
-                            }
-                          ></span>
-                          <div className="text-sm font-medium text-gray-900 max-w-xs break-words">
-                            {task.title}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div
-                          className="text-sm text-gray-900 whitespace-nowrap"
-                          title={getUserEmailById(task.user_id)}
-                        >
-                          {getUserEmailById(task.user_id)}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div
-                          className="text-sm text-gray-900 max-w-[150px] truncate"
-                          title={getPlanTitleById(task.plan_id)}
-                        >
-                          {getPlanTitleById(task.plan_id)}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-center">
-                        {/* Для десктопа отображаем текст, а для планшетов (< 971px) отображаем иконки */}
-                        <div className="hidden lg:inline-block">
-                          <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                            ${
-                              task.status === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : task.status === "in_progress"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {task.status === "completed"
-                              ? "Завершено"
-                              : task.status === "in_progress"
-                              ? "В процессе"
-                              : "В очереди"}
-                          </span>
-                        </div>
-
-                        <div className="lg:hidden flex justify-center">
-                          {task.status === "completed" ? (
-                            <CheckCircleIcon
-                              className="h-5 w-5 text-green-600"
-                              title="Завершено"
-                            />
-                          ) : task.status === "in_progress" ? (
-                            <ClockIcon
-                              className="h-5 w-5 text-blue-600"
-                              title="В процессе"
-                            />
-                          ) : (
-                            <QueueListIcon
-                              className="h-5 w-5 text-gray-500"
-                              title="В очереди"
-                            />
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-center">
-                        <div className="text-sm text-gray-900 whitespace-nowrap">
-                          {formatDate(task.deadline)}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-center">
-                        <div className="flex justify-center space-x-1">
-                          {userRole === "hr" && (
-                            <button
-                              onClick={() => handleEditTask(task)}
-                              className="text-blue-600 hover:text-blue-900 focus:outline-none p-1 hover:bg-blue-50 rounded-full"
-                              title="Редактировать задачу"
-                            >
-                              <PencilIcon className="h-4 w-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="text-red-600 hover:text-red-900 focus:outline-none p-1 hover:bg-red-50 rounded-full"
-                            title="Удалить задачу"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Карточки для мобильных устройств */}
-            <div className="md:hidden mt-4">
-              <div className="grid grid-cols-1 gap-4">
-                {filteredAndSortedTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="bg-white shadow-sm border border-gray-200 rounded-lg relative hover:shadow-md transition duration-150"
+                {/* Фильтр по плану */}
+                <div>
+                  <label
+                    htmlFor="planFilter"
+                    className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    {/* Заголовок с приоритетом */}
-                    <div className="flex justify-between items-center border-b px-4 py-2">
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`inline-block w-3 h-3 rounded-full
-                  ${
-                    task.priority === "high"
-                      ? "bg-red-500"
-                      : task.priority === "medium"
-                      ? "bg-yellow-500"
-                      : "bg-green-500"
-                  }`}
-                          title={
-                            task.priority === "high"
-                              ? "Высокий приоритет"
-                              : task.priority === "medium"
-                              ? "Средний приоритет"
-                              : "Низкий приоритет"
-                          }
-                        ></span>
-                        <h3
-                          className="text-base font-medium text-gray-800 truncate"
-                          title={task.title}
-                        >
-                          {task.title}
-                        </h3>
-                      </div>
-                      {/* Кнопки действий прямо в заголовке карточки */}
-                      <div className="flex space-x-1">
-                        {userRole === "hr" && (
-                          <button
-                            onClick={() => handleEditTask(task)}
-                            className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50"
-                            title="Редактировать задачу"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteTask(task.id)}
-                          className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50"
-                          title="Удалить задачу"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
+                    План адаптации
+                  </label>
+                  <select
+                    id="planFilter"
+                    value={taskPlanFilter}
+                    onChange={(e) => setTaskPlanFilter(e.target.value)}
+                    className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  >
+                    <option value="all">Все планы</option>
+                    {plans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                    {/* Основное содержимое карточки */}
-                    <div className="p-4">
-                      {/* Информация о сотруднике и плане */}
-                      <div className="mb-3">
-                        <div className="flex items-start mb-1">
-                          <span className="text-xs text-gray-500 font-medium w-20">
-                            Сотрудник:
-                          </span>
-                          <span className="text-xs text-gray-700 break-all">
-                            {getUserEmailById(task.user_id)}
-                          </span>
-                        </div>
-                        <div className="flex items-start">
-                          <span className="text-xs text-gray-500 font-medium w-20">
-                            План:
-                          </span>
-                          <span className="text-xs text-gray-700 break-all">
-                            {getPlanTitleById(task.plan_id)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Описание задачи - если есть */}
-                      {task.description && (
-                        <div className="mb-3 border-т pt-2">
-                          <p
-                            className="text-sm text-gray-600 line-clamp-2"
-                            title={task.description}
-                          >
-                            {task.description}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Статус и срок выполнения */}
-                      <div className="flex justify-between items-center mt-3 text-xs">
-                        <div className="flex items-center">
-                          {task.status === "completed" ? (
-                            <span className="flex items-center text-green-700">
-                              <CheckCircleIcon className="h-4 w-4 mr-1" />
-                              Завершено
-                            </span>
-                          ) : task.status === "in_progress" ? (
-                            <span className="flex items-center text-blue-700">
-                              <ClockIcon className="h-4 w-4 mr-1" />В процессе
-                            </span>
-                          ) : (
-                            <span className="flex items-center text-gray-700">
-                              <QueueListIcon className="h-4 w-4 mr-1" />В
-                              очереди
-                            </span>
-                          )}
-                        </div>
-
-                        <span className="text-gray-500">
-                          Срок: {formatDate(task.deadline)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={resetTaskFilters}
+                  className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Сбросить фильтры
+                </button>
               </div>
             </div>
-          </>
-        )}
-      </div>
-
-      {/* Раздел управления планами */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-gray-700">
-            Управление планами адаптации
-          </h3>
-          <div className="flex space-x-2">
-            <button
-              onClick={refreshPlansFromDatabase}
-              className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-              title="Обновить список планов из базы данных"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 mr-1"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              Обновить
-            </button>
-            {userRole === "hr" && (
-              <button
-                onClick={() => setIsPlanModalOpen(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <PlusIcon className="w-4 h-4 mr-2" />
-                Создать план адаптации
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
-        {plans.length === 0 ? (
-          <div className="bg-gray-50 p-4 rounded">
-            <p className="text-gray-500">Нет активных планов адаптации</p>
+        {/* Таблица задач */}
+        {filteredAndSortedTasks.length === 0 ? (
+          <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            <QueueListIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              Нет доступных задач
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {tasks.length > 0
+                ? "Нет задач, соответствующих заданным фильтрам."
+                : "Задачи еще не были созданы."}
+            </p>
+            <div className="mt-6">
+              <button
+                onClick={() => setIsTaskModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                Создать новую задачу
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => toggleSortDirection("title")}
                   >
                     Название
+                    {renderSortIcon("title")}
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => toggleSortDirection("status")}
                   >
-                    Описание
+                    Статус
+                    {renderSortIcon("status")}
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => toggleSortDirection("priority")}
                   >
-                    Роль
+                    Приоритет
+                    {renderSortIcon("priority")}
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => toggleSortDirection("deadline")}
                   >
-                    Количество задач
+                    Срок
+                    {renderSortIcon("deadline")}
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Сотрудник
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    План
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     Действия
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {plans.map((plan) => (
-                  <tr key={plan.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                {filteredAndSortedTasks.map((task) => (
+                  <tr key={task.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {plan.title}
+                        {task.title}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-500">
-                        {plan.description}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                        ${
-                          plan.role === "manager"
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-blue-100 text-blue-800"
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          task.status === "completed"
+                            ? "bg-green-100 text-green-800"
+                            : task.status === "in_progress"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {plan.role === "manager" ? "Менеджер" : "Сотрудник"}
+                        {task.status === "completed"
+                          ? "Выполнена"
+                          : task.status === "in_progress"
+                          ? "В работе"
+                          : "Не начата"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {
-                          tasks.filter((task) => task.plan_id === plan.id)
-                            .length
-                        }
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          task.priority === "high"
+                            ? "bg-red-100 text-red-800"
+                            : task.priority === "medium"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {task.priority === "high"
+                          ? "Высокий"
+                          : task.priority === "medium"
+                          ? "Средний"
+                          : "Низкий"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <CalendarIcon className="h-4 w-4 text-gray-400 mr-1" />
+                        <span
+                          className={`text-sm ${
+                            new Date(task.deadline) < new Date() &&
+                            task.status !== "completed"
+                              ? "text-red-600 font-medium"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {formatDate(task.deadline)}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">
+                        {task.user_id ? getUserEmailById(task.user_id) : "—"}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">
+                        {task.plan_id ? getPlanTitleById(task.plan_id) : "—"}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
                       <div className="flex justify-end space-x-2">
-                        {userRole === "hr" && (
-                          <>
-                            <button
-                              onClick={() => handleEditPlan(plan)}
-                              className="text-blue-600 hover:text-blue-900 focus:outline-none"
-                              title="Редактировать план"
-                            >
-                              <PencilIcon className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => openDeletePlanModal(plan)}
-                              className="text-red-600 hover:text-red-900 focus:outline-none"
-                              title="Удалить план"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
-                          </>
-                        )}
+                        <button
+                          onClick={() => handleEditTask(task)}
+                          className="text-blue-600 hover:text-blue-900 focus:outline-none"
+                          title="Редактировать задачу"
+                        >
+                          <PencilIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="text-red-600 hover:text-red-900 focus:outline-none"
+                          title="Удалить задачу"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1904,6 +1220,298 @@ export default function ManagerDashboard() {
             </table>
           </div>
         )}
+      </div>
+
+      {/* Раздел управления планами адаптации */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="flex items-center text-xl font-semibold text-gray-700">
+            <ClipboardDocumentListIcon className="h-6 w-6 mr-2 text-blue-600" />
+            Управление планами адаптации
+          </h3>
+          <div className="flex space-x-2">
+            <button
+              onClick={refreshPlansFromDatabase}
+              className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              title="Обновить планы из базы данных"
+            >
+              <ArrowPathIcon className="h-4 w-4 mr-1" />
+              Обновить
+            </button>
+            {userRole === "hr" && (
+              <>
+                <button
+                  onClick={() => {
+                    setEditingTemplate(null);
+                    setIsTaskTemplateModalOpen(true);
+                  }}
+                  className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <DocumentPlusIcon className="w-4 h-4 mr-2" />
+                  Создать шаблон
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingPlan(null);
+                    setIsPlanModalOpen(true);
+                  }}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <FolderPlusIcon className="w-4 h-4 mr-2" />
+                  Создать план
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Раздел с шаблонами задач */}
+        {userRole === "hr" && (
+          <div className="mb-6">
+            <div
+              className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
+              onClick={() => setIsTemplatesListOpen(!isTemplatesListOpen)}
+            >
+              <div className="flex items-center">
+                <DocumentDuplicateIcon className="h-5 w-5 text-purple-600 mr-2" />
+                <h4 className="text-lg font-medium text-gray-700">
+                  Шаблоны задач
+                </h4>
+                <span className="ml-3 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                  {templates.length} шт.
+                </span>
+              </div>
+              <ChevronDownIcon
+                className={`h-5 w-5 text-gray-500 transition-transform ${
+                  isTemplatesListOpen ? "transform rotate-180" : ""
+                }`}
+              />
+            </div>
+
+            {isTemplatesListOpen && (
+              <div className="mt-2 overflow-x-auto rounded-lg border border-gray-200">
+                {templates.length === 0 ? (
+                  <div className="bg-white px-4 py-6 text-center text-gray-500">
+                    <p>Нет доступных шаблонов задач.</p>
+                    <button
+                      onClick={() => {
+                        setEditingTemplate(null);
+                        setIsTaskTemplateModalOpen(true);
+                      }}
+                      className="mt-3 inline-flex items-center px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <PlusIcon className="w-4 h-4 mr-1" />
+                      Создать шаблон
+                    </button>
+                  </div>
+                ) : (
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Название
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Описание
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Роль
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Отдел
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Действия
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {templates.map((template) => (
+                        <tr key={template.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <DocumentDuplicateIcon className="h-4 w-4 text-purple-500 mr-2" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {template.title}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-500 line-clamp-1">
+                              {template.description || "—"}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm text-gray-500">
+                              {template.role || "Любая"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm text-gray-500">
+                              {template.department || "Любой"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
+                            <div className="flex justify-end space-x-2">
+                              <button
+                                onClick={() => handleEditTemplate(template)}
+                                className="text-blue-600 hover:text-blue-900 focus:outline-none"
+                                title="Редактировать шаблон"
+                              >
+                                <PencilIcon className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  openDeleteTemplateModal(template)
+                                }
+                                className="text-red-600 hover:text-red-900 focus:outline-none"
+                                title="Удалить шаблон"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Список планов адаптации */}
+        <div className="mt-4">
+          <h4 className="text-lg font-medium text-gray-700 mb-3">
+            Планы адаптации
+          </h4>
+
+          {plans.length === 0 ? (
+            <div className="bg-white px-4 py-6 text-center text-gray-500 border border-gray-200 rounded-lg">
+              <p>Нет активных планов адаптации</p>
+              {userRole === "hr" && (
+                <button
+                  onClick={() => {
+                    setEditingPlan(null);
+                    setIsPlanModalOpen(true);
+                  }}
+                  className="mt-3 inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <PlusIcon className="w-4 h-4 mr-1" />
+                  Создать план адаптации
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {plans.map((plan) => {
+                // Получаем все задачи, связанные с этим планом
+                const planTasks = tasks.filter(
+                  (task) => task.plan_id === plan.id
+                );
+                // Считаем процент выполненных задач
+                const completedTasks = planTasks.filter(
+                  (task) => task.status === "completed"
+                ).length;
+                const totalTasks = planTasks.length;
+                const progressPercentage =
+                  totalTasks > 0
+                    ? Math.round((completedTasks / totalTasks) * 100)
+                    : 0;
+
+                // Находим пользователя, связанного с планом (если есть)
+                const assignedUser =
+                  planTasks.length > 0 ? planTasks[0].user_id : null;
+
+                return (
+                  <div
+                    key={plan.id}
+                    className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+                  >
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3
+                          className="text-lg font-medium text-gray-900 line-clamp-1"
+                          title={plan.title}
+                        >
+                          {plan.title}
+                        </h3>
+                        {userRole === "hr" && (
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => handleEditPlan(plan)}
+                              className="text-blue-600 hover:text-blue-900 focus:outline-none p-1 hover:bg-blue-50 rounded"
+                              title="Редактировать план"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => openDeletePlanModal(plan)}
+                              className="text-red-600 hover:text-red-900 focus:outline-none p-1 hover:bg-red-50 rounded"
+                              title="Удалить план"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Отображаем роль плана */}
+                      <div className="mb-2">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                            plan.role === "manager"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {plan.role === "manager" ? "Менеджер" : "Сотрудник"}
+                        </span>
+                      </div>
+
+                      {/* Отображаем описание плана */}
+                      {plan.description && (
+                        <p
+                          className="text-sm text-gray-600 line-clamp-2 mb-3"
+                          title={plan.description}
+                        >
+                          {plan.description}
+                        </p>
+                      )}
+
+                      {/* Отображаем назначенного пользователя, если есть */}
+                      {assignedUser && (
+                        <div className="flex items-center mb-3">
+                          <UsersIcon className="h-4 w-4 text-gray-500 mr-1" />
+                          <span className="text-sm text-gray-600">
+                            {getUserEmailById(assignedUser)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Прогресс выполнения задач */}
+                      <div className="mt-2">
+                        <div className="flex justify-between items-center text-xs text-gray-500 mb-1">
+                          <span>
+                            {completedTasks} из {totalTasks} задач выполнено
+                          </span>
+                          <span>{progressPercentage}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 rounded-full"
+                            style={{ width: `${progressPercentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Добавление контейнера для уведомлений */}

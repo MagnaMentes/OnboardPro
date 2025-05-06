@@ -3,8 +3,8 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import { Dialog } from "@headlessui/react";
 
 /**
- * Универсальный компонент модального окна с улучшенным дизайном и анимациями
- * Поддерживает различные варианты цветов, размеры и дополнительные функции (свайп на мобильных)
+ * Универсальный компонент модального окна с современным дизайном и анимациями
+ * Поддерживает различные варианты цветов, размеры и дополнительные функции
  *
  * @param {boolean} isOpen - Флаг, указывающий открыто ли модальное окно
  * @param {Function} onClose - Функция закрытия модального окна
@@ -15,8 +15,9 @@ import { Dialog } from "@headlessui/react";
  * @param {React.ReactNode} footer - Футер модального окна с кнопками
  * @param {boolean} closeOnClickOutside - Закрывать ли модальное окно при клике вне его области
  * @param {boolean} closeOnEsc - Закрывать ли модальное окно при нажатии клавиши Escape
- * @param {Object} primaryAction - Основное действие с кнопкой {label: string, onClick: Function}
- * @param {Object} secondaryAction - Второстепенное действие с кнопкой {label: string, onClick: Function}
+ * @param {Object} primaryAction - Основное действие с кнопкой {label: string, onClick: Function, disabled: boolean}
+ * @param {Object} secondaryAction - Второстепенное действие с кнопкой {label: string, onClick: Function, disabled: boolean}
+ * @param {boolean} showCloseButton - Показывать ли кнопку закрытия в заголовке
  */
 export default function Modal({
   isOpen = false,
@@ -30,6 +31,7 @@ export default function Modal({
   closeOnEsc = true,
   primaryAction = null,
   secondaryAction = null,
+  showCloseButton = true,
 }) {
   const [isMobile, setIsMobile] = useState(false);
   const [touchStartY, setTouchStartY] = useState(null);
@@ -76,6 +78,22 @@ export default function Modal({
         return "bg-gradient-to-r from-blue-400 to-blue-500 text-white";
       default:
         return "bg-gradient-to-r from-blue-600 to-indigo-600 text-white";
+    }
+  };
+
+  // Получаем цвета для кнопок по варианту стиля
+  const getButtonColorByVariant = (variant) => {
+    switch (variant) {
+      case "danger":
+        return "bg-red-600 hover:bg-red-700 focus:ring-red-500";
+      case "success":
+        return "bg-green-600 hover:bg-green-700 focus:ring-green-500";
+      case "warning":
+        return "bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500";
+      case "info":
+        return "bg-blue-500 hover:bg-blue-600 focus:ring-blue-500";
+      default:
+        return "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500";
     }
   };
 
@@ -149,8 +167,9 @@ export default function Modal({
           {secondaryAction && (
             <button
               type="button"
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               onClick={secondaryAction.onClick}
+              disabled={secondaryAction.disabled}
             >
               {secondaryAction.label}
             </button>
@@ -158,8 +177,11 @@ export default function Modal({
           {primaryAction && (
             <button
               type="button"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className={`px-4 py-2.5 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${getButtonColorByVariant(
+                variant
+              )}`}
               onClick={primaryAction.onClick}
+              disabled={primaryAction.disabled}
             >
               {primaryAction.label}
             </button>
@@ -180,19 +202,19 @@ export default function Modal({
     >
       {/* Фоновое затемнение с эффектом размытия */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         aria-hidden="true"
       />
 
       {/* Центрирование модального окна */}
-      <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+      <div className="fixed inset-0 flex w-screen items-center justify-center p-4 sm:p-6">
         <Dialog.Panel
           ref={modalRef}
           className={`w-full ${getModalSize(
             size
-          )} overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-xl transform transition-all ${
-            isMobile ? "mt-auto rounded-b-none" : ""
-          }`}
+          )} overflow-hidden rounded-2xl bg-white shadow-xl transform transition-all duration-300 ease-out
+          ${isMobile ? "mt-auto rounded-b-none" : ""}
+          animate-modal-appear`}
           style={isMobile ? swipeStyle : {}}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -201,7 +223,7 @@ export default function Modal({
           {/* Индикатор свайпа (только для мобильных) */}
           {isMobile && (
             <div className="w-full flex justify-center py-2">
-              <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
             </div>
           )}
 
@@ -214,23 +236,25 @@ export default function Modal({
             <Dialog.Title as="h3" className="text-lg font-semibold leading-6">
               {title}
             </Dialog.Title>
-            <button
-              onClick={onClose}
-              className="rounded-full p-1 hover:bg-white/20 focus:outline-none transition-colors"
-              aria-label="Закрыть"
-            >
-              <XMarkIcon className="h-5 w-5" />
-            </button>
+            {showCloseButton && (
+              <button
+                onClick={onClose}
+                className="rounded-full p-1.5 hover:bg-white/20 focus:outline-none transition-colors duration-200"
+                aria-label="Закрыть"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            )}
           </div>
 
           {/* Содержимое модального окна */}
-          <div className="px-6 py-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+          <div className="px-6 py-5 max-h-[calc(100vh-200px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             {children}
           </div>
 
           {/* Футер с кнопками действий */}
           {renderFooter() !== null && (
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-3">
+            <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">
               {renderFooter()}
             </div>
           )}

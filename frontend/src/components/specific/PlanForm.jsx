@@ -16,6 +16,7 @@ import {
   DocumentDuplicateIcon,
   FunnelIcon,
   AdjustmentsHorizontalIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 // Компонент для отображения таблицы предпросмотра задач
@@ -271,7 +272,7 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
     queryFn: async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("/api/task_templates", {
+        const response = await axios.get("/api/api/task_templates", {
           headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;
@@ -330,7 +331,7 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
           try {
             const token = localStorage.getItem("token");
             const response = await axios.get(
-              `/api/plans/${editPlan.id}/tasks`,
+              `/api/tasks?plan_id=${editPlan.id}`,
               {
                 headers: { Authorization: `Bearer ${token}` },
               }
@@ -346,7 +347,7 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
             const templateIds = templateTasks.map((t) => t.template_id);
             if (templateIds.length > 0) {
               const templatesResponse = await axios.get(
-                `/api/task_templates?ids=${templateIds.join(",")}`,
+                `/api/api/task_templates?ids=${templateIds.join(",")}`,
                 {
                   headers: { Authorization: `Bearer ${token}` },
                 }
@@ -878,26 +879,46 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
 
             {/* Кастомные задачи */}
             <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="font-medium">Кастомные задачи:</h4>
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center">
+                  <DocumentIcon className="h-5 w-5 text-purple-600 mr-2" />
+                  <h4 className="font-medium text-lg">Кастомные задачи</h4>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
                     setEditingCustomTaskIndex(null);
                     setShowNewTaskForm(true);
                   }}
-                  className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded text-sm"
+                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-md shadow-sm hover:from-blue-600 hover:to-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
+                  <PlusIcon className="h-5 w-5 mr-1" />
                   Добавить задачу
                 </button>
               </div>
 
               {customTasks.length === 0 ? (
-                <div className="bg-white p-4 rounded border border-dashed border-gray-300 text-center">
-                  <p className="text-gray-500 mb-2">Нет кастомных задач</p>
-                  <p className="text-sm text-gray-400">
-                    Добавьте индивидуальные задачи для этого плана
+                <div className="bg-white p-6 rounded-lg border border-dashed border-gray-300 text-center">
+                  <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-3">
+                    <DocumentIcon className="h-8 w-8 text-blue-400" />
+                  </div>
+                  <p className="text-gray-900 font-medium mb-1">
+                    Нет кастомных задач
                   </p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Добавьте индивидуальные задачи для этого плана адаптации
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingCustomTaskIndex(null);
+                      setShowNewTaskForm(true);
+                    }}
+                    className="inline-flex items-center px-3 py-2 bg-white border border-blue-500 text-blue-600 rounded-md hover:bg-blue-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-1" />
+                    Создать первую задачу
+                  </button>
                 </div>
               ) : (
                 <Droppable droppableId="customTasks">
@@ -905,15 +926,89 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className="bg-white rounded border overflow-hidden"
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                     >
-                      <TaskPreviewTable
-                        tasks={customTasks}
-                        onDelete={handleRemoveCustomTask}
-                        onEdit={handleEditCustomTask}
-                        isDraggable={true}
-                        taskType="custom"
-                      />
+                      {customTasks.map((task, index) => (
+                        <div
+                          key={`custom-${index}`}
+                          className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden"
+                        >
+                          <div className="p-4">
+                            <div className="flex justify-between items-start">
+                              <h5 className="text-base font-medium text-gray-900 mb-1 line-clamp-2">
+                                {task.title}
+                              </h5>
+                              <span
+                                className={`ml-2 flex-shrink-0 inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                  task.priority === "high"
+                                    ? "bg-red-100 text-red-800"
+                                    : task.priority === "medium"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-green-100 text-green-800"
+                                }`}
+                              >
+                                {task.priority === "high"
+                                  ? "Высокий"
+                                  : task.priority === "medium"
+                                  ? "Средний"
+                                  : "Низкий"}
+                              </span>
+                            </div>
+
+                            {task.description && (
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-2 mt-1">
+                                {task.description}
+                              </p>
+                            )}
+
+                            <div className="flex items-center text-sm text-gray-500 mb-2">
+                              <CalendarIcon className="h-4 w-4 mr-1 text-gray-400" />
+                              <span>
+                                {new Date(task.deadline).toLocaleDateString(
+                                  "ru-RU",
+                                  {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                  }
+                                )}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+                              <button
+                                onClick={() =>
+                                  handleEditCustomTask(task, index)
+                                }
+                                className="text-blue-600 hover:bg-blue-50 hover:text-blue-800 p-1.5 rounded"
+                                title="Редактировать задачу"
+                              >
+                                <PencilIcon className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleRemoveCustomTask(task, index)
+                                }
+                                className="text-red-600 hover:bg-red-50 hover:text-red-800 p-1.5 rounded"
+                                title="Удалить задачу"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Визуальный индикатор статуса задачи */}
+                          <div
+                            className={`h-1 w-full ${
+                              task.status === "completed"
+                                ? "bg-green-500"
+                                : task.status === "in_progress"
+                                ? "bg-blue-500"
+                                : "bg-gray-300"
+                            }`}
+                          ></div>
+                        </div>
+                      ))}
                       {provided.placeholder}
                     </div>
                   )}
@@ -922,38 +1017,11 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
             </div>
           </DragDropContext>
 
-          {/* Интеграция с Google Calendar */}
-          <div className="mt-6 bg-white p-4 rounded border">
-            <div className="flex items-center space-x-2">
-              <input
-                id="google-calendar-integration"
-                type="checkbox"
-                checked={selectedGoogleCalendarIntegration}
-                onChange={(e) =>
-                  setSelectedGoogleCalendarIntegration(e.target.checked)
-                }
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <div>
-                <label
-                  htmlFor="google-calendar-integration"
-                  className="font-medium text-gray-700"
-                >
-                  Интеграция с Google Calendar
-                </label>
-                <p className="text-sm text-gray-500">
-                  Отправить шаблонные задачи в календарь сотрудника после
-                  создания плана
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Форма добавления новой кастомной задачи */}
           {showNewTaskForm && (
-            <div className="border border-blue-200 bg-blue-50 p-4 rounded-lg mt-4">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-medium">
+            <div className="border-2 border-blue-200 bg-blue-50 p-5 rounded-lg mt-4">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-semibold text-lg text-blue-800">
                   {editingCustomTaskIndex !== null
                     ? "Редактирование задачи"
                     : "Новая кастомная задача"}
@@ -961,9 +1029,9 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
                 <button
                   type="button"
                   onClick={() => setShowNewTaskForm(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-1 rounded-full"
                 >
-                  Отмена
+                  <XMarkIcon className="h-5 w-5" />
                 </button>
               </div>
               <TaskForm
@@ -982,6 +1050,33 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
               />
             </div>
           )}
+        </div>
+
+        {/* Интеграция с Google Calendar */}
+        <div className="mt-6 bg-white p-4 rounded border">
+          <div className="flex items-center space-x-2">
+            <input
+              id="google-calendar-integration"
+              type="checkbox"
+              checked={selectedGoogleCalendarIntegration}
+              onChange={(e) =>
+                setSelectedGoogleCalendarIntegration(e.target.checked)
+              }
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <div>
+              <label
+                htmlFor="google-calendar-integration"
+                className="font-medium text-gray-700"
+              >
+                Интеграция с Google Calendar
+              </label>
+              <p className="text-sm text-gray-500">
+                Отправить шаблонные задачи в календарь сотрудника после создания
+                плана
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end space-x-2 mt-6">
