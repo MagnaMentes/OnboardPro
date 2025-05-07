@@ -3,18 +3,20 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Устанавливаем необходимые пакеты: curl для проверки здоровья и sqlite3 для работы с базой данных
-RUN apt-get update && apt-get install -y curl sqlite3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl sqlite3 postgresql-client && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Создаем директорию для тестов и логов
-RUN mkdir -p /app/tests /app/logs
+# Создаем директории для тестов, логов и отчетов о миграциях
+RUN mkdir -p /app/tests /app/logs /app/migration_reports
 
 # Делаем скрипты исполняемыми
 RUN chmod +x /app/start.sh
+RUN chmod +x /app/migration_manager.py
+RUN chmod +x /app/validate_db_models.py
 
 EXPOSE 8000
 

@@ -399,230 +399,290 @@ export default function HRDashboard() {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    // Инициализация WebSocket соединения
-    webSocketService
-      .connect(token)
-      .then(() => {
-        setWsConnected(true);
-        toast.success("Подключение к серверу обновлений установлено");
+    console.log("[DEBUG] Инициализирую WebSocket соединение");
 
-        // После подключения запрашиваем актуальные данные аналитики
-        webSocketService.requestAnalyticsUpdate();
-      })
-      .catch((error) => {
-        console.error("Ошибка подключения к WebSocket:", error);
-        toast.error(
-          "Не удалось установить соединение для обновлений в реальном времени"
-        );
-      });
-
-    // Обработчик обновления аналитики, отдающий приоритет данным реального времени
+    // Создаем функции-обработчики один раз при монтировании компонента
+    // чтобы они не пересоздавались при перерендере
     const handleAnalyticsUpdate = (data) => {
-      console.log("Получено обновление аналитики:", data);
-      if (data.data) {
-        // Добавляем метку, что это данные реального времени
-        const updatedData = {
-          ...data.data,
-          metadata: {
-            ...(data.data.metadata || {}),
-            real_time_update: true,
-            generated_at: new Date().toISOString(),
-          },
-        };
-        setAnalytics(updatedData);
+      console.log(
+        "[DEBUG] Получено обновление аналитики через WebSocket:",
+        data
+      );
+      console.log("[DEBUG] Тип обновления:", data.type);
 
-        // Обработка детальной информации о задачах в процессе, если она есть
-        if (
-          updatedData.task_stats &&
-          updatedData.task_stats.in_progress_tasks_details
-        ) {
-          // Обновляем список задач, чтобы карточка со статистикой обновилась
-          setTasks((prevTasks) => {
-            // Находим все задачи, кроме тех, что в процессе
-            const filteredTasks = prevTasks.filter(
-              (task) => task.status !== "in_progress"
-            );
-            // Добавляем обновленные задачи в процессе
-            return [
-              ...filteredTasks,
-              ...updatedData.task_stats.in_progress_tasks_details,
-            ];
+      if (data && data.data) {
+        try {
+          // Добавляем метку, что это данные реального времени
+          const updatedData = {
+            ...data.data,
+            metadata: {
+              ...(data.data.metadata || {}),
+              real_time_update: true,
+              generated_at: new Date().toISOString(),
+            },
+          };
+
+          console.log("[DEBUG] Обновляем данные аналитики:", updatedData);
+
+          // КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Принудительно обновляем все состояния,
+          // а не только основной объект аналитики
+          setAnalytics(() => {
+            console.log("[DEBUG] Устанавливаем новое значение аналитики");
+            return { ...updatedData };
           });
-        }
 
-        setHasRealtimeUpdates(true);
-        setLastUpdate(new Date());
-        toast.info("Получены новые аналитические данные", {
-          autoClose: 2000,
-          icon: <WifiIcon className="h-5 w-5 text-blue-500" />,
-        });
+          // Обновляем значение задач в процессе, чтобы обновить StatCard
+          if (updatedData && updatedData.task_stats) {
+            console.log("[DEBUG] Подсчет задач: ", {
+              total: updatedData.task_stats.total,
+              completed: updatedData.task_stats.completed,
+              in_progress: updatedData.task_stats.in_progress,
+            });
+          }
+
+          // Принудительно обновляем связанные компоненты и состояния
+          if (
+            updatedData.task_stats &&
+            updatedData.task_stats.in_progress_tasks_details
+          ) {
+            setTasks((prevTasks) => {
+              const currentTaskIds = new Set(prevTasks.map((task) => task.id));
+              const newTasks =
+                updatedData.task_stats.in_progress_tasks_details.filter(
+                  (task) => !currentTaskIds.has(task.id)
+                );
+
+              // Обновляем существующие задачи и добавляем новые
+              const updatedTasks = [...prevTasks];
+              updatedData.task_stats.in_progress_tasks_details.forEach(
+                (newTask) => {
+                  const existingIndex = updatedTasks.findIndex(
+                    (task) => task.id === newTask.id
+                  );
+                  if (existingIndex >= 0) {
+                    updatedTasks[existingIndex] = {
+                      ...updatedTasks[existingIndex],
+                      ...newTask,
+                    };
+                  } else {
+                    updatedTasks.push(newTask);
+                  }
+                }
+              );
+
+              console.log("[DEBUG] Обновлено задач:", updatedTasks.length);
+              return updatedTasks;
+            });
+          }
+
+          // Обновляем другие связанные состояния
+          if (updatedData.summary) {
+            setTaskAnalytics((prev) => ({
+              ...prev,
+              summary: updatedData.summary,
+            }));
+          }
+
+          // Обновляем флаги статуса обновления
+          setHasRealtimeUpdates(true);
+          setLastUpdate(new Date());
+
+          // Явно вызываем перерисовку, отправляя одно из "часто обновляемых" значений
+          const inProgressValue = updatedData.task_stats?.in_progress || 0;
+          document
+            .getElementById("websocket-update-trigger")
+            ?.setAttribute("data-value", String(inProgressValue));
+
+          // Принудительно обновляем страницу в тестовом режиме, если другие методы не работают
+          // ЭТОТ КОД ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ - УДАЛИТЬ ПОЗЖЕ
+          // window.location.reload();
+
+          toast.info("Получены новые аналитические данные", {
+            autoClose: 2000,
+            icon: <WifiIcon className="h-5 w-5 text-blue-500" />,
+          });
+        } catch (error) {
+          console.error("[DEBUG] Ошибка при обновлении аналитики:", error);
+        }
       }
     };
 
-    // Обработчик обновления статуса задачи с улучшенной логикой кэширования
     const handleTaskStatusChanged = (data) => {
-      console.log("Изменение статуса задачи:", data);
+      console.log(
+        "[DEBUG] Получено обновление статуса задачи через WebSocket:",
+        data
+      );
+
+      // Принудительно запрашиваем новые аналитические данные при изменении задачи
+      webSocketService.requestAnalyticsUpdate();
 
       if (!data || !data.data) return;
 
-      let taskWasInProgress = false;
-      let taskWasCompleted = false;
-      let taskWasDeleted = data.data.status === "deleted";
-      let taskIsNowInProgress = data.data.status === "in_progress";
+      try {
+        let taskWasInProgress = false;
+        let taskWasCompleted = false;
+        let taskWasDeleted = data.data.status === "deleted";
+        let taskIsNowInProgress = data.data.status === "in_progress";
 
-      // Обрабатываем удаление задачи
-      if (taskWasDeleted) {
-        // Находим задачу перед удалением для определения её статуса
-        setTasks((prevTasks) => {
-          const taskToRemove = prevTasks.find(
-            (task) => task.id === data.data.id
-          );
+        // Обрабатываем удаление задачи
+        if (taskWasDeleted) {
+          // Находим задачу перед удалением для определения её статуса
+          setTasks((prevTasks) => {
+            const taskToRemove = prevTasks.find(
+              (task) => task.id === data.data.id
+            );
 
-          // Проверяем, была ли удаляемая задача в процессе
-          if (taskToRemove && taskToRemove.status === "in_progress") {
-            taskWasInProgress = true;
-          }
+            // Проверяем, была ли удаляемая задача в процессе
+            if (taskToRemove && taskToRemove.status === "in_progress") {
+              taskWasInProgress = true;
+            }
 
-          const wasCompleted =
-            taskToRemove && taskToRemove.status === "completed";
+            const wasCompleted =
+              taskToRemove && taskToRemove.status === "completed";
 
-          // Обновляем счетчики аналитики при удалении
+            // Обновляем счетчики аналитики при удалении
+            setAnalytics((prev) => {
+              if (!prev || !prev.task_stats) return prev;
+
+              const updatedStats = { ...prev.task_stats };
+              const newTotal = Math.max(0, updatedStats.total - 1);
+              let newCompleted = updatedStats.completed;
+              let newInProgress = updatedStats.in_progress;
+
+              // Если удаляем завершенную задачу, уменьшаем счетчик завершенных
+              if (wasCompleted) {
+                newCompleted = Math.max(0, updatedStats.completed - 1);
+              }
+
+              // Если удаляем задачу в процессе, уменьшаем счетчик задач в процессе
+              if (taskWasInProgress) {
+                newInProgress = Math.max(0, updatedStats.in_progress - 1);
+              }
+
+              // Рассчитываем новый процент выполнения
+              const newCompletionRate =
+                newTotal > 0 ? newCompleted / newTotal : 0;
+
+              return {
+                ...prev,
+                task_stats: {
+                  ...updatedStats,
+                  total: newTotal,
+                  completed: newCompleted,
+                  in_progress: newInProgress,
+                  completion_rate: newCompletionRate,
+                },
+                metadata: {
+                  ...(prev.metadata || {}),
+                  updated_locally: true,
+                  generated_at: new Date().toISOString(),
+                },
+              };
+            });
+
+            // Возвращаем отфильтрованный массив задач
+            return prevTasks.filter((task) => task.id !== data.data.id);
+          });
+        } else {
+          // Изменение статуса задачи
+          // Обновляем список задач локально при изменении статуса
+          setTasks((prevTasks) => {
+            // Проверяем предыдущее состояние задачи до обновления
+            const oldTask = prevTasks.find((task) => task.id === data.data.id);
+            if (oldTask) {
+              taskWasInProgress = oldTask.status === "in_progress";
+              taskWasCompleted = oldTask.status === "completed";
+            }
+
+            // Обновляем статус задачи
+            return prevTasks.map((task) =>
+              task.id === data.data.id
+                ? { ...task, status: data.data.status }
+                : task
+            );
+          });
+
+          // Немедленно обновляем счетчики для лучшего UX
           setAnalytics((prev) => {
             if (!prev || !prev.task_stats) return prev;
 
             const updatedStats = { ...prev.task_stats };
-            const newTotal = Math.max(0, updatedStats.total - 1);
-            let newCompleted = updatedStats.completed;
+            const total = updatedStats.total;
             let newInProgress = updatedStats.in_progress;
 
-            // Если удаляем завершенную задачу, уменьшаем счетчик завершенных
-            if (wasCompleted) {
-              newCompleted = Math.max(0, updatedStats.completed - 1);
-            }
-
-            // Если удаляем задачу в процессе, уменьшаем счетчик задач в процессе
-            if (taskWasInProgress) {
+            // Обновляем счетчик задач в процессе
+            if (taskIsNowInProgress && !taskWasInProgress) {
+              // Задача переведена в статус "в процессе"
+              newInProgress = updatedStats.in_progress + 1;
+            } else if (!taskIsNowInProgress && taskWasInProgress) {
+              // Задача переведена из статуса "в процессе" в другой статус
               newInProgress = Math.max(0, updatedStats.in_progress - 1);
             }
 
-            // Рассчитываем новый процент выполнения
-            const newCompletionRate =
-              newTotal > 0 ? newCompleted / newTotal : 0;
+            // Если задача завершена и она ранее НЕ была завершена
+            if (data.data.status === "completed" && !taskWasCompleted) {
+              const newCompleted = updatedStats.completed + 1;
+              const newCompletionRate = newCompleted / total;
 
-            return {
-              ...prev,
-              task_stats: {
-                ...updatedStats,
-                total: newTotal,
-                completed: newCompleted,
-                in_progress: newInProgress,
-                completion_rate: newCompletionRate,
-              },
-              metadata: {
-                ...(prev.metadata || {}),
-                updated_locally: true,
-                generated_at: new Date().toISOString(),
-              },
-            };
+              return {
+                ...prev,
+                task_stats: {
+                  ...updatedStats,
+                  in_progress: newInProgress,
+                  completed: newCompleted,
+                  completion_rate: newCompletionRate,
+                },
+                metadata: {
+                  ...(prev.metadata || {}),
+                  updated_locally: true,
+                  generated_at: new Date().toISOString(),
+                },
+              };
+            }
+            // Если задача переведена из завершенных в другой статус
+            else if (data.data.status !== "completed" && taskWasCompleted) {
+              const newCompleted = Math.max(0, updatedStats.completed - 1);
+              const newCompletionRate = newCompleted / total;
+
+              return {
+                ...prev,
+                task_stats: {
+                  ...updatedStats,
+                  in_progress: newInProgress,
+                  completed: newCompleted,
+                  completion_rate: newCompletionRate,
+                },
+                metadata: {
+                  ...(prev.metadata || {}),
+                  updated_locally: true,
+                  generated_at: new Date().toISOString(),
+                },
+              };
+            }
+            // Если изменение касается только счетчика задач в процессе
+            else if (newInProgress !== updatedStats.in_progress) {
+              return {
+                ...prev,
+                task_stats: {
+                  ...updatedStats,
+                  in_progress: newInProgress,
+                },
+                metadata: {
+                  ...(prev.metadata || {}),
+                  updated_locally: true,
+                  generated_at: new Date().toISOString(),
+                },
+              };
+            }
+
+            return prev; // Если статус не изменился или не влияет на счетчики
           });
-
-          // Возвращаем отфильтрованный массив задач
-          return prevTasks.filter((task) => task.id !== data.data.id);
-        });
-      } else {
-        // Изменение статуса задачи
-        // Обновляем список задач локально при изменении статуса
-        setTasks((prevTasks) => {
-          // Проверяем предыдущее состояние задачи до обновления
-          const oldTask = prevTasks.find((task) => task.id === data.data.id);
-          if (oldTask) {
-            taskWasInProgress = oldTask.status === "in_progress";
-            taskWasCompleted = oldTask.status === "completed";
-          }
-
-          // Обновляем статус задачи
-          return prevTasks.map((task) =>
-            task.id === data.data.id
-              ? { ...task, status: data.data.status }
-              : task
-          );
-        });
-
-        // Немедленно обновляем счетчики для лучшего UX
-        setAnalytics((prev) => {
-          if (!prev || !prev.task_stats) return prev;
-
-          const updatedStats = { ...prev.task_stats };
-          const total = updatedStats.total;
-          let newInProgress = updatedStats.in_progress;
-
-          // Обновляем счетчик задач в процессе
-          if (taskIsNowInProgress && !taskWasInProgress) {
-            // Задача переведена в статус "в процессе"
-            newInProgress = updatedStats.in_progress + 1;
-          } else if (!taskIsNowInProgress && taskWasInProgress) {
-            // Задача переведена из статуса "в процессе" в другой статус
-            newInProgress = Math.max(0, updatedStats.in_progress - 1);
-          }
-
-          // Если задача завершена и она ранее НЕ была завершена
-          if (data.data.status === "completed" && !taskWasCompleted) {
-            const newCompleted = updatedStats.completed + 1;
-            const newCompletionRate = newCompleted / total;
-
-            return {
-              ...prev,
-              task_stats: {
-                ...updatedStats,
-                in_progress: newInProgress,
-                completed: newCompleted,
-                completion_rate: newCompletionRate,
-              },
-              metadata: {
-                ...(prev.metadata || {}),
-                updated_locally: true,
-                generated_at: new Date().toISOString(),
-              },
-            };
-          }
-          // Если задача переведена из завершенных в другой статус
-          else if (data.data.status !== "completed" && taskWasCompleted) {
-            const newCompleted = Math.max(0, updatedStats.completed - 1);
-            const newCompletionRate = newCompleted / total;
-
-            return {
-              ...prev,
-              task_stats: {
-                ...updatedStats,
-                in_progress: newInProgress,
-                completed: newCompleted,
-                completion_rate: newCompletionRate,
-              },
-              metadata: {
-                ...(prev.metadata || {}),
-                updated_locally: true,
-                generated_at: new Date().toISOString(),
-              },
-            };
-          }
-          // Если изменение касается только счетчика задач в процессе
-          else if (newInProgress !== updatedStats.in_progress) {
-            return {
-              ...prev,
-              task_stats: {
-                ...updatedStats,
-                in_progress: newInProgress,
-              },
-              metadata: {
-                ...(prev.metadata || {}),
-                updated_locally: true,
-                generated_at: new Date().toISOString(),
-              },
-            };
-          }
-
-          return prev; // Если статус не изменился или не влияет на счетчики
-        });
+        }
+      } catch (error) {
+        console.error(
+          "[DEBUG] Ошибка при обработке обновления статуса задачи:",
+          error
+        );
       }
     };
 
@@ -637,19 +697,56 @@ export default function HRDashboard() {
 
     // Обработчик ошибок WebSocket
     const handleError = (data) => {
-      console.error("Ошибка WebSocket:", data.message);
+      console.error("[DEBUG] Ошибка WebSocket:", data.message);
       toast.error(`Ошибка соединения: ${data.message}`);
       setWsConnected(false);
     };
 
-    // Регистрация обработчиков
-    webSocketService.onAnalyticsUpdate(handleAnalyticsUpdate);
-    webSocketService.onTaskStatusChanged(handleTaskStatusChanged);
-    webSocketService.onNotification(handleNotification);
-    webSocketService.onError(handleError);
+    // Инициализируем WebSocket соединение
+    webSocketService
+      .connect(token)
+      .then(() => {
+        setWsConnected(true);
+        toast.success("Подключение к серверу обновлений установлено");
+        console.log("[DEBUG] WebSocket соединение установлено");
+
+        // Очищаем слушатели перед регистрацией новых, чтобы избежать дублирования
+        webSocketService.removeListener(
+          "analytics_update",
+          handleAnalyticsUpdate
+        );
+        webSocketService.removeListener(
+          "task_status_changed",
+          handleTaskStatusChanged
+        );
+        webSocketService.removeListener(
+          "user_notification",
+          handleNotification
+        );
+        webSocketService.removeListener("error", handleError);
+
+        // Регистрируем обработчики
+        webSocketService.onAnalyticsUpdate(handleAnalyticsUpdate);
+        webSocketService.onTaskStatusChanged(handleTaskStatusChanged);
+        webSocketService.onNotification(handleNotification);
+        webSocketService.onError(handleError);
+
+        // После подключения запрашиваем актуальные данные аналитики
+        webSocketService.requestAnalyticsUpdate();
+        console.log("[DEBUG] Отправлен запрос на обновление аналитики");
+      })
+      .catch((error) => {
+        console.error("[DEBUG] Ошибка подключения к WebSocket:", error);
+        toast.error(
+          "Не удалось установить соединение для обновлений в реальном времени"
+        );
+      });
 
     // Отключение при размонтировании компонента
     return () => {
+      console.log(
+        "[DEBUG] Размонтирование компонента HRDashboard, очищаем обработчики"
+      );
       webSocketService.removeListener(
         "analytics_update",
         handleAnalyticsUpdate
@@ -660,9 +757,12 @@ export default function HRDashboard() {
       );
       webSocketService.removeListener("user_notification", handleNotification);
       webSocketService.removeListener("error", handleError);
-      webSocketService.disconnect();
+
+      // Не разрываем соединение при размонтировании для сохранения
+      // одного экземпляра соединения в приложении
+      // webSocketService.disconnect();
     };
-  }, [wsDisabled]);
+  }, [wsDisabled]); // Зависимость только от флага отключения
 
   const handleFilterChange = (newFilters) => {
     setFilters((prev) => ({
@@ -1178,6 +1278,14 @@ export default function HRDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
+      {/* Скрытый элемент для отслеживания изменений в реальном времени */}
+      <div
+        id="websocket-update-trigger"
+        data-value="0"
+        style={{ display: "none" }}
+        data-last-update={lastUpdate?.toISOString()}
+      />
+
       <ToastContainer
         position="top-right"
         autoClose={3000}

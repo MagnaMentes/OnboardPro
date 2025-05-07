@@ -31,6 +31,11 @@ import traceback
 from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 import uuid
+import logging
+import asyncio
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
@@ -336,7 +341,7 @@ async def update_user_password(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can update passwords")
 
@@ -358,7 +363,7 @@ async def update_user(
     db: Session = Depends(auth.get_db)
 ):
     """Обновление данных пользователя"""
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Только HR может изменять данные пользователей"
         )
@@ -387,7 +392,7 @@ async def delete_user(
     db: Session = Depends(auth.get_db)
 ):
     """Удаление пользователя"""
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Только HR может удалять пользователей"
         )
@@ -414,7 +419,7 @@ async def toggle_user_status(
     db: Session = Depends(auth.get_db)
 ):
     """Блокирование/разблокирование пользователя"""
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Только HR может блокировать/разблокировать пользователей"
         )
@@ -446,7 +451,7 @@ async def reset_user_password(
     db: Session = Depends(auth.get_db)
 ):
     """Сброс пароля пользователя"""
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Только HR может сбрасывать пароли пользователей"
         )
@@ -476,7 +481,7 @@ async def create_plan(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(status_code=403, detail="Only HR can create plans")
     db_plan = models.OnboardingPlan(**plan.model_dump())
     db.add(db_plan)
@@ -500,7 +505,7 @@ async def update_plan(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(status_code=403, detail="Only HR can update plans")
 
     db_plan = db.query(models.OnboardingPlan).filter(
@@ -523,7 +528,7 @@ async def delete_plan(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(status_code=403, detail="Only HR can delete plans")
 
     # Проверяем, что план существует
@@ -552,7 +557,7 @@ async def create_task(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    if current_user.role not in ["hr", "manager"]:
+    if current_user.role.lower() not in ["hr", "manager"]:
         raise HTTPException(
             status_code=403,
             detail="Only HR or managers can create tasks"
@@ -591,7 +596,7 @@ async def get_tasks(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    if current_user.role == "employee":
+    if current_user.role.lower() == "employee":
         return db.query(models.Task).filter(
             models.Task.user_id == current_user.id
         ).all()
@@ -607,7 +612,7 @@ async def update_task(
 ):
     """Обновление всех полей задачи"""
     # Проверяем права доступа (только HR может редактировать задачи)
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403,
             detail="Только HR может редактировать задачи"
@@ -647,7 +652,7 @@ async def update_task_status(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if current_user.role == "employee" and task.user_id != current_user.id:
+    if current_user.role.lower() == "employee" and task.user_id != current_user.id:
         raise HTTPException(
             status_code=403, detail="Not authorized to update this task")
 
@@ -673,14 +678,33 @@ async def update_task_status(
         "previous_status": previous_status  # Добавляем информацию о предыдущем статусе
     }
 
-    # Отправляем оповещение о изменении статуса задачи через WebSocket
-    await websocket_manager.notify_task_status_change(task_data)
+    try:
+        # Отправляем оповещение о изменении статуса задачи через WebSocket
+        await websocket_manager.notify_task_status_change(task_data)
 
-    # Всегда отправляем обновление аналитики при любом изменении статуса
-    # Получаем свежие данные аналитики
-    analytics_data = await get_analytics_data_for_websocket()
-    # Отправляем через WebSocket HR пользователям
-    await websocket_manager.broadcast_analytics_update(analytics_data)
+        # Добавляем небольшую задержку перед отправкой аналитических данных
+        await asyncio.sleep(0.5)
+
+        # Всегда отправляем обновление аналитики при любом изменении статуса
+        # Получаем свежие данные аналитики
+        analytics_data = await get_analytics_data_for_websocket()
+
+        # Добавляем метаинформацию о том, что это обновление задачи
+        analytics_data["metadata"] = {
+            "triggered_by_task_id": task_id,
+            "real_time_update": True,
+            "generated_at": datetime.now().isoformat()
+        }
+
+        # Отправляем через WebSocket HR пользователям
+        await websocket_manager.broadcast_analytics_update(analytics_data)
+
+        # Логируем успешную отправку обновлений
+        logger.info(
+            f"WebSocket: Отправлены обновления для задачи {task_id} и аналитики")
+    except Exception as e:
+        logger.error(f"WebSocket: Ошибка при отправке обновлений: {str(e)}")
+        # Не прерываем выполнение API-запроса при ошибке WebSocket
 
     return task
 
@@ -692,7 +716,7 @@ async def delete_task(
     db: Session = Depends(auth.get_db)
 ):
     """Удаление задачи"""
-    if current_user.role not in ["hr", "manager"]:
+    if current_user.role.lower() not in ["hr", "manager"]:
         raise HTTPException(
             status_code=403,
             detail="Only HR or managers can delete tasks"
@@ -753,7 +777,7 @@ async def get_feedback(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    if current_user.role == "employee":
+    if current_user.role.lower() == "employee":
         return db.query(models.Feedback).filter(
             models.Feedback.recipient_id == current_user.id
         ).all()
@@ -765,7 +789,7 @@ async def get_users(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    if current_user.role not in ["manager", "hr"]:
+    if current_user.role.lower() not in ["manager", "hr"]:
         raise HTTPException(
             status_code=403,
             detail="Only managers or HR can view profiles"
@@ -804,7 +828,7 @@ async def upload_user_photo(
 ):
     """Загрузка фотографии пользователя"""
     # Проверяем права доступа (только HR может загружать фото других пользователей)
-    if current_user.role != "hr" and current_user.id != user_id:
+    if current_user.role.lower() != "hr" and current_user.id != user_id:
         raise HTTPException(
             status_code=403,
             detail="Недостаточно прав для загрузки фотографии этого пользователя"
@@ -859,7 +883,7 @@ async def delete_user_photo(
 ):
     """Удаление фотографии пользователя"""
     # Проверяем права доступа (только HR или сам пользователь)
-    if current_user.role != "hr" and current_user.id != user_id:
+    if current_user.role.lower() != "hr" and current_user.id != user_id:
         raise HTTPException(
             status_code=403,
             detail="Недостаточно прав для удаления фотографии этого пользователя"
@@ -903,7 +927,7 @@ async def create_calendar(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can create calendar events")
     create_calendar_event(current_user.id, data.task_id, db)
@@ -915,7 +939,7 @@ async def import_workable(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can import employees")
     candidates = import_workable_employees()
@@ -942,7 +966,7 @@ async def notify_telegram(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can send notifications")
     await send_telegram_notification(user_id, message, db)
@@ -972,7 +996,7 @@ async def sync_workable_candidate(
     db: Session = Depends(auth.get_db)
 ):
     """Синхронизация кандидата из Workable"""
-    if current_user.role != "admin" and current_user.role != "hr":
+    if current_user.role.lower() != "admin" and current_user.role.lower() != "hr":
         raise HTTPException(status_code=403, detail="Недостаточно прав")
     return sync_workable_candidate(candidate_id, db)
 
@@ -983,7 +1007,7 @@ async def create_analytics(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can record analytics")
     db_analytics = models.Analytics(**data.model_dump())
@@ -998,7 +1022,7 @@ async def get_analytics(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(auth.get_db)
 ):
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can view analytics")
     return db.query(models.Analytics).all()
@@ -1015,7 +1039,7 @@ async def get_analytics_summary(
     db: Session = Depends(auth.get_db)
 ):
     """Получение сводной аналитики для HR-дашборда с фильтрами по дате и отделу"""
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can view analytics")
 
@@ -1191,7 +1215,7 @@ async def get_task_analytics(
     import csv
     from sqlalchemy.orm import joinedload
 
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can view task analytics"
         )
@@ -1357,7 +1381,7 @@ async def get_user_analytics(
     import io
     import csv
 
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":
         raise HTTPException(
             status_code=403, detail="Only HR can view user analytics"
         )
@@ -1554,7 +1578,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = None):
             await websocket_manager.connect(websocket, user.id, user.role)
 
             # Немедленно отправляем текущую аналитику
-            if user.role == "hr":
+            if user.role.lower() == "hr":
                 try:
                     analytics_data = await get_analytics_data_for_websocket()
                     await websocket.send_text(json.dumps({
@@ -1655,6 +1679,8 @@ async def get_analytics_data_for_websocket() -> Dict[str, Any]:
     db = next(get_db())
 
     try:
+        logger.info("WebSocket: Начато получение аналитических данных")
+
         # Базовый запрос для задач
         task_query = db.query(models.Task)
 
@@ -1674,25 +1700,55 @@ async def get_analytics_data_for_websocket() -> Dict[str, Any]:
 
         completion_rate = completed_tasks / total_tasks if total_tasks > 0 else 0
 
+        logger.info(
+            f"WebSocket: Получена статистика задач: всего={total_tasks}, выполнено={completed_tasks}, в процессе={in_progress_tasks}")
+
         # Получаем список задач в процессе с более детальной информацией
         in_progress_tasks_details = []
         tasks_in_progress = in_progress_task_query.all()
 
         for task in tasks_in_progress:
-            # Получаем информацию о пользователе-исполнителе
-            assignee = db.query(models.User).filter(
-                models.User.id == task.user_id).first()
+            try:
+                # Получаем информацию о пользователе-исполнителе
+                assignee = db.query(models.User).filter(
+                    models.User.id == task.user_id).first()
 
-            in_progress_tasks_details.append({
-                "id": task.id,
-                "title": task.title,
-                "priority": task.priority,
-                "created_at": task.created_at.isoformat() if task.created_at else None,
-                "deadline": task.deadline.isoformat() if task.deadline else None,
-                "assignee_name": f"{assignee.first_name} {assignee.last_name}".strip() if assignee and assignee.first_name and assignee.last_name else assignee.email if assignee else "Неизвестно",
-                "assignee_id": task.user_id,
-                "department": assignee.department if assignee else "Неизвестно"
-            })
+                # Безопасное извлечение данных с проверками на None
+                task_details = {
+                    "id": task.id,
+                    "title": task.title if task.title else "Без названия",
+                    "priority": task.priority if task.priority else "medium",
+                    "status": task.status if task.status else "in_progress",
+                    "created_at": task.created_at.isoformat() if task.created_at else None,
+                    "deadline": task.deadline.isoformat() if task.deadline else None,
+                }
+
+                # Добавляем информацию о пользователе, если она доступна
+                if assignee:
+                    full_name = " ".join(
+                        filter(None, [assignee.first_name, assignee.last_name])).strip()
+                    task_details.update({
+                        "assignee_name": full_name if full_name else assignee.email,
+                        "assignee_id": assignee.id,
+                        "department": assignee.department if assignee.department else "Не указано",
+                        "user_id": assignee.id  # Добавляем для совместимости
+                    })
+                else:
+                    task_details.update({
+                        "assignee_name": "Не назначено",
+                        "assignee_id": None,
+                        "department": "Не указано",
+                        "user_id": task.user_id if hasattr(task, 'user_id') else None
+                    })
+
+                in_progress_tasks_details.append(task_details)
+            except Exception as e:
+                logger.error(
+                    f"WebSocket: Ошибка при обработке задачи {task.id}: {str(e)}")
+                continue
+
+        logger.info(
+            f"WebSocket: Получено {len(in_progress_tasks_details)} задач в процессе")
 
         # Статистика по отзывам
         total_feedback = db.query(models.Feedback).count()
@@ -1739,9 +1795,12 @@ async def get_analytics_data_for_websocket() -> Dict[str, Any]:
             }
         }
 
+        logger.info(
+            f"WebSocket: Аналитические данные успешно подготовлены (версия: {version})")
         return result
     except Exception as e:
-        print(f"Ошибка при получении аналитических данных: {str(e)}")
+        logger.error(
+            f"WebSocket: Ошибка при получении аналитических данных: {str(e)}")
         traceback.print_exc()  # Выводим полный стек ошибки для отладки
         return {
             "error": str(e),
@@ -1765,7 +1824,7 @@ async def generate_portal_token(
     Доступно только для HR и менеджеров.
     """
     # Проверяем права доступа (только HR и менеджеры)
-    if current_user.role not in ["hr", "manager"]:
+    if current_user.role.lower() not in ["hr", "manager"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Только HR и менеджеры могут создавать токены для портала кандидатов"
@@ -1780,7 +1839,7 @@ async def generate_portal_token(
         )
 
     # Если пользователь еще не имеет роли candidate, устанавливаем её
-    if user.role != "candidate":
+    if user.role.lower() != "candidate":
         user.role = "candidate"
         db.commit()
         db.refresh(user)

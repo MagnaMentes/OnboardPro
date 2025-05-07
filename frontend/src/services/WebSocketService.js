@@ -12,11 +12,15 @@ class WebSocketService {
       task_status_changed: [],
       tasks_update: [],
       user_notification: [],
+      connection_established: [], // Добавляем поддержку события установления соединения
+      pong: [], // Добавляем поддержку pong для проверки соединения
       error: [],
     };
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectTimeout = null;
+    this.authToken = null; // Сохраняем токен для возможного переподключения
+    this.debug = true; // Флаг для включения/выключения отладочных сообщений
   }
 
   /**
@@ -32,25 +36,43 @@ class WebSocketService {
         return;
       }
 
+      // Сохраняем токен для возможного переподключения
+      this.authToken = token;
+
       try {
         // Определяем протокол
         const wsProtocol =
           window.location.protocol === "https:" ? "wss:" : "ws:";
 
-        // Используем относительный путь или window.location.host для работы в Docker
-        // вместо жестко заданного localhost:8000
-        const host = window.location.host.includes(":")
-          ? window.location.host.split(":")[0] // Если есть порт в хосте, берём только имя хоста
-          : window.location.host;
+        // Корректируем URL для работы в Docker
+        // Используем определение на основе текущего URL
+        const host = window.location.hostname; // Берем только имя хоста без порта
+        const port = "8000"; // Порт API всегда 8000
 
-        // Используем относительный URL для работы как в контейнере, так и локально
-        const wsUrl = `${wsProtocol}//${host}:8000/ws`;
+        // Формируем полный URL для сокета
+        const wsUrl = `${wsProtocol}//${host}:${port}/ws`;
 
         console.log("[WebSocket] Попытка подключения к WebSocket");
         console.log("[WebSocket] URL соединения (без токена):", wsUrl);
 
         // Добавляем токен аутентификации
         const serverUrl = `${wsUrl}?token=${encodeURIComponent(token)}`;
+
+        // Закрываем предыдущее соединение, если оно существует
+        if (this.socket) {
+          try {
+            this.socket.close();
+            console.log(
+              "[WebSocket] Закрыто предыдущее соединение перед новым подключением"
+            );
+          } catch (e) {
+            console.warn(
+              "[WebSocket] Ошибка при закрытии предыдущего соединения:",
+              e
+            );
+          }
+        }
+
         this.socket = new WebSocket(serverUrl);
 
         // Обработчик успешного подключения
@@ -62,6 +84,19 @@ class WebSocketService {
           // Токен уже передан в URL, дополнительная аутентификация через сообщение не требуется
 
           this.startPingInterval(); // Запускаем пинг для поддержания соединения
+
+          // Уведомляем обработчики события connection_established
+          this.listeners.connection_established.forEach((callback) => {
+            try {
+              callback({ type: "connection_established" });
+            } catch (err) {
+              console.error(
+                "[WebSocket] Ошибка в обработчике connection_established:",
+                err
+              );
+            }
+          });
+
           resolve(true);
         };
 
@@ -71,18 +106,41 @@ class WebSocketService {
             const data = JSON.parse(event.data);
             console.log("[WebSocket] Получено сообщение:", data);
 
-            // Вызываем соответствующие обработчики в зависимости от типа сообщения
-            if (data.type && this.listeners[data.type]) {
-              this.listeners[data.type].forEach((callback) => {
-                try {
-                  callback(data);
-                } catch (err) {
-                  console.error(
-                    `[WebSocket] Ошибка в обработчике ${data.type}:`,
-                    err
-                  );
-                }
-              });
+            // Проверяем тип сообщения явно для улучшения отладки
+            if (data.type) {
+              console.log(
+                `[WebSocket] Тип сообщения: ${
+                  data.type
+                }, количество обработчиков: ${
+                  (this.listeners[data.type] || []).length
+                }`
+              );
+
+              // Если есть обработчики для данного типа
+              if (
+                this.listeners[data.type] &&
+                this.listeners[data.type].length > 0
+              ) {
+                this.listeners[data.type].forEach((callback) => {
+                  try {
+                    console.log(
+                      `[WebSocket] Вызываем обработчик для ${data.type}`
+                    );
+                    callback(data);
+                  } catch (err) {
+                    console.error(
+                      `[WebSocket] Ошибка в обработчике ${data.type}:`,
+                      err
+                    );
+                  }
+                });
+              } else {
+                console.warn(
+                  `[WebSocket] Нет обработчиков для типа: ${data.type}`
+                );
+              }
+            } else {
+              console.warn("[WebSocket] Получено сообщение без типа:", data);
             }
           } catch (err) {
             console.error("[WebSocket] Ошибка при обработке сообщения:", err);
@@ -110,7 +168,7 @@ class WebSocketService {
                 }/${this.maxReconnectAttempts}`
               );
               this.reconnectAttempts++;
-              this.connect(token).catch((err) => {
+              this.connect(this.authToken).catch((err) => {
                 console.log("[WebSocket] Ошибка при переподключении:", err);
                 // Если это последняя попытка, уведомляем об ошибке
                 if (this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -185,6 +243,7 @@ class WebSocketService {
     }
 
     try {
+      console.log("[WebSocket] Отправка сообщения:", message);
       this.socket.send(JSON.stringify(message));
       return true;
     } catch (err) {
@@ -198,6 +257,7 @@ class WebSocketService {
    * @returns {boolean} - Результат запроса
    */
   requestAnalyticsUpdate() {
+    console.log("[WebSocket] Запрос на обновление аналитики");
     return this.sendMessage({ type: "request_analytics_update" });
   }
 
@@ -214,6 +274,7 @@ class WebSocketService {
    * @param {Function} callback - Функция-обработчик
    */
   onAnalyticsUpdate(callback) {
+    console.log("[WebSocket] Регистрация обработчика analytics_update");
     this.listeners.analytics_update.push(callback);
   }
 
@@ -222,6 +283,7 @@ class WebSocketService {
    * @param {Function} callback - Функция-обработчик
    */
   onTaskStatusChanged(callback) {
+    console.log("[WebSocket] Регистрация обработчика task_status_changed");
     this.listeners.task_status_changed.push(callback);
   }
 
@@ -247,6 +309,14 @@ class WebSocketService {
    */
   onError(callback) {
     this.listeners.error.push(callback);
+  }
+
+  /**
+   * Регистрация обработчика для события установления соединения
+   * @param {Function} callback - Функция-обработчик
+   */
+  onConnectionEstablished(callback) {
+    this.listeners.connection_established.push(callback);
   }
 
   /**

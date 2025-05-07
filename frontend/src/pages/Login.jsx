@@ -22,9 +22,10 @@ export default function Login() {
         .validateToken()
         .then((userData) => {
           // Перенаправляем на соответствующий дашборд в зависимости от роли
-          if (userData.role === "hr") {
+          const roleInLowerCase = userData.role?.toLowerCase();
+          if (roleInLowerCase === "hr") {
             navigate("/hr-dashboard");
-          } else if (userData.role === "manager") {
+          } else if (roleInLowerCase === "manager") {
             navigate("/manager-dashboard");
           } else {
             navigate("/dashboard");
@@ -50,9 +51,10 @@ export default function Login() {
       localStorage.setItem("token", data.access_token);
 
       // Перенаправляем пользователя в зависимости от его роли
-      if (data.role === "hr") {
+      const roleInLowerCase = data.role?.toLowerCase();
+      if (roleInLowerCase === "hr") {
         navigate("/hr-dashboard");
-      } else if (data.role === "manager") {
+      } else if (roleInLowerCase === "manager") {
         navigate("/manager-dashboard");
       } else {
         // По умолчанию для сотрудников

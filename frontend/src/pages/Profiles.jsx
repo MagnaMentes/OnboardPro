@@ -75,7 +75,8 @@ const Profiles = () => {
         setUserRole(response.data.role);
 
         // Если пользователь не HR или менеджер, перенаправляем
-        if (response.data.role !== "hr" && response.data.role !== "manager") {
+        const roleLower = response.data.role.toLowerCase();
+        if (roleLower !== "hr" && roleLower !== "manager") {
           toast.error("У вас нет доступа к этой странице");
           navigate("/dashboard");
         }

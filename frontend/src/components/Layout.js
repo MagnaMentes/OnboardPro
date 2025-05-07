@@ -105,7 +105,7 @@ export default function Layout() {
 
   // Фильтрация навигационных элементов по роли пользователя
   const filteredNavItems = navItems.filter(
-    (item) => !user || item.roles.includes(user.role)
+    (item) => !user || item.roles.includes(user.role?.toLowerCase())
   );
 
   return (

@@ -137,24 +137,26 @@ def set_analytics_cache(cache_key: str, data: Dict[str, Any]) -> None:
     _analytics_cache_timestamp[cache_key] = time.time()
 
 
-def invalidate_analytics_cache() -> None:
-    """Полная инвалидация кэша для аналитических данных"""
-    global _analytics_cache, _analytics_cache_timestamp, _analytics_global_version
+def invalidate_analytics_cache():
+    """
+    Инвалидирует кеш аналитики путем обновления глобальной версии.
+    Эта функция должна вызываться при любых изменениях, которые могут повлиять на аналитические данные.
+    """
+    global _analytics_global_version
+    global _analytics_cache
 
-    # Увеличиваем глобальную версию, чтобы все новые запросы получали свежие данные
+    # Полностью очищаем кеш вместо инкремента версии
+    _analytics_cache.clear()
+
+    # Увеличиваем глобальный счетчик версий для принудительного обновления данных
     _analytics_global_version += 1
 
-    # В высоконагруженном режиме не очищаем кэш полностью для защиты от DDoS
-    current_load = get_current_load()
-    if current_load < HIGH_LOAD_THRESHOLD:
-        _analytics_cache.clear()
-        _analytics_cache_timestamp.clear()
-        print(
-            f"Кэш аналитики был полностью очищен (версия: {_analytics_global_version})")
-    else:
-        # При высокой нагрузке только помечаем версию как устаревшую
-        print(
-            f"Кэш аналитики помечен как устаревший (версия: {_analytics_global_version}), но сохранен для защиты от перегрузки")
+    # Выводим лог для отладки кеширования
+    print(
+        f"[DEBUG] Аналитический кеш инвалидирован. Новая версия: {_analytics_global_version}")
+
+    # Возвращаем новую версию
+    return _analytics_global_version
 
 
 def get_cache_stats() -> Dict[str, Any]:

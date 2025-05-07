@@ -24,7 +24,7 @@ const ProtectedRoute = ({ requiredRoles = [] }) => {
         // Проверяем валидность токена запросом информации о пользователе
         const userData = await usersApi.getCurrentUser();
         setIsAuthenticated(true);
-        setUserRole(userData.role);
+        setUserRole(userData.role?.toLowerCase()); // Нормализуем роль к нижнему регистру
       } catch (err) {
         // Если токен невалидный, удаляем его
         console.error("Ошибка при проверке авторизации:", err);
@@ -56,7 +56,7 @@ const ProtectedRoute = ({ requiredRoles = [] }) => {
   if (
     requiredRoles.length > 0 &&
     userRole &&
-    !requiredRoles.includes(userRole)
+    !requiredRoles.map((role) => role.toLowerCase()).includes(userRole)
   ) {
     return (
       <div className="flex justify-center items-center h-screen">
