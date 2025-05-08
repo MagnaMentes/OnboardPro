@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getApiBaseUrl } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
+import { hasAnyRole, normalizeRole } from "../utils/roleUtils";
 import { PaperAirplaneIcon, UserIcon } from "@heroicons/react/24/outline";
 import Modal from "../components/common/Modal"; // Импортируем универсальный компонент модального окна
 
@@ -41,10 +42,10 @@ export default function Feedback() {
           throw new Error("Ошибка при получении данных пользователя");
         }
         const userData = await userResponse.json();
-        setUserRole(userData.role);
+        setUserRole(normalizeRole(userData.role));
 
         // Получаем список всех пользователей (только для HR и менеджеров)
-        if (userData.role === "hr" || userData.role === "manager") {
+        if (hasAnyRole(userData.role, ["hr", "manager"])) {
           const usersResponse = await fetch("http://localhost:8000/users", {
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -164,7 +165,7 @@ export default function Feedback() {
         </div>
 
         {/* Кнопка для открытия модального окна (только для HR и менеджеров) */}
-        {(userRole === "hr" || userRole === "manager") && (
+        {hasAnyRole(userRole, ["hr", "manager"]) && (
           <button
             onClick={openModal}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"

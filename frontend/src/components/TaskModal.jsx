@@ -14,6 +14,18 @@ import {
   ClockIcon,
 } from "@heroicons/react/24/outline";
 
+// Импорт стилей и компонентов из нашей системы темы
+import {
+  FORM_STYLES,
+  BUTTON_STYLES,
+  TaskPriority,
+  TaskStatus,
+  FormField,
+  SelectField,
+  PriorityField,
+  StatusField,
+} from "../config/theme";
+
 /**
  * Компонент модального окна для работы с задачами
  * Поддерживает создание, редактирование и просмотр задач
@@ -146,6 +158,15 @@ export default function TaskModal({
     cancelled: "Отменено",
   };
 
+  // Кастомный компонент для заголовка поля с иконкой
+  const FieldLabel = ({ icon, text, required = false }) => (
+    <div className="flex items-center whitespace-nowrap mb-1">
+      {icon && <span className="mr-1.5 flex-shrink-0">{icon}</span>}
+      <span className="text-sm font-medium text-gray-700">{text}</span>
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </div>
+  );
+
   return (
     <Modal
       isOpen={isOpen}
@@ -201,73 +222,62 @@ export default function TaskModal({
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Заголовок задачи */}
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-gray-700 mb-1 flex items-center"
-          >
-            <PencilIcon className="h-4 w-4 mr-1.5 text-gray-500" />
-            Заголовок задачи
-          </label>
+        <div className={FORM_STYLES.formGroup}>
+          <FieldLabel
+            icon={<PencilIcon className="h-4 w-4 text-gray-500" />}
+            text="Заголовок задачи"
+            required={true}
+          />
           <input
-            type="text"
             id="title"
             name="title"
             value={formData.title}
             onChange={handleInputChange}
             placeholder="Введите заголовок задачи"
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className={FORM_STYLES.input}
             required
             disabled={mode === "view" || isSaving}
           />
         </div>
 
         {/* Описание задачи */}
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-gray-700 mb-1 flex items-center"
-          >
-            <DocumentTextIcon className="h-4 w-4 mr-1.5 text-gray-500" />
-            Описание задачи
-          </label>
+        <div className={FORM_STYLES.formGroup}>
+          <FieldLabel
+            icon={<DocumentTextIcon className="h-4 w-4 text-gray-500" />}
+            text="Описание задачи"
+          />
           <textarea
             id="description"
             name="description"
             value={formData.description}
             onChange={handleInputChange}
-            rows="3"
             placeholder="Опишите задачу подробнее"
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className={FORM_STYLES.input}
+            rows="3"
             disabled={mode === "view" || isSaving}
           />
-          {mode === "edit" && formData.description?.length === 0 && (
-            <p className="mt-1 text-xs text-gray-500">
-              Добавление описания поможет сотруднику лучше понять задачу
-            </p>
-          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* План */}
-          <div>
-            <label
-              htmlFor="plan_id"
-              className="block text-sm font-medium text-gray-700 mb-1 flex items-center"
-            >
-              <ClipboardDocumentCheckIcon className="h-4 w-4 mr-1.5 text-gray-500" />
-              План онбординга
-            </label>
+          <div className={FORM_STYLES.formGroup}>
+            <FieldLabel
+              icon={
+                <ClipboardDocumentCheckIcon className="h-4 w-4 text-gray-500" />
+              }
+              text="План онбординга"
+              required={true}
+            />
             <select
               id="plan_id"
               name="plan_id"
               value={formData.plan_id}
               onChange={handleInputChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className={FORM_STYLES.select}
               required
               disabled={mode === "view" || isSaving}
             >
-              <option value="">Выберите план онбординга</option>
+              <option value="">Выберите план</option>
               {plans.map((plan) => (
                 <option key={plan.id} value={plan.id}>
                   {plan.title}
@@ -277,20 +287,18 @@ export default function TaskModal({
           </div>
 
           {/* Сотрудник */}
-          <div>
-            <label
-              htmlFor="user_id"
-              className="block text-sm font-medium text-gray-700 mb-1 flex items-center"
-            >
-              <UserIcon className="h-4 w-4 mr-1.5 text-gray-500" />
-              Назначить сотруднику
-            </label>
+          <div className={FORM_STYLES.formGroup}>
+            <FieldLabel
+              icon={<UserIcon className="h-4 w-4 text-gray-500" />}
+              text="Назначить сотруднику"
+              required={true}
+            />
             <select
               id="user_id"
               name="user_id"
               value={formData.user_id}
               onChange={handleInputChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className={FORM_STYLES.select}
               required
               disabled={mode === "view" || isSaving}
             >
@@ -306,21 +314,18 @@ export default function TaskModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Приоритет */}
-          <div>
-            <label
-              htmlFor="priority"
-              className="block text-sm font-medium text-gray-700 mb-1 flex items-center"
-            >
-              <ChartBarIcon className="h-4 w-4 mr-1.5 text-gray-500" />
-              Приоритет
-            </label>
+          <div className={FORM_STYLES.formGroup}>
+            <FieldLabel
+              icon={<ChartBarIcon className="h-4 w-4 text-gray-500" />}
+              text="Приоритет"
+            />
             <div className="relative">
               <select
                 id="priority"
                 name="priority"
                 value={formData.priority}
                 onChange={handleInputChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pl-9"
+                className={`${FORM_STYLES.select} pl-9`}
                 disabled={mode === "view" || isSaving}
               >
                 <option value="low">Низкий</option>
@@ -342,21 +347,19 @@ export default function TaskModal({
           </div>
 
           {/* Дедлайн */}
-          <div>
-            <label
-              htmlFor="deadline"
-              className="block text-sm font-medium text-gray-700 mb-1 flex items-center"
-            >
-              <CalendarIcon className="h-4 w-4 mr-1.5 text-gray-500" />
-              Срок выполнения
-            </label>
+          <div className={FORM_STYLES.formGroup}>
+            <FieldLabel
+              icon={<CalendarIcon className="h-4 w-4 text-gray-500" />}
+              text="Срок выполнения"
+              required={true}
+            />
             <input
-              type="date"
               id="deadline"
               name="deadline"
               value={formData.deadline}
               onChange={handleInputChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              type="date"
+              className={FORM_STYLES.input}
               required
               min={new Date().toISOString().split("T")[0]}
               disabled={mode === "view" || isSaving}
@@ -366,21 +369,18 @@ export default function TaskModal({
 
         {/* Статус задачи (только для режима редактирования/просмотра) */}
         {(mode === "edit" || mode === "view") && (
-          <div>
-            <label
-              htmlFor="status"
-              className="block text-sm font-medium text-gray-700 mb-1 flex items-center"
-            >
-              <ClockIcon className="h-4 w-4 mr-1.5 text-gray-500" />
-              Статус задачи
-            </label>
+          <div className={FORM_STYLES.formGroup}>
+            <FieldLabel
+              icon={<ClockIcon className="h-4 w-4 text-gray-500" />}
+              text="Статус задачи"
+            />
             <div className="relative">
               <select
                 id="status"
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pl-9"
+                className={`${FORM_STYLES.select} pl-9`}
                 disabled={mode === "view" || isSaving}
               >
                 <option value="pending">Ожидает выполнения</option>
@@ -449,18 +449,8 @@ export default function TaskModal({
                 <ClockIcon className="h-4 w-4 mr-2 text-gray-500" />
                 <span className="flex items-center">
                   Статус:
-                  <span
-                    className={`ml-1.5 inline-flex px-2 py-0.5 text-xs rounded-full ${
-                      formData.status === "completed"
-                        ? "bg-green-100 text-green-800"
-                        : formData.status === "in_progress"
-                        ? "bg-blue-100 text-blue-800"
-                        : formData.status === "cancelled"
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {statusDisplay[formData.status]}
+                  <span className="ml-1.5">
+                    <TaskStatus status={formData.status} size="sm" />
                   </span>
                 </span>
               </div>

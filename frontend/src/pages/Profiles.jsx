@@ -87,12 +87,18 @@ const Profiles = () => {
 
     const fetchUsers = async () => {
       try {
+        console.log("Запрос к API: начало загрузки пользователей");
         const response = await axios.get(`${apiBaseUrl}/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log(
+          "Запрос к API: получены данные пользователей",
+          response.data
+        );
         setUsers(response.data);
         setLoading(false);
       } catch (err) {
+        console.error("Запрос к API: ошибка при загрузке пользователей", err);
         setError("Failed to fetch users");
         setLoading(false);
       }
@@ -176,6 +182,7 @@ const Profiles = () => {
 
   // Функция для группировки пользователей по ролям
   const getUsersByRole = (role) => {
+    // Применяем фильтры по статусу (все/активные/заблокированные)
     const filteredUsers =
       activeFilter === "all"
         ? users
@@ -193,7 +200,10 @@ const Profiles = () => {
         )
       : filteredUsers;
 
-    return searchedUsers.filter((user) => user.role === role);
+    // Нормализуем регистр при сравнении ролей, чтобы "HR" соответствовало "hr" и т.д.
+    return searchedUsers.filter(
+      (user) => user.role && user.role.toLowerCase() === role.toLowerCase()
+    );
   };
 
   // Функция для получения цветов для разных ролей
@@ -499,7 +509,7 @@ const Profiles = () => {
                   </p>
                 </div>
 
-                {userRole === "hr" && (
+                {userRole && userRole.toLowerCase() === "hr" && (
                   <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-3 justify-end">
                     {/* Кнопка редактирования */}
                     <button
@@ -664,7 +674,7 @@ const Profiles = () => {
           </p>
         </div>
 
-        {userRole === "hr" && (
+        {userRole && userRole.toLowerCase() === "hr" && (
           <button
             onClick={openCreateModal}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -676,66 +686,68 @@ const Profiles = () => {
       </div>
 
       {/* Фильтры и поиск */}
-      <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-          {/* Фильтры по статусу */}
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setActiveFilter("all")}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                activeFilter === "all"
-                  ? "bg-blue-50 text-blue-700 border border-blue-200"
-                  : "text-gray-500 hover:bg-gray-100"
-              }`}
-            >
-              Все
-            </button>
-            <button
-              onClick={() => setActiveFilter("active")}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                activeFilter === "active"
-                  ? "bg-green-50 text-green-700 border border-green-200"
-                  : "text-gray-500 hover:bg-gray-100"
-              }`}
-            >
-              Активные
-            </button>
-            <button
-              onClick={() => setActiveFilter("disabled")}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                activeFilter === "disabled"
-                  ? "bg-red-50 text-red-700 border border-red-200"
-                  : "text-gray-500 hover:bg-gray-100"
-              }`}
-            >
-              Заблокированные
-            </button>
-          </div>
-
-          {/* Поиск по email/отделу */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Поиск по email или отделу..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+      <div className="mb-6">
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            {/* Фильтры по статусу */}
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setActiveFilter("all")}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  activeFilter === "all"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                    : "text-gray-500 hover:bg-gray-100"
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+                Все
+              </button>
+              <button
+                onClick={() => setActiveFilter("active")}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  activeFilter === "active"
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "text-gray-500 hover:bg-gray-100"
+                }`}
+              >
+                Активные
+              </button>
+              <button
+                onClick={() => setActiveFilter("disabled")}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  activeFilter === "disabled"
+                    ? "bg-red-50 text-red-700 border border-red-200"
+                    : "text-gray-500 hover:bg-gray-100"
+                }`}
+              >
+                Заблокированные
+              </button>
+            </div>
+
+            {/* Поиск по email/отделу */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Поиск по email или отделу..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
         </div>

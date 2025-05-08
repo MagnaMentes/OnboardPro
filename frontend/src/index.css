@@ -51,6 +51,86 @@ code {
   .card {
     @apply bg-white rounded-lg shadow-md p-6;
   }
+
+  /* Стандартизированные отступы между компонентами */
+  .section-spacing {
+    @apply mb-10;
+  }
+
+  .component-spacing {
+    @apply mb-6;
+  }
+
+  .element-spacing {
+    @apply mb-4;
+  }
+
+  .item-spacing {
+    @apply mb-2;
+  }
+
+  /* Стандартизированные карточки с заголовками */
+  .standard-card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden;
+  }
+
+  .standard-card-header {
+    @apply px-6 py-4 border-b bg-gray-50 flex justify-between items-center;
+  }
+
+  .standard-card-title {
+    @apply text-lg font-semibold text-gray-800;
+  }
+
+  .standard-card-body {
+    @apply p-6;
+  }
+
+  .standard-card-footer {
+    @apply px-6 py-4 border-t bg-gray-50;
+  }
+
+  /* Стандартные кнопки со значками */
+  .icon-button {
+    @apply inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .icon-button-primary {
+    @apply icon-button bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 px-4 py-2;
+  }
+
+  .icon-button-secondary {
+    @apply icon-button bg-gray-200 hover:bg-gray-300 text-gray-700 focus:ring-gray-500 px-4 py-2;
+  }
+
+  .icon-button-success {
+    @apply icon-button bg-green-600 hover:bg-green-700 text-white focus:ring-green-500 px-4 py-2;
+  }
+
+  .icon-button-danger {
+    @apply icon-button bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 px-4 py-2;
+  }
+
+  /* Стандартные таблицы */
+  .standard-table {
+    @apply min-w-full divide-y divide-gray-200 bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200;
+  }
+
+  .standard-table thead {
+    @apply bg-gray-50;
+  }
+
+  .standard-table th {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+  }
+
+  .standard-table tbody {
+    @apply divide-y divide-gray-200;
+  }
+
+  .standard-table td {
+    @apply px-6 py-4 whitespace-nowrap text-sm;
+  }
 }
 
 /* Адаптивные стили с использованием брейкпоинтов */

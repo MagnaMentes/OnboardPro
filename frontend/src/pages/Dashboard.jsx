@@ -5,9 +5,23 @@ import {
   ExclamationCircleIcon,
   ExclamationTriangleIcon,
   FlagIcon,
+  CalendarIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { getApiBaseUrl } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
+// Импортируем компоненты и стили из системы темы
+import {
+  Card,
+  Button,
+  TaskStatus,
+  TaskPriority,
+  TASK_STATUS_CLASSES,
+  TASK_PRIORITY_CLASSES,
+  FORM_STYLES,
+  CARD_STYLES,
+  getButtonClassName,
+} from "../config/theme";
 
 // Функция для получения пользователя из кэша
 const getUserFromCache = () => {
@@ -146,57 +160,28 @@ export default function Dashboard() {
     return grouped;
   }, [tasks]);
 
+  // Улучшенная функция для получения иконки статуса с единым стилем
   const getStatusIcon = (status) => {
     switch (status) {
       case "completed":
-        return <CheckCircleIcon className="w-6 h-6 text-green-500" />;
+        return (
+          <div className="bg-green-100 p-1 rounded-full" title="Выполнено">
+            <CheckCircleIcon className="w-5 h-5 text-green-600" />
+          </div>
+        );
       case "in_progress":
-        return <ClockIcon className="w-6 h-6 text-yellow-500" />;
+        return (
+          <div className="bg-blue-100 p-1 rounded-full" title="В работе">
+            <ClockIcon className="w-5 h-5 text-blue-600" />
+          </div>
+        );
       case "not_started":
-        return <ExclamationCircleIcon className="w-6 h-6 text-gray-500" />;
       default:
-        return <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />;
-    }
-  };
-
-  const getPriorityClass = (priority) => {
-    switch (priority ? priority.toLowerCase() : "null") {
-      case "high":
-        return {
-          badge: "bg-red-100 text-red-800",
-          header: "bg-red-50 border-red-200",
-          text: "text-red-900",
-          sectionBg: "bg-red-50",
-          sectionBorder: "border-red-200",
-          icon: <FlagIcon className="w-5 h-5 text-red-500" />,
-        };
-      case "medium":
-        return {
-          badge: "bg-yellow-100 text-yellow-800",
-          header: "bg-yellow-50 border-yellow-200",
-          text: "text-yellow-900",
-          sectionBg: "bg-yellow-50",
-          sectionBorder: "border-yellow-200",
-          icon: <FlagIcon className="w-5 h-5 text-yellow-500" />,
-        };
-      case "low":
-        return {
-          badge: "bg-green-100 text-green-800",
-          header: "bg-green-50 border-green-200",
-          text: "text-green-900",
-          sectionBg: "bg-green-50",
-          sectionBorder: "border-green-200",
-          icon: <FlagIcon className="w-5 h-5 text-green-500" />,
-        };
-      default:
-        return {
-          badge: "bg-gray-100 text-gray-800",
-          header: "bg-gray-50 border-gray-200",
-          text: "text-gray-900",
-          sectionBg: "bg-gray-50",
-          sectionBorder: "border-gray-200",
-          icon: <FlagIcon className="w-5 h-5 text-gray-500" />,
-        };
+        return (
+          <div className="bg-gray-100 p-1 rounded-full" title="Не начато">
+            <ExclamationCircleIcon className="w-5 h-5 text-gray-600" />
+          </div>
+        );
     }
   };
 
@@ -266,19 +251,49 @@ export default function Dashboard() {
     }
   };
 
+  // Стандартизированная функция для получения классов и иконок приоритетов
+  const getPriorityClass = (priority) => {
+    const priorityKey = priority?.toLowerCase() || "null";
+
+    const priorityMap = {
+      high: {
+        sectionBg: "bg-red-50",
+        sectionBorder: "border-red-200",
+        text: "text-red-700",
+        icon: <FlagIcon className="w-5 h-5 text-red-500" />,
+        title: "Высокий приоритет",
+      },
+      medium: {
+        sectionBg: "bg-yellow-50",
+        sectionBorder: "border-yellow-200",
+        text: "text-yellow-700",
+        icon: <FlagIcon className="w-5 h-5 text-yellow-500" />,
+        title: "Средний приоритет",
+      },
+      low: {
+        sectionBg: "bg-green-50",
+        sectionBorder: "border-green-200",
+        text: "text-green-700",
+        icon: <FlagIcon className="w-5 h-5 text-green-500" />,
+        title: "Низкий приоритет",
+      },
+      null: {
+        sectionBg: "bg-gray-50",
+        sectionBorder: "border-gray-200",
+        text: "text-gray-700",
+        icon: <FlagIcon className="w-5 h-5 text-gray-500" />,
+        title: "Без приоритета",
+      },
+    };
+
+    return priorityMap[priorityKey] || priorityMap["null"];
+  };
+
   // Функция для отображения отдельного блока задач
   const renderTaskSection = (priority, taskList) => {
     if (!taskList || taskList.length === 0) return null;
 
     const priorityInfo = getPriorityClass(priority);
-    const title =
-      priority === "high"
-        ? "Высокий приоритет"
-        : priority === "medium"
-        ? "Средний приоритет"
-        : priority === "low"
-        ? "Низкий приоритет"
-        : "Без приоритета";
 
     return (
       <div className={`mb-8 rounded-lg border ${priorityInfo.sectionBorder}`}>
@@ -287,14 +302,18 @@ export default function Dashboard() {
         >
           {priorityInfo.icon}
           <h3 className={`text-lg font-semibold ml-2 ${priorityInfo.text}`}>
-            {title}
+            {priorityInfo.title}
           </h3>
           <span className="text-sm text-gray-600 ml-2">
             ({taskList.length})
           </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-white rounded-b-lg">
-          {taskList.map((task) => renderTaskCard(task))}
+          {taskList.map((task) => (
+            <React.Fragment key={task.id}>
+              {renderTaskCard(task)}
+            </React.Fragment>
+          ))}
         </div>
       </div>
     );
@@ -310,25 +329,26 @@ export default function Dashboard() {
     return (
       <div
         key={task.id}
-        className={`bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow duration-200 ${overdueClass}`}
+        className={`${CARD_STYLES.base} hover:shadow-lg transition-shadow duration-200 ${overdueClass}`}
       >
-        {/* Стандартизированный заголовок без цветов и указания приоритета */}
-        <div className="px-4 py-3 border-b bg-white">
+        {/* Стандартизированный заголовок */}
+        <div className={CARD_STYLES.header}>
           <div className="flex items-start justify-between">
-            <h4 className="font-medium text-gray-800 truncate">{task.title}</h4>
-            {/* Отображаем только статус иконкой */}
-            {getStatusIcon(task.status)}
+            <h4 className={CARD_STYLES.title}>{task.title}</h4>
+            {/* Используем стандартизированный компонент TaskStatus c иконкой */}
+            <TaskStatus status={task.status} size="lg" />
           </div>
         </div>
 
         {/* Содержимое карточки */}
-        <div className="p-4">
+        <div className={CARD_STYLES.body}>
           <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-            {task.description}
+            {task.description || "Описание отсутствует"}
           </p>
+
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center text-sm text-gray-500">
-              <ClockIcon className="w-4 h-4 mr-1" />
+              <CalendarIcon className="w-4 h-4 mr-1" />
               <span
                 className={
                   isOverdue(task.deadline) && task.status !== "completed"
@@ -340,11 +360,12 @@ export default function Dashboard() {
               </span>
             </div>
           </div>
+
           <div className="flex items-center justify-between">
             <select
               value={task.status}
               onChange={(e) => handleStatusChange(task.id, e.target.value)}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              className={FORM_STYLES.select}
             >
               <option value="not_started">Не начато</option>
               <option value="in_progress">В процессе</option>
@@ -375,13 +396,24 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-blue-600">Панель управления</h2>
-        <p className="mt-1 text-gray-500">
-          Управление задачами и отслеживание прогресса адаптации
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-blue-600">
+            Панель управления
+          </h2>
+          <p className="mt-1 text-gray-500">
+            Управление задачами и отслеживание прогресса адаптации
+          </p>
+        </div>
 
-        {/* Удален блок с надписями приоритетов задач */}
+        <Button
+          onClick={() => window.location.reload()}
+          variant="light"
+          className="flex items-center"
+        >
+          <ArrowPathIcon className="h-4 w-4 mr-2" />
+          Обновить
+        </Button>
       </div>
 
       <div className="space-y-6 mt-6">
@@ -394,7 +426,7 @@ export default function Dashboard() {
 
         {/* Если нет задач вообще */}
         {tasks.length === 0 && (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
+          <Card className="p-8 text-center">
             <div className="text-gray-400 mb-4">
               <ClockIcon className="w-12 h-12 mx-auto" />
             </div>
@@ -404,7 +436,7 @@ export default function Dashboard() {
             <p className="mt-2 text-gray-500">
               Задачи будут появляться здесь по мере их назначения
             </p>
-          </div>
+          </Card>
         )}
       </div>
     </div>

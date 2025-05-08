@@ -14,8 +14,17 @@ import {
   PhoneIcon,
   MapPinIcon,
   BriefcaseIcon,
+  ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import usePageTitle from "../utils/usePageTitle";
+import {
+  Button,
+  Card,
+  FormField,
+  SelectField,
+  FORM_STYLES,
+  CARD_STYLES,
+} from "../config/theme";
 
 export default function Profile() {
   // Состояния для информации профиля
@@ -508,159 +517,90 @@ export default function Profile() {
                   </h2>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <label
-                        htmlFor="firstName"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Имя
-                      </label>
-                      <input
-                        type="text"
-                        id="firstName"
-                        name="firstName"
-                        value={editForm.firstName || ""}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="lastName"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Фамилия
-                      </label>
-                      <input
-                        type="text"
-                        id="lastName"
-                        name="lastName"
-                        value={editForm.lastName || ""}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="phone"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Телефон
-                      </label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        name="phone"
-                        value={editForm.phone || ""}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="position"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Должность
-                      </label>
-                      <input
-                        type="text"
-                        id="position"
-                        name="position"
-                        value={editForm.position || ""}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="department"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Отдел
-                      </label>
-                      <input
-                        type="text"
-                        id="department"
-                        name="department"
-                        value={editForm.department || ""}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="hireDate"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Дата начала работы
-                      </label>
-                      <input
-                        type="date"
-                        id="hireDate"
-                        name="hireDate"
-                        value={editForm.hireDate || ""}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="address"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Адрес
-                    </label>
-                    <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      value={editForm.address || ""}
+                    <FormField
+                      label="Имя"
+                      id="firstName"
+                      name="firstName"
+                      value={editForm.firstName || ""}
                       onChange={handleInputChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      placeholder="Введите имя"
                     />
-                  </div>
 
-                  <div>
-                    <label
-                      htmlFor="bio"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      О себе
-                    </label>
-                    <textarea
-                      id="bio"
-                      name="bio"
-                      rows={3}
-                      value={editForm.bio || ""}
+                    <FormField
+                      label="Фамилия"
+                      id="lastName"
+                      name="lastName"
+                      value={editForm.lastName || ""}
                       onChange={handleInputChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      placeholder="Введите фамилию"
+                    />
+
+                    <FormField
+                      label="Телефон"
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={editForm.phone || ""}
+                      onChange={handleInputChange}
+                      placeholder="Введите номер телефона"
+                    />
+
+                    <FormField
+                      label="Должность"
+                      id="position"
+                      name="position"
+                      value={editForm.position || ""}
+                      onChange={handleInputChange}
+                      placeholder="Введите должность"
+                    />
+
+                    <FormField
+                      label="Отдел"
+                      id="department"
+                      name="department"
+                      value={editForm.department || ""}
+                      onChange={handleInputChange}
+                      placeholder="Введите название отдела"
+                    />
+
+                    <FormField
+                      label="Дата начала работы"
+                      id="hireDate"
+                      name="hireDate"
+                      type="date"
+                      value={editForm.hireDate || ""}
+                      onChange={handleInputChange}
                     />
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="skills"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Навыки (через запятую)
-                    </label>
-                    <input
-                      type="text"
-                      id="skills"
-                      name="skills"
-                      value={editForm.skills ? editForm.skills.join(", ") : ""}
-                      onChange={handleSkillsChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                  </div>
+                  <FormField
+                    label="Адрес"
+                    id="address"
+                    name="address"
+                    value={editForm.address || ""}
+                    onChange={handleInputChange}
+                    placeholder="Введите адрес"
+                  />
+
+                  <FormField
+                    label="О себе"
+                    id="bio"
+                    name="bio"
+                    type="textarea"
+                    rows={3}
+                    value={editForm.bio || ""}
+                    onChange={handleInputChange}
+                    placeholder="Расскажите о себе"
+                  />
+
+                  <FormField
+                    label="Навыки (через запятую)"
+                    id="skills"
+                    name="skills"
+                    value={editForm.skills ? editForm.skills.join(", ") : ""}
+                    onChange={handleSkillsChange}
+                    placeholder="Например: React, JavaScript, TypeScript"
+                  />
                 </div>
               ) : (
                 /* Просмотр детальной информации профиля */
@@ -892,70 +832,42 @@ export default function Profile() {
                 className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700"
               >
                 <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="currentPassword"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Текущий пароль
-                    </label>
-                    <input
-                      type="password"
-                      id="currentPassword"
-                      name="currentPassword"
-                      value={passwordForm.currentPassword}
-                      onChange={handlePasswordFormChange}
-                      required
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                    />
-                  </div>
+                  <FormField
+                    label="Текущий пароль"
+                    id="currentPassword"
+                    name="currentPassword"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={handlePasswordFormChange}
+                    required
+                  />
 
-                  <div>
-                    <label
-                      htmlFor="newPassword"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Новый пароль
-                    </label>
-                    <input
-                      type="password"
-                      id="newPassword"
-                      name="newPassword"
-                      value={passwordForm.newPassword}
-                      onChange={handlePasswordFormChange}
-                      required
-                      minLength={8}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                    />
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Пароль должен содержать не менее 8 символов.
-                    </p>
-                  </div>
+                  <FormField
+                    label="Новый пароль"
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={handlePasswordFormChange}
+                    required
+                    minLength={8}
+                    helpText="Пароль должен содержать не менее 8 символов."
+                  />
 
-                  <div>
-                    <label
-                      htmlFor="confirmPassword"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Подтверждение пароля
-                    </label>
-                    <input
-                      type="password"
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      value={passwordForm.confirmPassword}
-                      onChange={handlePasswordFormChange}
-                      required
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                    />
-                  </div>
+                  <FormField
+                    label="Подтверждение пароля"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={handlePasswordFormChange}
+                    required
+                  />
 
                   <div className="flex justify-end">
-                    <button
+                    <Button
                       type="submit"
-                      className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors ${
-                        isLoading ? "opacity-70 cursor-not-allowed" : ""
-                      }`}
+                      variant="primary"
                       disabled={isLoading}
                     >
                       {isLoading ? (
@@ -966,7 +878,7 @@ export default function Profile() {
                       ) : (
                         "Сохранить пароль"
                       )}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </form>

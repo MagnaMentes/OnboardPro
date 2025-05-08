@@ -1,5 +1,14 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Chart, registerables } from "chart.js";
+// Импортируем компоненты и стили из системы темы
+import {
+  Button,
+  FormField,
+  SelectField,
+  FORM_STYLES,
+  Card,
+} from "../../config/theme";
+
 // Регистрируем все компоненты Chart.js
 Chart.register(...registerables);
 
@@ -417,110 +426,10 @@ const AnalyticsChart = ({
     };
   }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (onFilterChange) {
-      onFilterChange({
-        startDate,
-        endDate,
-        department,
-      });
-    }
-  };
-
-  const handleReset = () => {
-    setStartDate("");
-    setEndDate("");
-    setDepartment("");
-
-    if (onFilterChange) {
-      onFilterChange({
-        startDate: "",
-        endDate: "",
-        department: "",
-      });
-    }
-  };
-
   const isDataTruncated = labels && labels.length > maxPoints;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-      <form onSubmit={handleSubmit} className="mb-4 p-3 bg-gray-50 rounded-md">
-        <h3 className="text-lg font-medium text-gray-700 mb-3">Фильтры</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label
-              htmlFor="startDate"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Дата начала
-            </label>
-            <input
-              type="date"
-              id="startDate"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="endDate"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Дата окончания
-            </label>
-            <input
-              type="date"
-              id="endDate"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="department"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Отдел
-            </label>
-            <select
-              id="department"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            >
-              <option value="">Все отделы</option>
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="mt-4 flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-          >
-            Сбросить
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Применить
-          </button>
-        </div>
-      </form>
-
+    <Card className="bg-white rounded-lg shadow-md p-4 mb-6">
       <div className={`mt-1 ${isResponsive ? "h-64" : "h-80"}`}>
         <canvas ref={chartRef}></canvas>
       </div>
@@ -531,7 +440,7 @@ const AnalyticsChart = ({
           объединены для улучшения производительности.
         </div>
       )}
-    </div>
+    </Card>
   );
 };
 

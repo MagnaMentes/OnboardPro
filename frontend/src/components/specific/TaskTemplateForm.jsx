@@ -5,7 +5,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ExclamationCircleIcon,
   DocumentDuplicateIcon,
+  UserIcon,
+  ClipboardDocumentListIcon,
+  BuildingOfficeIcon,
+  CalendarIcon,
+  FlagIcon,
 } from "@heroicons/react/24/outline";
+import { Button, FormField, SelectField } from "../../config/theme";
 
 const priorityOptions = [
   { value: "low", label: "Низкий", color: "text-green-600" },
@@ -192,151 +198,133 @@ const TaskTemplateForm = ({
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium text-gray-900">
-          {editTemplate
-            ? "Редактирование шаблона задачи"
-            : "Новый шаблон задачи"}
-        </h3>
-        <DocumentDuplicateIcon className="h-5 w-5 text-blue-500" />
-      </div>
+  // Индикатор приоритета
+  const PriorityIndicator = ({ priority }) => {
+    const colors = {
+      high: "bg-red-600",
+      medium: "bg-yellow-600",
+      low: "bg-green-600",
+    };
 
-      {/* Название шаблона */}
-      <div>
-        <label
-          htmlFor="title"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Название шаблона*
-        </label>
-        <div className="mt-1 relative">
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            className={`shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md ${
-              errors.title ? "border-red-300" : ""
-            }`}
-            placeholder="Введите название шаблона задачи"
-          />
-          {errors.title && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <ExclamationCircleIcon
-                className="h-5 w-5 text-red-500"
-                aria-hidden="true"
-              />
-            </div>
-          )}
+    return (
+      <span
+        className={`inline-block w-3 h-3 rounded-full ${
+          colors[priority] || colors.medium
+        }`}
+      ></span>
+    );
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between pb-4 border-b border-blue-100">
+        <div className="flex items-center">
+          <DocumentDuplicateIcon className="h-5 w-5 text-blue-500 mr-2" />
+          <h3 className="text-lg font-medium text-blue-900">
+            {editTemplate
+              ? "Редактирование шаблона задачи"
+              : "Новый шаблон задачи"}
+          </h3>
         </div>
-        {errors.title && (
-          <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+        {editTemplate && (
+          <div className="flex items-center space-x-1 bg-blue-50 px-3 py-1 rounded-full text-xs text-blue-700">
+            <span>ID шаблона: {editTemplate.id}</span>
+          </div>
         )}
       </div>
 
-      {/* Описание */}
-      <div>
-        <label
-          htmlFor="description"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Описание
-        </label>
-        <div className="mt-1">
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description || ""}
-            onChange={handleChange}
-            rows={3}
-            className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border border-gray-300 rounded-md"
-            placeholder="Введите описание задачи"
-          />
-        </div>
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Название шаблона */}
+        <FormField
+          label="Название шаблона*"
+          id="title"
+          name="title"
+          value={formData.title}
+          onChange={handleChange}
+          placeholder="Введите название шаблона задачи"
+          error={errors.title}
+          required
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Приоритет */}
-        <div>
-          <label
-            htmlFor="priority"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Приоритет
-          </label>
-          <div className="mt-1">
-            <select
-              id="priority"
-              name="priority"
-              value={formData.priority}
-              onChange={handleChange}
-              className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-            >
-              {priorityOptions.map((option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                  className={option.color}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
+        {/* Описание */}
+        <FormField
+          label="Описание"
+          id="description"
+          name="description"
+          type="textarea"
+          rows={3}
+          value={formData.description || ""}
+          onChange={handleChange}
+          placeholder="Введите описание задачи"
+          helpText="Подробное описание поможет сотрудникам лучше понять задачу"
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Приоритет */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+              <FlagIcon className="h-4 w-4 mr-1.5 text-gray-500" />
+              Приоритет
+            </label>
+            <div className="relative">
+              <select
+                id="priority"
+                name="priority"
+                value={formData.priority}
+                onChange={handleChange}
+                className="block w-full pl-8 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              >
+                {priorityOptions.map((option) => (
+                  <option
+                    key={option.value}
+                    value={option.value}
+                    className={option.color}
+                  >
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                <PriorityIndicator priority={formData.priority} />
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Длительность */}
-        <div>
-          <label
-            htmlFor="duration_days"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Длительность (дней)*
-          </label>
-          <div className="mt-1 relative">
+          {/* Длительность */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+              <CalendarIcon className="h-4 w-4 mr-1.5 text-gray-500" />
+              Длительность (дней)*
+            </label>
             <input
-              type="number"
               id="duration_days"
               name="duration_days"
+              type="number"
+              min="1"
               value={formData.duration_days}
               onChange={handleChange}
-              min="1"
-              className={`shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md ${
-                errors.duration_days ? "border-red-300" : ""
-              }`}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
             />
             {errors.duration_days && (
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <ExclamationCircleIcon
-                  className="h-5 w-5 text-red-500"
-                  aria-hidden="true"
-                />
-              </div>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.duration_days}
+              </p>
             )}
           </div>
-          {errors.duration_days && (
-            <p className="mt-1 text-sm text-red-600">{errors.duration_days}</p>
-          )}
-        </div>
 
-        {/* Целевая роль */}
-        <div>
-          <label
-            htmlFor="role"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Целевая роль
-          </label>
-          <div className="mt-1">
+          {/* Целевая роль */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+              <UserIcon className="h-4 w-4 mr-1.5 text-gray-500" />
+              Целевая роль
+            </label>
             <select
               id="role"
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
               {roleOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -345,93 +333,106 @@ const TaskTemplateForm = ({
               ))}
             </select>
           </div>
-        </div>
 
-        {/* Отдел */}
-        <div>
-          <label
-            htmlFor="department"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Отдел (опционально)
-          </label>
-          <div className="mt-1">
+          {/* Отдел */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+              <BuildingOfficeIcon className="h-4 w-4 mr-1.5 text-gray-500" />
+              Отдел (опционально)
+            </label>
             {isLoadingUsers ? (
-              <div className="shadow-sm block w-full sm:text-sm border-gray-300 rounded-md p-2 bg-gray-50">
-                Загрузка отделов...
+              <div className="flex items-center space-x-2 text-sm text-gray-500 py-2">
+                <svg
+                  className="animate-spin h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  ></path>
+                </svg>
+                <span>Загрузка отделов...</span>
               </div>
             ) : (
-              <select
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              >
-                <option value="">Все отделы</option>
-                {departments.map((dept, index) => (
-                  <option key={index} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <select
+                  id="department"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="">Все отделы</option>
+                  {departments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Если отдел не указан, шаблон будет доступен для всех отделов
+                </p>
+              </div>
             )}
           </div>
-          <p className="mt-1 text-xs text-gray-500">
-            Если отдел не указан, шаблон будет доступен для всех отделов
-          </p>
         </div>
-      </div>
 
-      <div className="flex justify-end space-x-3 pt-4">
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            disabled={isSubmitting}
-          >
-            Отмена
-          </button>
-        )}
-        <button
-          type="submit"
-          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <svg
-                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                зойти
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
-              Сохранение...
-            </>
-          ) : editTemplate ? (
-            "Обновить шаблон"
-          ) : (
-            "Создать шаблон"
+        <div className="flex justify-end space-x-3 pt-4 border-t border-blue-100">
+          {onCancel && (
+            <Button
+              type="button"
+              onClick={onCancel}
+              variant="secondary"
+              disabled={isSubmitting}
+            >
+              Отмена
+            </Button>
           )}
-        </button>
-      </div>
-    </form>
+          <Button type="submit" variant="primary" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                Сохранение...
+              </>
+            ) : editTemplate ? (
+              "Обновить шаблон"
+            ) : (
+              "Создать шаблон"
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };
 

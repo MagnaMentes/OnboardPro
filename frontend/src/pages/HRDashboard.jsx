@@ -29,6 +29,18 @@ import Table from "../components/common/Table";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Импортируем компоненты и стили из нашей системы темы
+import {
+  Button,
+  Card,
+  BUTTON_STYLES,
+  CARD_STYLES,
+  FORM_STYLES,
+  TaskPriority,
+  TaskStatus,
+  getButtonClassName,
+} from "../config/theme";
+
 export default function HRDashboard() {
   usePageTitle("Панель HR");
 
@@ -60,6 +72,7 @@ export default function HRDashboard() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [activeTab, setActiveTab] = useState("analytics");
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [showChartFiltersPanel, setShowChartFiltersPanel] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [hasRealtimeUpdates, setHasRealtimeUpdates] = useState(false);
   const [wsDisabled, setWsDisabled] = useState(false); // Флаг для отключения WebSocket
@@ -950,7 +963,7 @@ export default function HRDashboard() {
 
   const FilterPanel = () => {
     return (
-      <div className="bg-white p-4 mb-4 rounded-lg shadow-md">
+      <Card>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium text-gray-800">
             Фильтры аналитики
@@ -965,41 +978,35 @@ export default function HRDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Дата начала
-            </label>
+            <label className={FORM_STYLES.label}>Дата начала</label>
             <input
               type="date"
               value={filters.startDate}
               onChange={(e) =>
                 handleFilterChange({ startDate: e.target.value })
               }
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className={FORM_STYLES.input}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Дата окончания
-            </label>
+            <label className={FORM_STYLES.label}>Дата окончания</label>
             <input
               type="date"
               value={filters.endDate}
               onChange={(e) => handleFilterChange({ endDate: e.target.value })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className={FORM_STYLES.input}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Отдел
-            </label>
+            <label className={FORM_STYLES.label}>Отдел</label>
             <select
               value={filters.department}
               onChange={(e) =>
                 handleFilterChange({ department: e.target.value })
               }
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className={FORM_STYLES.select}
             >
               <option value="">Все отделы</option>
               {departments.map((dept) => (
@@ -1028,7 +1035,7 @@ export default function HRDashboard() {
         </div>
 
         <div className="flex justify-end mt-4 space-x-3">
-          <button
+          <Button
             onClick={() =>
               handleFilterChange({
                 startDate: "",
@@ -1036,21 +1043,23 @@ export default function HRDashboard() {
                 department: "",
               })
             }
-            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+            variant="secondary"
+            size="md"
           >
             Сбросить
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => {
               refreshData();
               setShowFiltersPanel(false);
             }}
-            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            variant="primary"
+            size="md"
           >
             Применить
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     );
   };
 
@@ -1277,7 +1286,7 @@ export default function HRDashboard() {
   const dataWasTruncated = taskAnalytics?.metadata?.truncated;
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Скрытый элемент для отслеживания изменений в реальном времени */}
       <div
         id="websocket-update-trigger"
@@ -1291,63 +1300,68 @@ export default function HRDashboard() {
         autoClose={3000}
         hideProgressBar={false}
       />
-      <div>
-        <div className="flex flex-wrap justify-between items-center">
-          <div className="flex items-center">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-blue-600">
-                Панель HR
-              </h2>
-              <p className="mt-1 text-sm sm:text-base text-gray-500">
-                Аналитика и управление процессами адаптации сотрудников
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setShowFiltersPanel(!showFiltersPanel)}
-              className="flex items-center px-3 py-1 sm:px-3 sm:py-1.5 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-            >
-              <AdjustmentsHorizontalIcon className="h-4 w-4 mr-1" />
-              Фильтры
-            </button>
-
-            {lastUpdate && (
-              <span className="hidden sm:inline-block text-xs text-gray-500 mr-3">
-                Обновлено: {formatDate(lastUpdate)}
-                {hasRealtimeUpdates && " (real-time)"}
-              </span>
-            )}
-            <button
-              onClick={refreshData}
-              disabled={isRefreshing}
-              className="flex items-center px-3 py-1 sm:px-4 sm:py-2 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-            >
-              <ArrowPathIcon
-                className={`h-4 w-4 mr-1 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-              Обновить
-            </button>
-          </div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-blue-600">Панель HR</h2>
+          <p className="mt-1 text-gray-500">
+            Аналитика и управление процессами адаптации сотрудников
+          </p>
         </div>
 
-        {(filters.startDate || filters.endDate || filters.department) && (
-          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-xs sm:text-sm text-blue-700">
-              <strong>Фильтры:</strong>
-              {filters.startDate && ` Начало: ${filters.startDate}`}
-              {filters.endDate && ` Окончание: ${filters.endDate}`}
-              {filters.department && ` Отдел: ${filters.department}`}
-            </p>
-          </div>
-        )}
+        <div className="flex items-center space-x-3">
+          <Button
+            onClick={() => setShowFiltersPanel(!showFiltersPanel)}
+            variant="secondary"
+            size="sm"
+            className="flex items-center"
+          >
+            <AdjustmentsHorizontalIcon className="h-4 w-4 mr-2" />
+            Фильтры
+          </Button>
+
+          {lastUpdate && (
+            <span className="hidden sm:inline-block text-xs text-gray-500 mr-3">
+              Обновлено: {formatDate(lastUpdate)}
+              {hasRealtimeUpdates && " (real-time)"}
+            </span>
+          )}
+          <Button
+            onClick={refreshData}
+            disabled={isRefreshing}
+            variant="secondary"
+            size="sm"
+            className="flex items-center"
+          >
+            <ArrowPathIcon
+              className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            Обновить
+          </Button>
+        </div>
       </div>
 
-      {showFiltersPanel && <FilterPanel />}
+      {(filters.startDate || filters.endDate || filters.department) && (
+        <div className="mb-6 p-2 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-xs sm:text-sm text-blue-700">
+            <strong>Фильтры:</strong>
+            {filters.startDate && ` Начало: ${filters.startDate}`}
+            {filters.endDate && ` Окончание: ${filters.endDate}`}
+            {filters.department && ` Отдел: ${filters.department}`}
+          </p>
+        </div>
+      )}
+
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out mb-6 ${
+          showFiltersPanel ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        {FilterPanel()}
+      </div>
 
       {dataWasTruncated && (
-        <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-md flex items-center">
+        <div className="mb-6 p-2 bg-yellow-50 border border-yellow-200 rounded-md flex items-center">
           <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500 mr-2" />
           <p className="text-xs sm:text-sm text-yellow-700">
             Некоторые данные были сокращены из-за большого объема. Для получения
@@ -1698,21 +1712,152 @@ export default function HRDashboard() {
               </div>
 
               <div className="flex justify-end">
-                <button
+                <Button
                   onClick={handleExportCSV}
-                  className="flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  variant="success"
+                  size="md"
+                  className="flex items-center"
                 >
-                  <ArrowDownTrayIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                  <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
                   Экспорт аналитики в CSV
-                </button>
+                </Button>
               </div>
 
               {chartData && (
                 <div className="space-y-4 sm:space-y-6">
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
-                    <ChartBarIcon className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-blue-500" />
-                    Аналитические графики
-                  </h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
+                      <ChartBarIcon className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-blue-500" />
+                      Аналитические графики
+                    </h3>
+                    <Button
+                      onClick={() =>
+                        setShowChartFiltersPanel(!showChartFiltersPanel)
+                      }
+                      variant="secondary"
+                      size="sm"
+                      className="flex items-center"
+                    >
+                      <AdjustmentsHorizontalIcon className="h-4 w-4 mr-2" />
+                      Фильтры
+                    </Button>
+                  </div>
+
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      showChartFiltersPanel
+                        ? "max-h-96 opacity-100 mb-4"
+                        : "max-h-0 opacity-0"
+                    }`}
+                  >
+                    <Card className="transform transition-transform duration-300 ease-in-out">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-800">
+                          Фильтры графиков
+                        </h3>
+                        <button
+                          onClick={() => setShowChartFiltersPanel(false)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <XMarkIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                          <label className={FORM_STYLES.label}>
+                            Дата начала
+                          </label>
+                          <input
+                            type="date"
+                            value={filters.startDate}
+                            onChange={(e) =>
+                              handleFilterChange({ startDate: e.target.value })
+                            }
+                            className={FORM_STYLES.input}
+                          />
+                        </div>
+
+                        <div>
+                          <label className={FORM_STYLES.label}>
+                            Дата окончания
+                          </label>
+                          <input
+                            type="date"
+                            value={filters.endDate}
+                            onChange={(e) =>
+                              handleFilterChange({ endDate: e.target.value })
+                            }
+                            className={FORM_STYLES.input}
+                          />
+                        </div>
+
+                        <div>
+                          <label className={FORM_STYLES.label}>Отдел</label>
+                          <select
+                            value={filters.department}
+                            onChange={(e) =>
+                              handleFilterChange({
+                                department: e.target.value,
+                              })
+                            }
+                            className={FORM_STYLES.select}
+                          >
+                            <option value="">Все отделы</option>
+                            {departments.map((dept) => (
+                              <option key={dept} value={dept}>
+                                {dept}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center space-x-4">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={filters.compareWithPrevious}
+                              onChange={(e) =>
+                                handleFilterChange({
+                                  compareWithPrevious: e.target.checked,
+                                })
+                              }
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">
+                              Сравнить с предыдущим периодом
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end mt-4 space-x-3">
+                        <Button
+                          onClick={() =>
+                            handleFilterChange({
+                              startDate: "",
+                              endDate: "",
+                              department: "",
+                            })
+                          }
+                          variant="secondary"
+                          size="md"
+                        >
+                          Сбросить
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            refreshData();
+                            setShowChartFiltersPanel(false);
+                          }}
+                          variant="primary"
+                          size="md"
+                        >
+                          Применить
+                        </Button>
+                      </div>
+                    </Card>
+                  </div>
 
                   <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
                     <AnalyticsChart
@@ -1759,25 +1904,6 @@ export default function HRDashboard() {
               pageSize={10}
             />
           )}
-        </div>
-      </div>
-
-      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-        <h3 className="text-base sm:text-lg font-medium text-gray-800 mb-3 sm:mb-4">
-          Информационная панель
-        </h3>
-        <p className="text-sm text-gray-600">
-          В аналитических графиках вы можете фильтровать данные по датам и
-          отделам. Используйте экспорт в CSV для более детального анализа в
-          Excel или других инструментах.
-        </p>
-        <div className="mt-4 sm:mt-6 p-3 sm:p-4 border border-yellow-300 bg-yellow-50 rounded">
-          <p className="text-yellow-800 text-xs sm:text-sm">
-            <strong>Совет:</strong> Используйте страницу "Профили" для
-            управления сотрудниками и "Интеграции" для настройки интеграций с
-            другими системами. Включите опцию "Сравнить с предыдущим периодом"
-            для анализа тенденций.
-          </p>
         </div>
       </div>
     </div>

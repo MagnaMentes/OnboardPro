@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
+import {
+  Button,
+  FormField,
+  Card,
+  FORM_STYLES,
+  CARD_STYLES,
+} from "../config/theme";
+import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -70,7 +78,7 @@ export default function Login() {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md px-6 py-8 bg-white rounded-lg shadow-lg">
+      <Card className="w-full max-w-md px-6 py-8">
         <h1 className="mb-8 text-3xl font-bold text-center text-blue-600">
           OnboardPro
         </h1>
@@ -79,54 +87,44 @@ export default function Login() {
         </h2>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-            {error}
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded flex items-start">
+            <ExclamationCircleIcon className="h-5 w-5 mr-2 flex-shrink-0 text-red-500 mt-0.5" />
+            <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block mb-2 text-sm font-medium" htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <FormField
+            label="Email"
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Введите ваш email"
+            required
+          />
 
-          <div className="mb-6">
-            <label
-              className="block mb-2 text-sm font-medium"
-              htmlFor="password"
-            >
-              Пароль
-            </label>
-            <input
-              id="password"
-              type="password"
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+          <FormField
+            label="Пароль"
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Введите ваш пароль"
+            required
+          />
 
-          <button
+          <Button
             type="submit"
-            className={`w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              isLoading ? "opacity-70 cursor-not-allowed" : ""
-            }`}
+            variant="primary"
+            size="lg"
+            className="w-full"
             disabled={isLoading}
           >
             {isLoading ? "Выполняется вход..." : "Войти"}
-          </button>
+          </Button>
         </form>
-      </div>
+      </Card>
 
       <footer className="fixed bottom-0 w-full bg-blue-600 text-white text-center py-4 shadow-inner">
         <p>© 2025 magna_mentes. All rights reserved.</p>

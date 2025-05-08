@@ -7,6 +7,7 @@ import {
   CalendarIcon,
   DocumentCheckIcon,
   XCircleIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -15,6 +16,13 @@ import usePageTitle from "../utils/usePageTitle";
 import Modal from "../components/common/Modal";
 import ConfirmDialog from "../components/common/ConfirmDialog";
 import PlanForm from "../components/specific/PlanForm";
+import {
+  Button,
+  Card,
+  FormField,
+  SelectField,
+  CARD_STYLES,
+} from "../config/theme";
 
 const Plans = () => {
   usePageTitle("Планы адаптации");
@@ -197,67 +205,48 @@ const Plans = () => {
           </p>
         </div>
 
-        <button
+        <Button
           onClick={handleCreatePlan}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          variant="primary"
+          className="inline-flex items-center"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
           Создать план
-        </button>
+        </Button>
       </div>
 
       {/* Панель фильтров */}
-      <div className="bg-white p-4 shadow rounded-lg mb-6">
+      <Card className="p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Поиск */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Поиск
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Поиск по названию или описанию..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="border rounded w-full py-2 px-3 pl-10 text-gray-700"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
+          <FormField
+            label="Поиск"
+            id="search"
+            name="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Поиск по названию или описанию..."
+            leadingIcon={
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            }
+          />
 
           {/* Фильтр по статусу */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Статус
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border rounded w-full py-2 px-3 text-gray-700"
-            >
-              <option value="all">Все статусы</option>
-              <option value="draft">Черновики</option>
-              <option value="active">Активные</option>
-              <option value="completed">Завершенные</option>
-            </select>
-          </div>
+          <SelectField
+            label="Статус"
+            id="status"
+            name="status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            options={[
+              { value: "all", label: "Все статусы" },
+              { value: "draft", label: "Черновики" },
+              { value: "active", label: "Активные" },
+              { value: "completed", label: "Завершенные" },
+            ]}
+          />
         </div>
-      </div>
+      </Card>
 
       {/* Состояние загрузки */}
       {loading ? (
@@ -301,10 +290,7 @@ const Plans = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPlans.map((plan) => (
-            <div
-              key={plan.id}
-              className="bg-white overflow-hidden shadow rounded-lg"
-            >
+            <Card key={plan.id} className="overflow-hidden">
               <div className="px-4 py-5 sm:p-6">
                 {/* Заголовок и действия */}
                 <div className="flex justify-between items-start">
@@ -312,20 +298,20 @@ const Plans = () => {
                     {plan.title}
                   </h3>
                   <div className="flex space-x-2">
-                    <button
+                    <Button
                       onClick={() => handleEditPlan(plan)}
-                      className="text-blue-600 hover:text-blue-800"
+                      variant="icon"
                       title="Редактировать план"
                     >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button
+                      <PencilIcon className="h-5 w-5 text-blue-600" />
+                    </Button>
+                    <Button
                       onClick={() => handleDeleteClick(plan)}
-                      className="text-red-600 hover:text-red-800"
+                      variant="icon"
                       title="Удалить план"
                     >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
+                      <TrashIcon className="h-5 w-5 text-red-600" />
+                    </Button>
                   </div>
                 </div>
 
@@ -395,7 +381,7 @@ const Plans = () => {
                   </span>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

@@ -39,6 +39,34 @@ export default function Modal({
   const [isDragging, setIsDragging] = useState(false);
   const modalRef = useRef(null);
 
+  // Добавляем состояния для анимации закрытия
+  const [isClosing, setIsClosing] = useState(false);
+  const [showModal, setShowModal] = useState(isOpen);
+
+  // Обработка открытия/закрытия модального окна с анимацией
+  useEffect(() => {
+    if (isOpen) {
+      setShowModal(true);
+      setIsClosing(false);
+    } else if (showModal) {
+      setIsClosing(true);
+      // Ожидаем завершения анимации перед удалением модального окна из DOM
+      const timer = setTimeout(() => {
+        setShowModal(false);
+      }, 300); // Соответствует длительности анимации
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, showModal]);
+
+  // Метод для обработки закрытия с анимацией
+  const handleClose = () => {
+    setIsClosing(true);
+    // Вызываем внешний onClose после завершения анимации
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
   // Отслеживание размера экрана
   useEffect(() => {
     const checkIfMobile = () => {
@@ -55,7 +83,7 @@ export default function Modal({
 
   // Блокировка прокрутки при открытии модального окна
   useEffect(() => {
-    if (isOpen) {
+    if (showModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -63,7 +91,7 @@ export default function Modal({
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isOpen]);
+  }, [showModal]);
 
   // Вычисляем классы для разных вариантов стилей
   const getHeaderStylesByVariant = (variant) => {
@@ -140,7 +168,7 @@ export default function Modal({
 
     // Если свайп достаточно длинный, закрываем модальное окно
     if (translateY > 100) {
-      onClose();
+      handleClose();
     }
 
     // Сброс состояния
@@ -193,16 +221,20 @@ export default function Modal({
     return null;
   };
 
+  if (!showModal) return null;
+
   return (
     <Dialog
-      open={isOpen}
-      onClose={closeOnClickOutside ? onClose : () => {}}
+      open={showModal}
+      onClose={closeOnClickOutside ? handleClose : () => {}}
       className="relative z-50"
       initialFocus={modalRef}
     >
       {/* Фоновое затемнение с эффектом размытия */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+          isClosing ? "opacity-0" : "opacity-100"
+        }`}
         aria-hidden="true"
       />
 
@@ -212,9 +244,14 @@ export default function Modal({
           ref={modalRef}
           className={`w-full ${getModalSize(
             size
-          )} overflow-hidden rounded-2xl bg-white shadow-xl transform transition-all duration-300 ease-out
+          )} overflow-hidden rounded-2xl bg-white shadow-xl 
+          transform transition-all duration-300 ease-out
           ${isMobile ? "mt-auto rounded-b-none" : ""}
-          animate-modal-appear`}
+          ${
+            isClosing
+              ? "opacity-0 scale-95"
+              : "opacity-100 scale-100 animate-modal-appear"
+          }`}
           style={isMobile ? swipeStyle : {}}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -238,7 +275,7 @@ export default function Modal({
             </Dialog.Title>
             {showCloseButton && (
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="rounded-full p-1.5 hover:bg-white/20 focus:outline-none transition-colors duration-200"
                 aria-label="Закрыть"
               >

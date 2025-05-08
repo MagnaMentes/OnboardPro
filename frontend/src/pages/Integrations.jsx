@@ -37,8 +37,8 @@ export default function Integrations() {
         const userData = await response.json();
         setUserRole(userData.role);
 
-        // Проверка прав доступа
-        if (userData.role !== "hr") {
+        // Проверка прав доступа с учетом регистра
+        if (userData.role.toLowerCase() !== "hr") {
           setError(
             "Недостаточно прав для просмотра этой страницы. Требуется роль HR."
           );
@@ -140,7 +140,7 @@ export default function Integrations() {
     );
   };
 
-  if (userRole !== "hr") {
+  if (userRole && userRole.toLowerCase() !== "hr") {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">

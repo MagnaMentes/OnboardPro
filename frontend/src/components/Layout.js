@@ -309,7 +309,7 @@ export default function Layout() {
 
       <footer className="bg-blue-600 text-white py-4">
         <div className="container text-center">
-          <p>© 2025 OnboardPro. Все права защищены.</p>
+          <p className="mb-1">© 2025 Created by magna_mentes. Все права защищены.</p>
         </div>
       </footer>
 
