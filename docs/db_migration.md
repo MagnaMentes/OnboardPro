@@ -213,9 +213,24 @@ class Task(Base):
 
 ### 3. Миграция данных
 
-#### 3.1. Создание схемы БД в PostgreSQL
+#### 3.1. Подготовка и консолидация миграций
 
-Используем Alembic для создания схемы базы данных:
+Перед переходом на PostgreSQL рекомендуется консолидировать все миграции и убедиться в их целостности:
+
+```bash
+# Запустите скрипт для консолидации миграций
+python rebuild_migrations.py
+
+# Проверьте целостность новой структуры миграций
+python test_migrations.py
+
+# Проверьте корректность миграций с помощью менеджера миграций
+python migration_manager.py check
+```
+
+#### 3.2. Создание схемы БД в PostgreSQL
+
+Используем консолидированные миграции для создания схемы базы данных:
 
 ```bash
 # Установите переменные окружения для подключения к PostgreSQL
@@ -227,11 +242,14 @@ export DB_HOST=localhost
 export DB_PORT=5432
 export DB_NAME=onboardpro
 
-# Создание миграции
-alembic revision --autogenerate -m "migrate_to_postgresql"
+# Создайте резервную копию текущей базы данных
+python migration_manager.py backup
 
 # Применение миграции
 alembic upgrade head
+
+# Проверьте соответствие схемы моделям
+python test_migrations.py --check-schema-only
 ```
 
 #### 3.2. Экспорт данных из SQLite
