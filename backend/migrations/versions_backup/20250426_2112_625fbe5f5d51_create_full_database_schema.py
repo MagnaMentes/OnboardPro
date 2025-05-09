@@ -1,6 +1,6 @@
 """Create full database schema
 
-Revision ID: 20250426_2112-625fbe5f5d51
+Revision ID: 625fbe5f5d51
 Revises: 20250426_1000
 Create Date: 2025-04-26 21:12:04.678618
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '20250426_2112-625fbe5f5d51'
+revision = '625fbe5f5d51'
 down_revision: Union[str, None] = '20250426_1000'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
