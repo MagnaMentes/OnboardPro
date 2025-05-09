@@ -10,6 +10,8 @@ import {
   FunnelIcon,
   PhotoIcon,
   XCircleIcon,
+  BuildingOfficeIcon,
+  PlusCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -18,6 +20,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { getApiBaseUrl } from "../config/api"; // Импортируем функцию для получения базового API URL
 import usePageTitle from "../utils/usePageTitle";
 import Modal from "../components/common/Modal"; // Обновленный импорт модального окна
+import DepartmentForm from "../components/DepartmentForm"; // Импорт формы создания отдела
 
 const Profiles = () => {
   // Устанавливаем заголовок страницы
@@ -44,13 +47,16 @@ const Profiles = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDepartmentModalOpen, setIsDepartmentModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [resetPasswordInfo, setResetPasswordInfo] = useState(null); // Для отображения временного пароля
+  const [departments, setDepartments] = useState([]); // Список отделов
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     role: "employee",
     department: "",
+    department_id: null,
     first_name: "",
     last_name: "",
     middle_name: "",
@@ -95,7 +101,17 @@ const Profiles = () => {
           "Запрос к API: получены данные пользователей",
           response.data
         );
-        setUsers(response.data);
+
+        // Преобразуем department_id к числовому типу, если он существует
+        const processedUsers = response.data.map((user) => ({
+          ...user,
+          department_id:
+            user.department_id !== null ? Number(user.department_id) : null,
+        }));
+
+        console.log("Обработанные данные пользователей:", processedUsers);
+
+        setUsers(processedUsers);
         setLoading(false);
       } catch (err) {
         console.error("Запрос к API: ошибка при загрузке пользователей", err);
@@ -104,9 +120,55 @@ const Profiles = () => {
       }
     };
 
+    const fetchDepartments = async () => {
+      try {
+        const response = await axios.get(`${apiBaseUrl}/api/departments`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("Загружены отделы:", response.data);
+        setDepartments(response.data);
+      } catch (err) {
+        console.error("Ошибка при загрузке отделов:", err);
+      }
+    };
+
     fetchUserRole();
     fetchUsers();
+    fetchDepartments();
   }, [navigate, apiBaseUrl]);
+
+  // Дополнительный эффект для синхронизации данных формы после загрузки отделов
+  useEffect(() => {
+    // Если модальное окно редактирования открыто и у нас есть текущий пользователь
+    if (isEditModalOpen && currentUser && departments.length > 0) {
+      console.log("Синхронизация данных формы после загрузки отделов");
+      console.log("Текущий пользователь:", currentUser);
+      console.log("Список отделов:", departments);
+
+      // Находим отдел пользователя по ID или имени
+      const userDepartment = departments.find(
+        (dept) =>
+          dept.id === currentUser.department_id ||
+          dept.name === currentUser.department
+      );
+
+      console.log("Найденный отдел пользователя:", userDepartment);
+
+      if (userDepartment) {
+        setFormData((prevData) => ({
+          ...prevData,
+          department_id: userDepartment.id,
+          department: userDepartment.name,
+        }));
+        console.log(
+          "Form data обновлена с отделом:",
+          userDepartment.name,
+          "ID:",
+          userDepartment.id
+        );
+      }
+    }
+  }, [isEditModalOpen, currentUser, departments]);
 
   // Функция для обработки выбора файла фотографии
   const handlePhotoChange = (e) => {
@@ -257,6 +319,7 @@ const Profiles = () => {
       password: "",
       role: "employee",
       department: "",
+      department_id: null, // Устанавливаем null вместо пустой строки
       first_name: "",
       last_name: "",
       middle_name: "",
@@ -268,16 +331,32 @@ const Profiles = () => {
   };
 
   const openEditModal = (user) => {
+    // Добавляем подробное логирование для отладки
+    console.log("Данные пользователя при редактировании:", user);
+    console.log("Тип department_id:", typeof user.department_id);
+    console.log("Значение department_id:", user.department_id);
+    console.log("Список отделов:", departments);
+
     setCurrentUser(user);
+    // Устанавливаем department_id сразу как число, если оно есть
+    const departmentId = user.department_id ? Number(user.department_id) : null;
+
     setFormData({
       email: user.email,
       role: user.role,
       department: user.department || "",
+      department_id: departmentId,
       first_name: user.first_name || "",
       last_name: user.last_name || "",
       middle_name: user.middle_name || "",
       phone: user.phone || "",
     });
+
+    console.log("FormData после установки:", {
+      department: user.department || "",
+      department_id: departmentId,
+    });
+
     setPhotoPreview(user.photo ? `${apiBaseUrl}${user.photo}` : null);
     setIsEditModalOpen(true);
   };
@@ -289,7 +368,64 @@ const Profiles = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    console.log(
+      `Изменение поля ${name} на значение:`,
+      value,
+      "тип:",
+      typeof value
+    );
+
+    // Специальная обработка для поля department_id
+    if (name === "department_id") {
+      if (value) {
+        // Преобразуем строковое значение select в число
+        const departmentId = parseInt(value, 10);
+        console.log(
+          "Преобразованный ID отдела:",
+          departmentId,
+          "тип:",
+          typeof departmentId
+        );
+
+        // Находим отдел по ID
+        const selectedDepartment = departments.find(
+          (dept) => dept.id === departmentId
+        );
+        console.log("Найденный отдел:", selectedDepartment);
+
+        if (selectedDepartment) {
+          const newFormData = {
+            ...formData,
+            department_id: departmentId, // Числовое значение
+            department: selectedDepartment.name,
+          };
+
+          console.log("Обновляем formData с отделом:", newFormData);
+          setFormData(newFormData);
+        } else {
+          console.error("Отдел с ID", departmentId, "не найден!");
+        }
+      } else {
+        // Если выбрано пустое значение, очищаем оба поля
+        const newFormData = {
+          ...formData,
+          department_id: null,
+          department: "",
+        };
+
+        console.log("Очищаем значения отдела:", newFormData);
+        setFormData(newFormData);
+      }
+      return;
+    }
+
+    // Стандартная обработка для остальных полей
+    setFormData((prevData) => {
+      const newData = { ...prevData, [name]: value };
+      console.log(`Обновлено поле ${name}:`, newData);
+      return newData;
+    });
   };
 
   const handleCreateUser = async (e) => {
@@ -324,9 +460,25 @@ const Profiles = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      await axios.put(`${apiBaseUrl}/users/${currentUser.id}`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+
+      // Отладочная информация перед отправкой данных
+      console.log("Отправляем данные для обновления:", formData);
+      console.log(
+        "ID отдела перед отправкой:",
+        formData.department_id,
+        "тип:",
+        typeof formData.department_id
+      );
+
+      const response = await axios.put(
+        `${apiBaseUrl}/users/${currentUser.id}`,
+        formData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log("Ответ от сервера:", response.data);
 
       // Загружаем фотографию, если она была выбрана
       if (photoFile) {
@@ -334,14 +486,23 @@ const Profiles = () => {
       }
 
       // Обновляем список пользователей
-      const response = await axios.get(`${apiBaseUrl}/users`, {
+      const usersResponse = await axios.get(`${apiBaseUrl}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsers(response.data);
+
+      // Преобразуем department_id к числовому типу, если он существует
+      const processedUsers = usersResponse.data.map((user) => ({
+        ...user,
+        department_id:
+          user.department_id !== null ? Number(user.department_id) : null,
+      }));
+
+      setUsers(processedUsers);
 
       setIsEditModalOpen(false);
       toast.success("Данные пользователя обновлены");
     } catch (err) {
+      console.error("Ошибка при обновлении пользователя:", err);
       toast.error(
         err.response?.data?.message || "Ошибка при обновлении пользователя"
       );
@@ -675,13 +836,22 @@ const Profiles = () => {
         </div>
 
         {userRole && userRole.toLowerCase() === "hr" && (
-          <button
-            onClick={openCreateModal}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <UsersIcon className="h-5 w-5 mr-2" />
-            Добавить пользователя
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setIsDepartmentModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              <BuildingOfficeIcon className="h-5 w-5 mr-2" />
+              Управление отделами
+            </button>
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <UsersIcon className="h-5 w-5 mr-2" />
+              Добавить пользователя
+            </button>
+          </div>
         )}
       </div>
 
@@ -922,14 +1092,30 @@ const Profiles = () => {
             >
               Отдел
             </label>
-            <input
-              type="text"
-              id="department"
-              name="department"
-              value={formData.department}
+            <select
+              id="department_id"
+              name="department_id"
+              value={formData.department_id?.toString() || ""}
               onChange={handleChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            />
+            >
+              <option value="">Выберите отдел</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id.toString()}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
+            {userRole === "hr" && (
+              <button
+                type="button"
+                onClick={() => setIsDepartmentModalOpen(true)}
+                className="mt-2 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+              >
+                <PlusCircleIcon className="h-4 w-4 mr-1" />
+                Создать новый отдел
+              </button>
+            )}
           </div>
 
           <div>
@@ -1111,14 +1297,34 @@ const Profiles = () => {
               >
                 Отдел
               </label>
-              <input
-                type="text"
-                id="edit-department"
-                name="department"
-                value={formData.department}
+              <select
+                id="edit-department_id"
+                name="department_id"
+                value={
+                  formData.department_id !== null
+                    ? formData.department_id.toString()
+                    : ""
+                }
                 onChange={handleChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
+              >
+                <option value="">Выберите отдел</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id.toString()}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+              {userRole === "hr" && (
+                <button
+                  type="button"
+                  onClick={() => setIsDepartmentModalOpen(true)}
+                  className="mt-2 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+                >
+                  <PlusCircleIcon className="h-4 w-4 mr-1" />
+                  Создать новый отдел
+                </button>
+              )}
             </div>
 
             <div>
@@ -1328,6 +1534,37 @@ const Profiles = () => {
           </div>
         </Modal>
       )}
+
+      {/* Модальное окно создания отдела */}
+      <DepartmentForm
+        isOpen={isDepartmentModalOpen}
+        onClose={() => setIsDepartmentModalOpen(false)}
+        refreshProfiles={() => {
+          // Обновляем список пользователей и отделов после создания нового отдела
+          const token = localStorage.getItem("token");
+          axios
+            .get(`${apiBaseUrl}/api/departments`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            .then((response) => {
+              setDepartments(response.data);
+            })
+            .catch((error) => {
+              console.error("Ошибка при загрузке отделов:", error);
+            });
+
+          axios
+            .get(`${apiBaseUrl}/users`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            .then((response) => {
+              setUsers(response.data);
+            })
+            .catch((error) => {
+              console.error("Ошибка при загрузке пользователей:", error);
+            });
+        }}
+      />
 
       <ToastContainer position="bottom-right" />
     </div>
