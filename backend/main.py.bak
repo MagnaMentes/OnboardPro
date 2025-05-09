@@ -349,17 +349,17 @@ async def get_departments(
             status_code=403,
             detail='Только HR или менеджеры могут просматривать список отделов'
         )
-
+    
     # Используем SQL функцию distinct для получения уникальных значений поля department
     departments = [
-        dept[0] for dept in
+        dept[0] for dept in 
         db.query(distinct(models.User.department))
         .filter(models.User.department != None)
         .filter(models.User.department != '')
         .order_by(models.User.department)
         .all()
     ]
-
+    
     return {'departments': departments}
 
 
@@ -1886,3 +1886,4 @@ async def generate_portal_token(
         "expires_at": expires_at,
         "candidate_id": user.id
     }
+```

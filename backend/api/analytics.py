@@ -207,7 +207,7 @@ async def get_analytics_summary(
     # Регистрируем запрос для мониторинга нагрузки
     register_request()
 
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":  # Изменено: проверка не зависит от регистра
         raise HTTPException(
             status_code=403, detail="Only HR can view analytics"
         )
@@ -267,11 +267,15 @@ async def get_analytics_summary(
     # Оптимизируем: выполняем один запрос с агрегацией вместо нескольких
     from sqlalchemy import case
 
-    # Строим одним запросом статистику задач по статусам
+    # Оптимизированный запрос с использованием case для подсчета задач в разных статусах
     task_stats = db.query(
         func.count(models.Task.id).label('total'),
-        func.sum(case([(models.Task.status == 'completed', 1)], else_=0)).label(
-            'completed')
+        func.sum(case((models.Task.status == 'completed', 1), else_=0)
+                 ).label('completed'),
+        func.sum(case((models.Task.status == 'in_progress', 1), else_=0)).label(
+            'in_progress'),
+        func.sum(case((models.Task.status == 'pending', 1), else_=0)
+                 ).label('pending')
     )
 
     # Применяем те же фильтры, что и для основного запроса
@@ -284,9 +288,13 @@ async def get_analytics_summary(
             .filter(models.User.department == department)
 
     # Выполняем запрос
-    task_stats = task_stats.first()
-    total_tasks = task_stats.total or 0
-    completed_tasks = task_stats.completed or 0
+    task_stats_result = task_stats.first()
+    total_tasks = task_stats_result.total or 0
+    completed_tasks = task_stats_result.completed or 0
+    # Добавлено: получаем количество задач в процессе
+    in_progress_tasks = task_stats_result.in_progress or 0
+    # Добавлено: получаем количество ожидающих задач
+    pending_tasks = task_stats_result.pending or 0
     completion_rate = completed_tasks / total_tasks if total_tasks > 0 else 0
 
     # Статистика по приоритетам задач - оптимизированный запрос
@@ -297,7 +305,7 @@ async def get_analytics_summary(
         # Для каждого приоритета выполняем один запрос с агрегацией
         priority_data = db.query(
             func.count(models.Task.id).label('total'),
-            func.sum(case([(models.Task.status == 'completed', 1)], else_=0)).label(
+            func.sum(case((models.Task.status == 'completed', 1), else_=0)).label(
                 'completed')
         ).filter(models.Task.priority == priority)
 
@@ -352,6 +360,8 @@ async def get_analytics_summary(
         "task_stats": {
             "total": total_tasks,
             "completed": completed_tasks,
+            "in_progress": in_progress_tasks,  # Добавлено: задачи в процессе
+            "pending": pending_tasks,  # Добавлено: ожидающие задачи
             "completion_rate": completion_rate,
             "priority": priority_stats
         },
@@ -401,7 +411,7 @@ async def get_task_analytics(
     # Регистрируем запрос для мониторинга нагрузки
     register_request()
 
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":  # Изменено: проверка не зависит от регистра
         raise HTTPException(
             status_code=403, detail="Only HR can view task analytics"
         )
@@ -580,7 +590,7 @@ async def get_user_analytics(
     # Регистрируем запрос для мониторинга нагрузки
     register_request()
 
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":  # Изменено: проверка не зависит от регистра
         raise HTTPException(
             status_code=403, detail="Only HR can view user analytics"
         )
@@ -646,10 +656,10 @@ async def get_user_analytics(
         task_subquery = select([
             models.Task.user_id,
             func.count(models.Task.id).label('total_tasks'),
-            func.sum(case([(models.Task.status == 'completed', 1)], else_=0)).label(
+            func.sum(case((models.Task.status == 'completed', 1), else_=0)).label(
                 'completed_tasks'),
             func.min(models.Task.created_at).label('earliest_task'),
-            func.max(case([(models.Task.status == 'completed', models.Task.created_at)], else_=None)).label(
+            func.max(case((models.Task.status == 'completed', models.Task.created_at), else_=None)).label(
                 'latest_completed')
         ]).where(models.Task.user_id.in_(user_ids))
 
@@ -786,7 +796,7 @@ async def get_analytics_cache_statistics(
     current_user: models.User = Depends(auth.get_current_user)
 ):
     """Получение статистики использования кэша для мониторинга"""
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":  # Изменено: проверка не зависит от регистра
         raise HTTPException(
             status_code=403, detail="Only HR can view cache statistics"
         )
@@ -811,7 +821,7 @@ async def invalidate_cache(
     current_user: models.User = Depends(auth.get_current_user)
 ):
     """Принудительная инвалидация кэша аналитики"""
-    if current_user.role != "hr":
+    if current_user.role.lower() != "hr":  # Изменено: проверка не зависит от регистра
         raise HTTPException(
             status_code=403, detail="Only HR can invalidate cache"
         )

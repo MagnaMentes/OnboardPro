@@ -663,8 +663,8 @@ const Profiles = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-blue-600">
             Профили пользователей
@@ -685,94 +685,95 @@ const Profiles = () => {
         )}
       </div>
 
-      {/* Фильтры и поиск */}
-      <div className="mb-6">
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            {/* Фильтры по статусу */}
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setActiveFilter("all")}
-                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  activeFilter === "all"
-                    ? "bg-blue-50 text-blue-700 border border-blue-200"
-                    : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
-                Все
-              </button>
-              <button
-                onClick={() => setActiveFilter("active")}
-                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  activeFilter === "active"
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
-                Активные
-              </button>
-              <button
-                onClick={() => setActiveFilter("disabled")}
-                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  activeFilter === "disabled"
-                    ? "bg-red-50 text-red-700 border border-red-200"
-                    : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
-                Заблокированные
-              </button>
-            </div>
-
-            {/* Поиск по email/отделу */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Поиск по email или отделу..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+      <div className="space-y-6 mt-6">
+        {/* Фильтры и поиск */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+              {/* Фильтры по статусу */}
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setActiveFilter("all")}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    activeFilter === "all"
+                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      : "text-gray-500 hover:bg-gray-100"
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+                  Все
+                </button>
+                <button
+                  onClick={() => setActiveFilter("active")}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    activeFilter === "active"
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "text-gray-500 hover:bg-gray-100"
+                  }`}
+                >
+                  Активные
+                </button>
+                <button
+                  onClick={() => setActiveFilter("disabled")}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    activeFilter === "disabled"
+                      ? "bg-red-50 text-red-700 border border-red-200"
+                      : "text-gray-500 hover:bg-gray-100"
+                  }`}
+                >
+                  Заблокированные
+                </button>
+              </div>
+
+              {/* Поиск по email/отделу */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Поиск по email или отделу..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        <div>
+          <UserGroupSection
+            title="HR-менеджеры"
+            users={getUsersByRole("hr")}
+            role="hr"
+          />
+
+          <UserGroupSection
+            title="Менеджеры отделов"
+            users={getUsersByRole("manager")}
+            role="manager"
+          />
+
+          <UserGroupSection
+            title="Сотрудники"
+            users={getUsersByRole("employee")}
+            role="employee"
+          />
+        </div>
       </div>
-
-      <div>
-        <UserGroupSection
-          title="HR-менеджеры"
-          users={getUsersByRole("hr")}
-          role="hr"
-        />
-
-        <UserGroupSection
-          title="Менеджеры отделов"
-          users={getUsersByRole("manager")}
-          role="manager"
-        />
-
-        <UserGroupSection
-          title="Сотрудники"
-          users={getUsersByRole("employee")}
-          role="employee"
-        />
-      </div>
-
       {/* Модальное окно создания пользователя */}
       <Modal
         isOpen={isCreateModalOpen}

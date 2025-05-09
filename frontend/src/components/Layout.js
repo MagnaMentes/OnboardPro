@@ -111,7 +111,7 @@ export default function Layout() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <header className="bg-blue-600 text-white shadow-md sticky top-0 z-10">
-        <div className="container py-4 flex justify-between items-center">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <Link to="/dashboard" className="text-xl font-bold flex items-center">
             <span>OnboardPro</span>
             {wsConnected && (
@@ -242,7 +242,7 @@ export default function Layout() {
             isBurgerOpen ? "block" : "hidden"
           } md:hidden bg-blue-600 text-white border-t border-blue-500 transition-all duration-300 ease-in-out`}
         >
-          <div className="container py-2 flex flex-col space-y-2">
+          <div className="container mx-auto px-4 py-2 flex flex-col space-y-2">
             {user && (
               <div className="flex items-center py-2 border-b border-blue-500 mb-2">
                 <span className="mr-2">{user.email}</span>
@@ -303,13 +303,17 @@ export default function Layout() {
         </nav>
       </header>
 
-      <main className="flex-grow container py-6">
-        <Outlet />
+      <main className="flex-1 overflow-auto py-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <Outlet />
+        </div>
       </main>
 
-      <footer className="bg-blue-600 text-white py-4">
-        <div className="container text-center">
-          <p className="mb-1">© 2025 Created by magna_mentes. Все права защищены.</p>
+      <footer className="bg-blue-600 text-white py-4 sticky bottom-0 z-10 shadow-md-up">
+        <div className="container mx-auto px-4 text-center">
+          <p className="mb-1">
+            © 2025 Created by magna_mentes. Все права защищены.
+          </p>
         </div>
       </footer>
 
@@ -319,8 +323,6 @@ export default function Layout() {
           max-width: 1280px;
           margin-left: auto;
           margin-right: auto;
-          padding-left: 1rem;
-          padding-right: 1rem;
         }
 
         .nav-link {
@@ -345,6 +347,11 @@ export default function Layout() {
 
         .nav-text {
           font-size: 0.875rem;
+        }
+
+        .shadow-md-up {
+          box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 -2px 4px -1px rgba(0, 0, 0, 0.06);
         }
       `}</style>
     </div>
