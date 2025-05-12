@@ -30,6 +30,7 @@ import {
   ClipboardDocumentListIcon,
   ExclamationCircleIcon,
   MagnifyingGlassIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -149,7 +150,8 @@ export default function ManagerDashboard() {
         setTasks(tasksData);
 
         // Получаем список всех шаблонов задач
-        if (hasRole(userData.role, ["HR", "hr"])) {
+        // Разрешаем доступ к шаблонам задач и менеджерам, и HR
+        if (hasRole(userData.role, ["HR", "hr", "manager", "Manager"])) {
           const templatesResponse = await fetch(
             `${apiBaseUrl}/api/task_templates`,
             {
@@ -1590,7 +1592,7 @@ export default function ManagerDashboard() {
           </div>
 
           {/* Раздел с шаблонами задач */}
-          {hasRole(userRole, ["hr"]) && (
+          {hasRole(userRole, ["hr", "manager", "Manager"]) && (
             <div className="mb-6">
               <div
                 className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
@@ -1623,16 +1625,18 @@ export default function ManagerDashboard() {
                   {templates.length === 0 ? (
                     <div className="bg-white px-4 py-6 text-center text-gray-500">
                       <p>Нет доступных шаблонов задач.</p>
-                      <button
-                        onClick={() => {
-                          setEditingTemplate(null);
-                          setIsTaskTemplateModalOpen(true);
-                        }}
-                        className="mt-3 inline-flex items-center px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      >
-                        <PlusIcon className="w-4 h-4 mr-1" />
-                        Создать шаблон
-                      </button>
+                      {hasRole(userRole, ["hr"]) && (
+                        <button
+                          onClick={() => {
+                            setEditingTemplate(null);
+                            setIsTaskTemplateModalOpen(true);
+                          }}
+                          className="mt-3 inline-flex items-center px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                          <PlusIcon className="w-4 h-4 mr-1" />
+                          Создать шаблон
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <table className="min-w-full divide-y divide-gray-200">
@@ -1682,24 +1686,30 @@ export default function ManagerDashboard() {
                               </span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
-                              <div className="flex justify-end space-x-2">
-                                <button
-                                  onClick={() => handleEditTemplate(template)}
-                                  className="text-blue-600 hover:text-blue-900 focus:outline-none"
-                                  title="Редактировать шаблон"
-                                >
-                                  <PencilIcon className="h-5 w-5" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    openDeleteTemplateModal(template)
-                                  }
-                                  className="text-red-600 hover:text-red-900 focus:outline-none"
-                                  title="Удалить шаблон"
-                                >
-                                  <TrashIcon className="h-5 w-5" />
-                                </button>
-                              </div>
+                              {hasRole(userRole, ["hr"]) ? (
+                                <div className="flex justify-end space-x-2">
+                                  <button
+                                    onClick={() => handleEditTemplate(template)}
+                                    className="text-blue-600 hover:text-blue-900 focus:outline-none"
+                                    title="Редактировать шаблон"
+                                  >
+                                    <PencilIcon className="h-5 w-5" />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      openDeleteTemplateModal(template)
+                                    }
+                                    className="text-red-600 hover:text-red-900 focus:outline-none"
+                                    title="Удалить шаблон"
+                                  >
+                                    <TrashIcon className="h-5 w-5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-xs">
+                                  Только просмотр
+                                </span>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -1761,12 +1771,42 @@ export default function ManagerDashboard() {
                     >
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-2">
-                          <h3
-                            className="text-lg font-medium text-gray-900 line-clamp-1"
-                            title={plan.title}
-                          >
-                            {plan.title}
-                          </h3>
+                          {/* Заголовок с именем сотрудника и фото */}
+                          <div className="flex items-center">
+                            {/* Фото пользователя */}
+                            {assignedUser &&
+                            users.find((u) => u.id === assignedUser)?.photo ? (
+                              <div className="h-8 w-8 rounded-full overflow-hidden mr-3 border border-gray-200 flex-shrink-0">
+                                <img
+                                  src={`${getApiBaseUrl()}${
+                                    users.find((u) => u.id === assignedUser)
+                                      ?.photo
+                                  }`}
+                                  alt="Фото"
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-8 w-8 rounded-full overflow-hidden mr-3 bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                <UserCircleIcon className="h-6 w-6 text-gray-500" />
+                              </div>
+                            )}
+
+                            {/* Имя сотрудника */}
+                            <h3
+                              className="text-lg font-medium text-gray-900 line-clamp-1"
+                              title={
+                                assignedUser
+                                  ? getDisplayName(assignedUser)
+                                  : plan.title
+                              }
+                            >
+                              {assignedUser
+                                ? getDisplayName(assignedUser)
+                                : plan.title}
+                            </h3>
+                          </div>
+
                           {hasRole(userRole, ["hr"]) && (
                             <div className="flex space-x-1">
                               <button
@@ -1808,16 +1848,6 @@ export default function ManagerDashboard() {
                           >
                             {plan.description}
                           </p>
-                        )}
-
-                        {/* Отображаем назначенного пользователя, если есть */}
-                        {assignedUser && (
-                          <div className="flex items-center mb-3">
-                            <UsersIcon className="h-4 w-4 text-gray-500 mr-1" />
-                            <span className="text-sm text-gray-600">
-                              {getDisplayName(assignedUser)}
-                            </span>
-                          </div>
                         )}
 
                         {/* Прогресс выполнения задач */}
