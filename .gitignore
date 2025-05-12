@@ -8,5 +8,6 @@ venv/
 .onboardpro_backlog.md
 # Исключаем файлы логов
 backend/logs/*.log
-logs/
+logs/**/*.log
+logs/nginx/*.log
 *.log
