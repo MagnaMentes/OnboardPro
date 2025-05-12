@@ -12,6 +12,7 @@ import {
   ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import { Button, FormField, SelectField } from "../../config/theme";
+import { getApiBaseUrl } from "../../config/api";
 
 const TaskForm = ({
   onTaskCreated,
@@ -34,6 +35,7 @@ const TaskForm = ({
   const [users, setUsers] = useState([]);
   const [plans, setPlans] = useState([]);
   const [errors, setErrors] = useState({});
+  const apiUrl = getApiBaseUrl();
 
   // Загрузка пользователей и планов при инициализации
   useEffect(() => {
@@ -44,13 +46,17 @@ const TaskForm = ({
 
         // Загружаем пользователей только если они нужны (hideUserSelect === false)
         if (!hideUserSelect) {
-          const usersResponse = await axios.get("/api/users", { headers });
+          const usersResponse = await axios.get(`${apiUrl}/users`, {
+            headers,
+          });
           // Фильтруем только активных пользователей
           setUsers(usersResponse.data.filter((user) => !user.disabled));
         }
 
         // Загружаем планы
-        const plansResponse = await axios.get("/api/plans", { headers });
+        const plansResponse = await axios.get(`${apiUrl}/plans`, {
+          headers,
+        });
         setPlans(plansResponse.data);
 
         // Устанавливаем первый план по умолчанию, если не указан
@@ -178,12 +184,14 @@ const TaskForm = ({
 
       let response;
       if (editTask) {
-        response = await axios.put(`/api/tasks/${editTask.id}`, formData, {
+        response = await axios.put(`${apiUrl}/tasks/${editTask.id}`, formData, {
           headers,
         });
         toast.success("Задача успешно обновлена");
       } else {
-        response = await axios.post("/api/tasks", formData, { headers });
+        response = await axios.post(`${apiUrl}/tasks`, formData, {
+          headers,
+        });
         toast.success("Задача успешно создана");
       }
 

@@ -11,19 +11,22 @@
 #### Изменения в компоненте ManagerDashboard.jsx
 
 1. **Добавлен импорт компонента UserCircleIcon**:
+
    ```jsx
-   import { 
+   import {
      // существующие импорты
-     UserCircleIcon 
+     UserCircleIcon,
    } from "@heroicons/react/24/outline";
    ```
 
 2. **Изменена структура заголовка карточки плана**:
+
    - Добавлен блок для отображения фотографии пользователя
    - Изменен контент заголовка для отображения имени пользователя вместо названия плана
    - Сохранена функциональность кнопок редактирования и удаления
 
 3. **Логика отображения фотографии**:
+
    - Проверяется наличие пользователя, назначенного на план: `assignedUser`
    - Проверяется наличие фотографии у пользователя: `users.find(u => u.id === assignedUser)?.photo`
    - В зависимости от результата проверок отображается либо фотография, либо иконка-заглушка
@@ -35,6 +38,7 @@
 #### Описание изменений в разметке
 
 Оригинальная разметка:
+
 ```jsx
 <div className="flex justify-between items-start mb-2">
   <h3
@@ -65,15 +69,18 @@
 ```
 
 Новая разметка:
+
 ```jsx
 <div className="flex justify-between items-start mb-2">
   {/* Заголовок с именем сотрудника и фото */}
   <div className="flex items-center">
     {/* Фото пользователя */}
-    {assignedUser && users.find(u => u.id === assignedUser)?.photo ? (
+    {assignedUser && users.find((u) => u.id === assignedUser)?.photo ? (
       <div className="h-8 w-8 rounded-full overflow-hidden mr-3 border border-gray-200 flex-shrink-0">
-        <img 
-          src={`${getApiBaseUrl()}${users.find(u => u.id === assignedUser)?.photo}`}
+        <img
+          src={`${getApiBaseUrl()}${
+            users.find((u) => u.id === assignedUser)?.photo
+          }`}
           alt="Фото"
           className="h-full w-full object-cover"
         />
@@ -83,7 +90,7 @@
         <UserCircleIcon className="h-6 w-6 text-gray-500" />
       </div>
     )}
-    
+
     {/* Имя сотрудника */}
     <h3
       className="text-lg font-medium text-gray-900 line-clamp-1"
@@ -92,7 +99,7 @@
       {assignedUser ? getDisplayName(assignedUser) : plan.title}
     </h3>
   </div>
-  
+
   {hasRole(userRole, ["hr"]) && (
     <div className="flex space-x-1">
       <button
@@ -117,16 +124,19 @@
 ### Используемые CSS классы и компоненты
 
 1. **Контейнеры и расположение**:
+
    - `flex items-center` - для горизонтального выравнивания фото и текста
    - `flex-shrink-0` - предотвращает сжатие контейнера с фото
 
 2. **Стилизация фотографии**:
+
    - `h-8 w-8` - высота и ширина аватара
    - `rounded-full` - круглая форма
    - `overflow-hidden` - отсечение выступающих частей изображения
    - `border border-gray-200` - тонкая серая рамка вокруг фото
 
 3. **Стили для изображения**:
+
    - `object-cover` - сохранение пропорций и заполнение контейнера
 
 4. **Стили для заглушки**:
@@ -136,6 +146,7 @@
 ### Зависимости
 
 1. **Компоненты**:
+
    - `UserCircleIcon` из библиотеки Heroicons
    - Функция `getDisplayName()` из `userUtils.js`
    - Функция `getApiBaseUrl()` из `config/api.js`
@@ -147,6 +158,7 @@
 ### Примечания по производительности
 
 1. **Оптимизация поиска**:
+
    - Используется повторный вызов `users.find(u => u.id === assignedUser)`, что может влиять на производительность при большом количестве пользователей
    - Оптимизация: можно было бы вынести поиск пользователя в отдельную переменную перед использованием
 
@@ -163,6 +175,7 @@
 ### Тестирование
 
 Компонент был успешно протестирован в следующих сценариях:
+
 1. Отображение карточки плана с назначенным пользователем, имеющим фото
 2. Отображение карточки плана с назначенным пользователем без фото
 3. Отображение карточки плана без назначенного пользователя

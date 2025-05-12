@@ -99,7 +99,7 @@ export default function HRDashboard() {
       // Используем централизованный API клиент вместо прямого fetch
       const [analyticsResponse, tasksResponse, usersResponse] =
         await Promise.all([
-          apiRequest(`/api/analytics/summary${queryString}`), // Исправляем путь, добавляя префикс /api
+          apiRequest(`/analytics/summary${queryString}`), // Используем правильный путь без дублирования /api
           apiRequest("/tasks"),
           apiRequest("/users"),
         ]);

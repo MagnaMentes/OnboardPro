@@ -23,7 +23,7 @@ const DepartmentForm = ({ isOpen, onClose, refreshProfiles }) => {
   const fetchDepartments = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${apiBaseUrl}/api/departments`, {
+      const response = await axios.get(`${apiBaseUrl}/departments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDepartments(response.data);
@@ -38,7 +38,7 @@ const DepartmentForm = ({ isOpen, onClose, refreshProfiles }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `${apiBaseUrl}/api/departments/managers/list`,
+        `${apiBaseUrl}/departments/managers/list`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -96,7 +96,7 @@ const DepartmentForm = ({ isOpen, onClose, refreshProfiles }) => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`${apiBaseUrl}/api/departments`, formData, {
+      await axios.post(`${apiBaseUrl}/departments`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -119,7 +119,7 @@ const DepartmentForm = ({ isOpen, onClose, refreshProfiles }) => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `${apiBaseUrl}/api/departments/${selectedDepartment.id}`,
+        `${apiBaseUrl}/departments/${selectedDepartment.id}`,
         formData,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -145,12 +145,9 @@ const DepartmentForm = ({ isOpen, onClose, refreshProfiles }) => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(
-        `${apiBaseUrl}/api/departments/${selectedDepartment.id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await axios.delete(`${apiBaseUrl}/departments/${selectedDepartment.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       toast.success("Отдел успешно удален");
       refreshProfiles(); // Обновляем список пользователей

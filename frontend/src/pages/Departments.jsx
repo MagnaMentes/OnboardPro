@@ -34,7 +34,7 @@ const Departments = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${apiBaseUrl}/api/departments`, {
+      const response = await axios.get(`${apiBaseUrl}/departments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDepartments(response.data);
@@ -123,13 +123,13 @@ const Departments = () => {
       if (editMode) {
         // Обновление существующего отдела
         await axios.put(
-          `${apiBaseUrl}/api/departments/${currentDepartment.id}`,
+          `${apiBaseUrl}/departments/${currentDepartment.id}`,
           currentDepartment,
           { headers }
         );
       } else {
         // Создание нового отдела
-        await axios.post(`${apiBaseUrl}/api/departments`, currentDepartment, {
+        await axios.post(`${apiBaseUrl}/departments`, currentDepartment, {
           headers,
         });
       }
@@ -158,7 +158,7 @@ const Departments = () => {
     if (window.confirm("Вы действительно хотите удалить этот отдел?")) {
       try {
         const token = localStorage.getItem("token");
-        await axios.delete(`${apiBaseUrl}/api/departments/${id}`, {
+        await axios.delete(`${apiBaseUrl}/departments/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

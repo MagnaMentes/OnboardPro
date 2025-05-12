@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getApiBaseUrl } from "../../config/api";
 import {
   ExclamationCircleIcon,
   DocumentDuplicateIcon,
@@ -42,6 +43,7 @@ const TaskTemplateForm = ({
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const apiUrl = getApiBaseUrl();
 
   // Получение списка отделов из данных пользователей
   const { data: users = [], isLoading: isLoadingUsers } = useQuery({
@@ -49,7 +51,7 @@ const TaskTemplateForm = ({
     queryFn: async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("/api/users", {
+        const response = await axios.get(`${apiUrl}/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         return response.data.filter((user) => !user.disabled);
@@ -154,7 +156,7 @@ const TaskTemplateForm = ({
       if (editTemplate) {
         // Обновление существующего шаблона
         response = await axios.put(
-          `/api/task_templates/${editTemplate.id}`,
+          `${apiUrl}/api/task_templates/${editTemplate.id}`,
           formData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -163,7 +165,7 @@ const TaskTemplateForm = ({
         toast.success(`Шаблон "${formData.title}" успешно обновлен`);
       } else {
         // Создание нового шаблона
-        response = await axios.post("/api/task_templates", formData, {
+        response = await axios.post(`${apiUrl}/api/task_templates`, formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success(`Шаблон "${formData.title}" успешно создан`);

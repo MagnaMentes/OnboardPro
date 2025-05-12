@@ -44,7 +44,7 @@ const TaskTemplates = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Не авторизован");
 
-      const response = await axios.get(`${apiUrl}/task_templates`, {
+      const response = await axios.get(`${apiUrl}/api/task_templates`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -81,9 +81,12 @@ const TaskTemplates = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${apiUrl}/task_templates/${templateToDelete.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(
+        `${apiUrl}/api/task_templates/${templateToDelete.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       setTemplates((prevTemplates) =>
         prevTemplates.filter((t) => t.id !== templateToDelete.id)
@@ -110,7 +113,7 @@ const TaskTemplates = () => {
       if (editTemplate) {
         // Обновление существующего шаблона
         response = await axios.put(
-          `${apiUrl}/task_templates/${editTemplate.id}`,
+          `${apiUrl}/api/task_templates/${editTemplate.id}`,
           templateData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -124,9 +127,13 @@ const TaskTemplates = () => {
         toast.success("Шаблон задачи успешно обновлен");
       } else {
         // Создание нового шаблона
-        response = await axios.post(`${apiUrl}/task_templates`, templateData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        response = await axios.post(
+          `${apiUrl}/api/task_templates`,
+          templateData,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         setTemplates((prevTemplates) => [...prevTemplates, response.data]);
         toast.success("Шаблон задачи успешно создан");

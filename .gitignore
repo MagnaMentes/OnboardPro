@@ -11,3 +11,5 @@ backend/logs/*.log
 logs/**/*.log
 logs/nginx/*.log
 *.log
+# Исключаем директорию MyKnowledge
+MyKnowledge/
