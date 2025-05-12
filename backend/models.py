@@ -5,6 +5,18 @@ from sqlalchemy.orm import declarative_base, relationship
 Base = declarative_base()
 
 
+class Department(Base):
+    __tablename__ = "departments"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+    # Отношение к менеджеру отдела
+    manager = relationship("User", foreign_keys=[
+                           manager_id], backref="managed_department")
+
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -17,11 +29,18 @@ class User(Base):
     role = Column(String, default="employee")  # employee, manager, hr
     # Добавлен индекс для поля department
     department = Column(String, nullable=True, index=True)
+    # Внешний ключ для связи с таблицей departments
+    department_id = Column(Integer, ForeignKey(
+        "departments.id"), nullable=True)
     telegram_id = Column(String, nullable=True)
     # Флаг для блокировки пользователя
     disabled = Column(Boolean, default=False)
     # Путь к фотографии пользователя
     photo = Column(String, nullable=True)
+
+    # Отношение к отделу
+    department_rel = relationship("Department", foreign_keys=[
+                                  department_id], backref="members")
 
     tasks = relationship("Task", back_populates="assignee")
     sent_feedback = relationship("Feedback",

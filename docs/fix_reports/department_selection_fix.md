@@ -9,10 +9,12 @@
 В ходе диагностики были выявлены следующие основные причины проблемы:
 
 1. **Несоответствие типов данных** между фронтендом и бэкендом:
+
    - В модальном окне редактирования поле `department_id` инициализировалось как строка (`""`)
    - На бэкенде это поле ожидалось как число (`int`) или `null`
 
 2. **Проблемы с обработкой значений в React-компоненте**:
+
    - Отсутствовала корректная типизация между строковыми значениями в селекторе и числовыми ID отделов
    - Существовали конфликты между атрибутом `value` и состоянием компонента
 
@@ -28,16 +30,16 @@
 const openEditModal = (user) => {
   // Добавлено подробное логирование для отладки
   console.log("Данные пользователя при редактировании:", user);
-  
+
   // Корректное преобразование типа для department_id
   const departmentId = user.department_id ? Number(user.department_id) : null;
-  
+
   setFormData({
     // ...existing code...
     department_id: departmentId,
     // ...existing code...
   });
-}
+};
 ```
 
 ### 2. Улучшена обработка изменений в выпадающем списке
@@ -47,10 +49,12 @@ if (name === "department_id") {
   if (value) {
     // Преобразование строкового значения в число
     const departmentId = parseInt(value, 10);
-    
+
     // Поиск отдела по числовому ID
-    const selectedDepartment = departments.find(dept => dept.id === departmentId);
-    
+    const selectedDepartment = departments.find(
+      (dept) => dept.id === departmentId
+    );
+
     // Обновление обоих полей в форме
     setFormData({
       ...formData,
@@ -76,14 +80,16 @@ if (name === "department_id") {
 useEffect(() => {
   if (isEditModalOpen && currentUser && departments.length > 0) {
     const userDepartment = departments.find(
-      dept => dept.id === currentUser.department_id || dept.name === currentUser.department
+      (dept) =>
+        dept.id === currentUser.department_id ||
+        dept.name === currentUser.department
     );
-    
+
     if (userDepartment) {
-      setFormData(prevData => ({
+      setFormData((prevData) => ({
         ...prevData,
         department_id: userDepartment.id,
-        department: userDepartment.name
+        department: userDepartment.name,
       }));
     }
   }
@@ -94,9 +100,10 @@ useEffect(() => {
 
 ```jsx
 // Преобразование полученных данных к нужным типам
-const processedUsers = response.data.map(user => ({
+const processedUsers = response.data.map((user) => ({
   ...user,
-  department_id: user.department_id !== null ? Number(user.department_id) : null
+  department_id:
+    user.department_id !== null ? Number(user.department_id) : null,
 }));
 
 setUsers(processedUsers);

@@ -19,6 +19,8 @@ from api.task_templates import router as task_templates_router
 from api.portal import router as portal_router
 # Добавляем импорт нового роутера аналитики
 from api.analytics import router as analytics_router, invalidate_analytics_cache, _analytics_global_version, generate_cache_key, get_cached_analytics, set_analytics_cache, cache_data, get_cached_data
+# Импортируем роутер управления отделами
+from api.departments import router as departments_router
 import secrets
 import string
 import re
@@ -85,6 +87,9 @@ app.include_router(portal_router, prefix="/api")
 # Регистрируем API эндпоинты для аналитики
 app.include_router(analytics_router)  # Добавляем роутер аналитики
 
+# Регистрируем API эндпоинты для управления отделами
+app.include_router(departments_router)
+
 
 @app.get("/health")
 def health_check():
@@ -103,6 +108,7 @@ class UserCreate(BaseModel):
     password: str
     role: str
     department: str | None = None
+    department_id: int | None = None  # Добавляем поле для ID отдела
     first_name: str | None = None
     last_name: str | None = None
     middle_name: str | None = None
@@ -136,6 +142,7 @@ class UserUpdate(BaseModel):
     email: str
     role: str
     department: str | None = None
+    department_id: int | None = None  # Добавляем поле для ID отдела
     first_name: str | None = None
     last_name: str | None = None
     middle_name: str | None = None
@@ -313,11 +320,19 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 @app.post("/users")
 async def create_user(user: UserCreate, db: Session = Depends(auth.get_db)):
     hashed_password = auth.pwd_context.hash(user.password)
+
+    # Обработка department_id
+    department = None
+    if user.department_id:
+        department = db.query(models.Department).filter(
+            models.Department.id == user.department_id).first()
+
     db_user = models.User(
         email=user.email,
         password=hashed_password,
         role=user.role,
-        department=user.department,
+        department=department.name if department else user.department,
+        department_id=user.department_id,
         first_name=user.first_name,
         last_name=user.last_name,
         middle_name=user.middle_name,
@@ -403,7 +418,24 @@ async def update_user(
 
     db_user.email = user_data.email
     db_user.role = user_data.role
-    db_user.department = user_data.department
+
+    # Обновляем и department_id, и department
+    if user_data.department_id:
+        # Если указан ID отдела, проверяем его существование и берём название из базы
+        department = db.query(models.Department).filter(
+            models.Department.id == user_data.department_id).first()
+        if department:
+            db_user.department_id = user_data.department_id
+            db_user.department = department.name
+        else:
+            # Если отдел не найден, сбрасываем оба поля
+            db_user.department_id = None
+            db_user.department = None
+    else:
+        # Если ID отдела не указан, обновляем только строковое поле
+        db_user.department = user_data.department
+        db_user.department_id = None
+
     db_user.first_name = user_data.first_name
     db_user.last_name = user_data.last_name
     db_user.middle_name = user_data.middle_name

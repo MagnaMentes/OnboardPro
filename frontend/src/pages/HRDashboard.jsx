@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { getApiBaseUrl, apiRequest } from "../config/api";
+import { apiRequest } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
 import webSocketService from "../services/WebSocketService";
 import {
@@ -20,8 +20,6 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowTrendingDownIcon,
   XMarkIcon,
-  BellAlertIcon,
-  WifiIcon,
 } from "@heroicons/react/24/outline";
 import AnalyticsChart from "../components/specific/AnalyticsChart";
 import CalendarView from "../components/specific/CalendarView";
@@ -30,16 +28,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // Импортируем компоненты и стили из нашей системы темы
-import {
-  Button,
-  Card,
-  BUTTON_STYLES,
-  CARD_STYLES,
-  FORM_STYLES,
-  TaskPriority,
-  TaskStatus,
-  getButtonClassName,
-} from "../config/theme";
+import { Button, Card, FORM_STYLES } from "../config/theme";
 
 export default function HRDashboard() {
   usePageTitle("Панель HR");
@@ -73,16 +62,15 @@ export default function HRDashboard() {
   const [activeTab, setActiveTab] = useState("analytics");
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [showChartFiltersPanel, setShowChartFiltersPanel] = useState(false);
-  const [wsConnected, setWsConnected] = useState(false);
   const [hasRealtimeUpdates, setHasRealtimeUpdates] = useState(false);
-  const [wsDisabled, setWsDisabled] = useState(false); // Флаг для отключения WebSocket
+  const [wsDisabled] = useState(false); // Флаг для отключения WebSocket
 
   useEffect(() => {
     localStorage.setItem("hrDashboardFilters", JSON.stringify(filters));
   }, [filters]);
 
   // Функция для обновления аналитических данных с сервера
-  const fetchUpdatedAnalytics = async () => {
+  const fetchUpdatedAnalytics = useCallback(async () => {
     try {
       // Формируем параметры запроса
       let queryParams = [];
@@ -166,7 +154,7 @@ export default function HRDashboard() {
       setError(error.message);
       throw error;
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -200,12 +188,11 @@ export default function HRDashboard() {
     };
 
     fetchData();
-  }, [filters, isRefreshing]);
+  }, [filters, isRefreshing, fetchUpdatedAnalytics]);
 
   // Инициализация WebSocket соединения
   useEffect(() => {
     if (wsDisabled) {
-      setWsConnected(false);
       return;
     }
 
@@ -220,17 +207,35 @@ export default function HRDashboard() {
     const handleAnalyticsUpdate = (data) => {
       console.log("Получено WebSocket обновление аналитики:", data);
 
-      // Обновляем данные аналитики
-      if (data.data?.current) {
-        setAnalytics(data.data.current);
+      // Проверяем, что данные содержат правильную структуру
+      if (!data.data) {
+        console.error("Неверный формат данных аналитики от WebSocket:", data);
+        return;
       }
-      if (data.data?.previous) {
+
+      // Обновляем данные аналитики
+      if (data.data.current) {
+        setAnalytics(data.data.current);
+
+        // Форматируем данные для taskAnalytics в правильном формате
+        // Это важно для корректного отображения графиков
+        const analyticsResponse = data.data.current;
+
+        const taskAnalyticsData = {
+          summary: {
+            tasksByPriority: analyticsResponse.task_stats?.priority || {},
+            departmentStats: analyticsResponse.department_stats || {},
+          },
+        };
+
+        setTaskAnalytics(taskAnalyticsData);
+      }
+
+      if (data.data.previous) {
         setPreviousAnalytics(data.data.previous);
       }
-      if (data.data?.task_analytics) {
-        setTaskAnalytics(data.data.task_analytics);
-      }
-      if (data.data?.user_analytics) {
+
+      if (data.data.user_analytics) {
         setUserAnalytics(data.data.user_analytics);
       }
 
@@ -252,7 +257,6 @@ export default function HRDashboard() {
     // Обработчик установления соединения
     const handleConnectionEstablished = () => {
       console.log("WebSocket соединение установлено");
-      setWsConnected(true);
 
       // После успешного подключения запрашиваем актуальные данные аналитики
       setTimeout(() => {
@@ -300,7 +304,7 @@ export default function HRDashboard() {
       webSocketService.removeListener("error", handleError);
       webSocketService.disconnect();
     };
-  }, [wsDisabled]);
+  }, [wsDisabled, fetchUpdatedAnalytics]);
 
   const handleFilterChange = (newFilters) => {
     setFilters((prev) => ({
@@ -377,7 +381,6 @@ export default function HRDashboard() {
     const percentChange =
       prevValue !== null ? calculatePercentChange(value, prevValue) : null;
     const isPositiveTrend = percentChange > 0;
-    const isNegativeTrend = percentChange < 0;
     const showTrend = percentChange !== null;
 
     const isTrendPositive = title.includes("онбординг")
@@ -534,17 +537,74 @@ export default function HRDashboard() {
   };
 
   const chartData = useMemo(() => {
-    if (!taskAnalytics || !taskAnalytics.summary) return null;
+    if (
+      !analytics ||
+      !analytics.task_stats ||
+      !taskAnalytics ||
+      !taskAnalytics.summary
+    )
+      return null;
 
-    // ... существующий код ...
+    // Получаем данные о задачах по приоритету из API
+    const tasksByPriority = analytics.task_stats.priority || {};
+
+    // Создаем правильные метки и данные для графика приоритетов
+    const priorityLabels = [];
+    const priorityData = [];
+
+    // Сопоставление приоритетов с русскими названиями
+    const priorityMapping = {
+      high: "Высокий",
+      medium: "Средний",
+      low: "Низкий",
+    };
+
+    // Создаем массивы меток и данных
+    for (const [priority, stats] of Object.entries(tasksByPriority)) {
+      priorityLabels.push(priorityMapping[priority] || priority);
+      priorityData.push(stats.total || 0);
+    }
+
+    // Получаем данные о задачах по отделам
+    // Если доступны статистики отделов, используем их
+    const departments = Object.keys(
+      taskAnalytics.summary.departmentStats || {}
+    );
+    const departmentTotalTasks = [];
+    const departmentCompletedTasks = [];
+
+    // Если есть данные по отделам в аналитике
+    if (departments.length > 0) {
+      for (const dept of departments) {
+        const deptStats = taskAnalytics.summary.departmentStats[dept] || {};
+        departmentTotalTasks.push(deptStats.total || 0);
+        departmentCompletedTasks.push(deptStats.completed || 0);
+      }
+    }
+    // Иначе создаем график из доступных данных
+    else if (
+      analytics.filters_applied &&
+      analytics.filters_applied.department
+    ) {
+      // Если применен фильтр по отделу, показываем только его статистику
+      const dept = analytics.filters_applied.department;
+      departments.push(dept);
+      departmentTotalTasks.push(analytics.task_stats.total || 0);
+      departmentCompletedTasks.push(analytics.task_stats.completed || 0);
+    } else {
+      // Используем общую статистику вместо разбивки по отделам
+      departments.push("Все отделы");
+      departmentTotalTasks.push(analytics.task_stats.total || 0);
+      departmentCompletedTasks.push(analytics.task_stats.completed || 0);
+    }
 
     return {
       priority: {
-        labels: ["Высокий", "Средний", "Низкий"], // Примерно, поскольку реальный код скрыт
+        labels: priorityLabels,
         datasets: [
           {
             label: "Количество задач",
-            data: [5, 10, 15], // Примерно, поскольку реальный код скрыт
+            data: priorityData,
             backgroundColor: ["#FFCC80", "#81D4FA", "#FF8A80"],
             borderColor: ["#FB8C00", "#03A9F4", "#F44336"],
             borderWidth: 1,
@@ -552,18 +612,18 @@ export default function HRDashboard() {
         ],
       },
       department: {
-        labels: ["Отдел 1", "Отдел 2", "Отдел 3"], // Примерно, поскольку реальный код скрыт
+        labels: departments,
         datasets: [
           {
             label: "Выполнено задач",
-            data: [3, 5, 7], // Примерно, поскольку реальный код скрыт
+            data: departmentCompletedTasks,
             backgroundColor: "#4CAF50",
             borderColor: "#388E3C",
             borderWidth: 1,
           },
           {
             label: "Общее количество задач",
-            data: [5, 8, 10], // Примерно, поскольку реальный код скрыт
+            data: departmentTotalTasks,
             backgroundColor: "#2196F3",
             borderColor: "#1976D2",
             borderWidth: 1,
@@ -571,7 +631,7 @@ export default function HRDashboard() {
         ],
       },
     };
-  }, [taskAnalytics]);
+  }, [analytics, taskAnalytics]);
 
   const kpiData = useMemo(() => {
     if (!analytics)
@@ -666,7 +726,8 @@ export default function HRDashboard() {
     },
   ];
 
-  const isCached = useMemo(() => {
+  // Флаг для определения, используются ли кэшированные данные
+  useMemo(() => {
     return analytics?.metadata?.version !== undefined;
   }, [analytics]);
 
