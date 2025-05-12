@@ -4,6 +4,7 @@ import axios from "axios";
 import { getApiBaseUrl } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
 import { hasRole } from "../utils/roleUtils";
+import { getUserDisplayNameById } from "../utils/userUtils";
 import {
   UserPlusIcon,
   ArrowPathIcon,
@@ -372,18 +373,9 @@ export default function ManagerDashboard() {
     }).format(date);
   };
 
-  const getUserEmailById = (userId) => {
-    const user = users.find((u) => u.id === userId);
-    if (!user) return `Пользователь #${userId}`;
-
-    // Используем имя и фамилию если они доступны, иначе email
-    if (user.first_name || user.last_name) {
-      const fullName = [user.last_name, user.first_name]
-        .filter(Boolean)
-        .join(" ");
-      return fullName || user.email;
-    }
-    return user.email;
+  // Используем импортированную функцию getUserDisplayNameById из userUtils.js
+  const getDisplayName = (userId) => {
+    return getUserDisplayNameById(userId, users);
   };
 
   const getPlanTitleById = (planId) => {
@@ -1204,7 +1196,7 @@ export default function ManagerDashboard() {
                           <UsersIcon className="h-4 w-4 text-gray-500 mr-1.5 mt-0.5" />
                           <span className="text-gray-700 truncate line-clamp-1">
                             {task.user_id
-                              ? getUserEmailById(task.user_id)
+                              ? getDisplayName(task.user_id)
                               : "Не назначено"}
                           </span>
                         </div>
@@ -1378,7 +1370,7 @@ export default function ManagerDashboard() {
                             <td className="px-2 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-700 truncate">
                                 {task.user_id
-                                  ? getUserEmailById(task.user_id)
+                                  ? getDisplayName(task.user_id)
                                   : "—"}
                               </div>
                             </td>
@@ -1497,7 +1489,7 @@ export default function ManagerDashboard() {
                                   ></div>
                                   <span className="text-xs text-gray-500 truncate">
                                     {task.user_id
-                                      ? getUserEmailById(task.user_id)
+                                      ? getDisplayName(task.user_id)
                                       : "Не назначено"}
                                   </span>
                                 </div>
@@ -1823,7 +1815,7 @@ export default function ManagerDashboard() {
                           <div className="flex items-center mb-3">
                             <UsersIcon className="h-4 w-4 text-gray-500 mr-1" />
                             <span className="text-sm text-gray-600">
-                              {getUserEmailById(assignedUser)}
+                              {getDisplayName(assignedUser)}
                             </span>
                           </div>
                         )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./common/Modal";
 import { getApiBaseUrl } from "../config/api";
+import { formatUserDisplayName } from "../utils/userUtils";
 import {
   PaperClipIcon,
   XMarkIcon,
@@ -305,7 +306,7 @@ export default function TaskModal({
               <option value="">Выберите сотрудника</option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
-                  {user.full_name || user.email}
+                  {formatUserDisplayName(user)}
                 </option>
               ))}
             </select>
@@ -417,8 +418,13 @@ export default function TaskModal({
                 <UserIcon className="h-4 w-4 mr-2 text-gray-500" />
                 <span>
                   Назначено:{" "}
-                  {users.find((u) => u.id === parseInt(formData.user_id))
-                    ?.full_name || "Не назначено"}
+                  {(() => {
+                    const user = users.find(
+                      (u) => u.id === parseInt(formData.user_id)
+                    );
+                    if (!user) return "Не назначено";
+                    return formatUserDisplayName(user);
+                  })()}
                 </span>
               </div>
               <div className="flex items-center">
