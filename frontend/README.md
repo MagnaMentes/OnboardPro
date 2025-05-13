@@ -1,6 +1,19 @@
-# Getting Started with Create React App
+# OnboardPro Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Клиентская часть системы OnboardPro для онбординга сотрудников, разработанная на React с использованием Tailwind CSS.
+
+## 🚀 Последние улучшения (13 мая 2025)
+
+### Рефакторинг HR Dashboard
+
+- **Модульная архитектура**: Компоненты были выделены в отдельные файлы для улучшения поддерживаемости
+- **Оптимизация WebSocket**: Улучшена обработка соединений для стабильной работы в Docker
+- **Новые компоненты**:
+  - `AnalyticsTabs.jsx` - компонент вкладок с поддержкой доступности
+  - `StatCard.jsx` - переиспользуемые карточки статистики
+  - `FilterPanels.jsx` - компоненты панелей фильтрации
+  - `KPIPanel.jsx` - панель ключевых показателей
+  - `InProgressTasksList.jsx` - улучшенное отображение задач в процессе
 
 ## Available Scripts
 
