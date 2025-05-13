@@ -1,3 +1,4 @@
+// filepath: /Users/magna_mentes/Desktop/Projects/OnboardPro/frontend/src/components/Layout.js
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { usersApi } from "../config/api";
@@ -132,19 +133,18 @@ export default function Layout() {
                   location.pathname === item.path ? "active" : ""
                 }`}
               >
-                <item.icon className="w-5 h-5 mr-3" />
+                <item.icon className="w-5 h-5 mr-2" />
                 <span>{item.name}</span>
               </Link>
             ))}
             {user && (
-              <button
-                onClick={handleLogout}
-                className="nav-link flex items-center"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
+              <Link
+                to="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLogout();
                 }}
+                className="nav-link pr-0"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -152,7 +152,7 @@ export default function Layout() {
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-5 h-5 mr-3"
+                  className="w-5 h-5"
                 >
                   <path
                     strokeLinecap="round"
@@ -166,7 +166,7 @@ export default function Layout() {
                   />
                 </svg>
                 <span className="nav-text">Выйти</span>
-              </button>
+              </Link>
             )}
           </nav>
 
@@ -185,18 +185,17 @@ export default function Layout() {
               </Link>
             ))}
             {user && (
-              <button
-                onClick={handleLogout}
+              <Link
+                to="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLogout();
+                }}
                 className={
-                  "nav-link flex items-center ml-2" +
+                  "nav-link ml-2 pr-0" +
                   (location.pathname === "/logout" ? " active" : "")
                 }
                 title="Выйти"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -204,7 +203,7 @@ export default function Layout() {
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-5 h-5 mr-1"
+                  className="w-5 h-5"
                 >
                   <path
                     strokeLinecap="round"
@@ -217,8 +216,7 @@ export default function Layout() {
                     d="M18 12H9m0 0l3-3m-3 3l3 3"
                   />
                 </svg>
-                <span className="nav-text">Выйти</span>
-              </button>
+              </Link>
             )}
           </nav>
 
@@ -260,22 +258,19 @@ export default function Layout() {
                 }`}
                 onClick={() => setIsBurgerOpen(false)}
               >
-                <item.icon className="w-5 h-5 mr-3" />
+                <item.icon className="w-5 h-5 mr-2" />
                 <span>{item.name}</span>
               </Link>
             ))}
             {user && (
-              <button
-                onClick={() => {
+              <Link
+                to="#"
+                onClick={(e) => {
+                  e.preventDefault();
                   setIsBurgerOpen(false);
                   handleLogout();
                 }}
-                className="nav-link flex items-center mt-2"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                }}
+                className="nav-link mt-2 pr-0"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -283,7 +278,7 @@ export default function Layout() {
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-5 h-5 mr-3"
+                  className="w-5 h-5"
                 >
                   <path
                     strokeLinecap="round"
@@ -297,7 +292,7 @@ export default function Layout() {
                   />
                 </svg>
                 <span>Выйти</span>
-              </button>
+              </Link>
             )}
           </div>
         </nav>
@@ -334,6 +329,10 @@ export default function Layout() {
           text-decoration: none;
           transition: background-color 0.2s;
           margin: 0.125rem;
+        }
+
+        .nav-link.pr-0 {
+          padding-right: 0;
         }
 
         .nav-link:hover {
