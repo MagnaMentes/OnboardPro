@@ -122,8 +122,10 @@ export const setupHRWebSocketHandlers = (
       setUserAnalytics(data.data.user_analytics);
     }
 
-    // Устанавливаем флаг обновления в реальном времени
-    setHasRealtimeUpdates(true);
+    // Устанавливаем флаг обновления в реальном времени и время последнего обновления
+    if (setHasRealtimeUpdates && typeof setHasRealtimeUpdates === 'function') {
+      setHasRealtimeUpdates(true);
+    }
     setLastUpdate(new Date());
 
     // Показываем уведомление пользователю
@@ -144,7 +146,9 @@ export const setupHRWebSocketHandlers = (
 
     // При изменении статуса задачи обновляем время последнего обновления
     setLastUpdate(new Date());
-    setHasRealtimeUpdates(true);
+    if (setHasRealtimeUpdates && typeof setHasRealtimeUpdates === 'function') {
+      setHasRealtimeUpdates(true);
+    }
   };
 
   // Обработчик установления соединения
