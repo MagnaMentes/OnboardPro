@@ -54,7 +54,7 @@ if (setHasRealtimeUpdates) {
 
 ```javascript
 // Устанавливаем флаг обновления в реальном времени и время последнего обновления
-if (setHasRealtimeUpdates && typeof setHasRealtimeUpdates === 'function') {
+if (setHasRealtimeUpdates && typeof setHasRealtimeUpdates === "function") {
   setHasRealtimeUpdates(true);
 }
 ```
@@ -72,12 +72,13 @@ if (setHasRealtimeUpdates && typeof setHasRealtimeUpdates === 'function') {
 1. Добавить более строгую типизацию с помощью PropTypes или TypeScript.
 2. Использовать значения по умолчанию для опциональных функций обратного вызова.
 3. При передаче `null` или отсутствии параметра, лучше использовать нулевую функцию вместо `null`:
+
    ```javascript
    const noop = () => {}; // Функция, которая ничего не делает
-   
+
    setupHRWebSocketHandlers(
      // ...другие параметры,
-     hasRealtimeUpdatesHandler || noop,
+     hasRealtimeUpdatesHandler || noop
      // ...другие параметры
    );
    ```

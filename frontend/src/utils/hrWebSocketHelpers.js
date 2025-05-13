@@ -123,7 +123,7 @@ export const setupHRWebSocketHandlers = (
     }
 
     // Устанавливаем флаг обновления в реальном времени и время последнего обновления
-    if (setHasRealtimeUpdates && typeof setHasRealtimeUpdates === 'function') {
+    if (setHasRealtimeUpdates && typeof setHasRealtimeUpdates === "function") {
       setHasRealtimeUpdates(true);
     }
     setLastUpdate(new Date());
@@ -146,7 +146,7 @@ export const setupHRWebSocketHandlers = (
 
     // При изменении статуса задачи обновляем время последнего обновления
     setLastUpdate(new Date());
-    if (setHasRealtimeUpdates && typeof setHasRealtimeUpdates === 'function') {
+    if (setHasRealtimeUpdates && typeof setHasRealtimeUpdates === "function") {
       setHasRealtimeUpdates(true);
     }
   };
