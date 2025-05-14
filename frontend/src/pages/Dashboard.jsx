@@ -10,6 +10,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { getApiBaseUrl } from "../config/api";
 import usePageTitle from "../utils/usePageTitle";
+import TaskStatusToggle from "../components/TaskStatusToggle";
+import TaskStatusTip from "../components/TaskStatusTip";
+import StatusChangeIndicator from "../components/StatusChangeIndicator";
 // Импортируем компоненты и стили из системы темы
 import {
   Card,
@@ -215,16 +218,29 @@ export default function Dashboard() {
     } catch (error) {
       return false;
     }
-  };
+  }; // Состояние для отслеживания выполняющихся запросов на обновление статусов задач
+  const [updatingTaskIds, setUpdatingTaskIds] = useState([]);
+
+  // Состояние для отображения всплывающих уведомлений
+  const [notifications, setNotifications] = useState([]);
+
+  // Состояние для отображения индикатора изменения статуса
+  const [statusChangeIndicator, setStatusChangeIndicator] = useState({
+    show: false,
+    taskId: null,
+    status: null,
+  });
 
   const handleStatusChange = async (taskId, newStatus) => {
     try {
+      // Добавляем задачу в список обновляемых для отображения анимации загрузки
+      setUpdatingTaskIds((prev) => [...prev, taskId]);
+
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("Не авторизован");
       }
 
-      // Исправляем запрос - отправляем статус как параметр запроса, а не в теле
       const response = await fetch(
         `${getApiBaseUrl()}/tasks/${taskId}/status?status=${newStatus}`,
         {
@@ -232,7 +248,6 @@ export default function Dashboard() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          // Убираем тело запроса, так как статус передается как параметр
         }
       );
 
@@ -243,11 +258,44 @@ export default function Dashboard() {
       // Получаем обновленную задачу из ответа
       const updatedTask = await response.json();
 
+      // Обновляем задачу в состоянии
       setTasks((prevTasks) =>
         prevTasks.map((task) => (task.id === taskId ? updatedTask : task))
       );
+
+      // Добавляем уведомление об успешном обновлении
+      const statusLabels = {
+        not_started: "Не начато",
+        in_progress: "В процессе",
+        completed: "Завершено",
+      };
+
+      // Показываем индикатор изменения статуса
+      setStatusChangeIndicator({
+        show: true,
+        taskId: taskId,
+        status: newStatus,
+      });
+
+      // Добавляем уведомление
+      const notification = {
+        id: Date.now(),
+        message: `Статус задачи "${updatedTask.title}" изменён на "${statusLabels[newStatus]}"`,
+        type: "success",
+      };
+      setNotifications((prev) => [...prev, notification]);
+
+      // Удаляем уведомление через 3 секунды
+      setTimeout(() => {
+        setNotifications((prev) =>
+          prev.filter((n) => n.id !== notification.id)
+        );
+      }, 3000);
     } catch (error) {
       setError("Ошибка при обновлении статуса задачи");
+    } finally {
+      // Удаляем задачу из списка обновляемых
+      setUpdatingTaskIds((prev) => prev.filter((id) => id !== taskId));
     }
   };
 
@@ -319,6 +367,27 @@ export default function Dashboard() {
     );
   };
 
+  // Компонент для отображения уведомлений
+  const Notification = ({ notification }) => {
+    const typeClasses = {
+      success: "bg-green-100 border-green-400 text-green-700",
+      error: "bg-red-100 border-red-400 text-red-700",
+      warning: "bg-yellow-100 border-yellow-400 text-yellow-700",
+      info: "bg-blue-100 border-blue-400 text-blue-700",
+    };
+
+    return (
+      <div
+        className={`${
+          typeClasses[notification.type]
+        } border-l-4 p-3 rounded-r shadow-sm mb-2 
+        animate-fade-in-out transition-all duration-300 ease-in-out`}
+      >
+        {notification.message}
+      </div>
+    );
+  };
+
   // Функция для отображения карточки задачи
   const renderTaskCard = (task) => {
     const overdueClass =
@@ -326,17 +395,67 @@ export default function Dashboard() {
         ? "border-red-300 bg-red-50"
         : "";
 
+    // Проверяем, выполняется ли запрос на обновление статуса для этой задачи
+    const isUpdating = updatingTaskIds.includes(task.id);
+
     return (
       <div
         key={task.id}
-        className={`${CARD_STYLES.base} hover:shadow-lg transition-shadow duration-200 ${overdueClass}`}
+        className={`${
+          CARD_STYLES.base
+        } hover:shadow-lg transition-all duration-300 ${overdueClass} 
+        ${isUpdating ? "opacity-80 shadow-md pulse-animation" : ""}`}
       >
+        {/* Индикатор загрузки, если задача обновляется */}
+        {isUpdating && (
+          <div className="absolute inset-0 bg-white bg-opacity-50 rounded-lg flex items-center justify-center z-10">
+            <div className="animate-pulse flex space-x-1">
+              <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+              <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+              <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+            </div>
+          </div>
+        )}
+
         {/* Стандартизированный заголовок */}
         <div className={CARD_STYLES.header}>
           <div className="flex items-start justify-between">
             <h4 className={CARD_STYLES.title}>{task.title}</h4>
-            {/* Используем стандартизированный компонент TaskStatus c иконкой */}
-            <TaskStatus status={task.status} size="lg" />
+            {/* Кликабельный индикатор статуса для быстрого переключения */}
+            <TaskStatusTip
+              content={
+                <>
+                  <span className="font-semibold">Статус задачи:</span>{" "}
+                  {task.status === "completed"
+                    ? "Завершено"
+                    : task.status === "in_progress"
+                    ? "В процессе"
+                    : "Не начато"}
+                  <br />
+                  <span className="text-xs opacity-75">
+                    (нажмите для изменения)
+                  </span>
+                </>
+              }
+              position="bottom"
+              showStatusCycle={true}
+              currentStatus={task.status}
+            >
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // При клике циклически меняем статус
+                  const statuses = ["not_started", "in_progress", "completed"];
+                  const currentIndex = statuses.indexOf(task.status);
+                  const nextIndex = (currentIndex + 1) % statuses.length;
+                  const nextStatus = statuses[nextIndex];
+                  handleStatusChange(task.id, nextStatus);
+                }}
+                className="cursor-pointer transition-transform hover:scale-110"
+              >
+                <TaskStatus status={task.status} size="lg" />
+              </div>
+            </TaskStatusTip>
           </div>
         </div>
 
@@ -362,15 +481,11 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center justify-between">
-            <select
-              value={task.status}
-              onChange={(e) => handleStatusChange(task.id, e.target.value)}
-              className={FORM_STYLES.select}
-            >
-              <option value="not_started">Не начато</option>
-              <option value="in_progress">В процессе</option>
-              <option value="completed">Завершено</option>
-            </select>
+            <TaskStatusToggle
+              status={task.status}
+              onChange={(newStatus) => handleStatusChange(task.id, newStatus)}
+              disabled={isUpdating}
+            />
           </div>
         </div>
       </div>
@@ -394,8 +509,73 @@ export default function Dashboard() {
     );
   }
 
+  // Стили для анимаций
+  const animationStyles = `
+    @keyframes pulse-animation {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.02);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes fade-in-out {
+      0% {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      10% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      90% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+    }
+    
+    .pulse-animation {
+      animation: pulse-animation 1.5s ease-in-out infinite;
+    }
+    
+    .animate-fade-in-out {
+      animation: fade-in-out 3s forwards;
+    }
+  `;
+
   return (
     <div className="space-y-6">
+      {/* Вставляем CSS-анимации */}
+      <style>{animationStyles}</style>
+
+      {/* Индикатор изменения статуса задачи */}
+      <StatusChangeIndicator
+        show={statusChangeIndicator.show}
+        status={statusChangeIndicator.status}
+        onAnimationComplete={() =>
+          setStatusChangeIndicator({
+            show: false,
+            taskId: null,
+            status: null,
+          })
+        }
+      />
+
+      {/* Контейнер для уведомлений */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col max-w-sm">
+        {notifications.map((notification) => (
+          <Notification key={notification.id} notification={notification} />
+        ))}
+      </div>
+
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-blue-600">
