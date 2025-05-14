@@ -89,6 +89,9 @@ export default function ManagerDashboard() {
   const [planToDelete, setPlanToDelete] = useState(null);
   const [templateToDelete, setTemplateToDelete] = useState(null);
 
+  const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+
   // Прочие состояния
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -710,6 +713,12 @@ export default function ManagerDashboard() {
     }
   };
 
+  // Функция для открытия диалога подтверждения удаления задачи
+  const openDeleteTaskModal = (task) => {
+    setTaskToDelete(task);
+    setIsDeleteTaskModalOpen(true);
+  };
+
   // Функция для удаления задачи
   const handleDeleteTask = async (taskId) => {
     try {
@@ -966,6 +975,39 @@ export default function ManagerDashboard() {
           </p>
         </Modal>
 
+        {/* Диалог подтверждения удаления задачи */}
+        <Modal
+          isOpen={isDeleteTaskModalOpen}
+          onClose={() => setIsDeleteTaskModalOpen(false)}
+          title="Удаление задачи"
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => setIsDeleteTaskModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleDeleteTask(taskToDelete?.id);
+                  setIsDeleteTaskModalOpen(false);
+                }}
+                className="ml-3 inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Удалить
+              </button>
+            </>
+          }
+        >
+          <p className="text-sm text-gray-500">
+            Вы действительно хотите удалить задачу "{taskToDelete?.title}"? Это
+            действие нельзя отменить.
+          </p>
+        </Modal>
+
         {/* Раздел управления задачами */}
         <div className="bg-white p-6 rounded-lg shadow-md overflow-hidden">
           <div className="flex flex-wrap justify-between items-center mb-6">
@@ -1081,36 +1123,9 @@ export default function ManagerDashboard() {
                       {/* Заголовок и статус */}
                       <div className="flex justify-between items-start">
                         <div className="flex-grow pr-3">
-                          <h4 className="font-medium text-gray-900 line-clamp-2">
-                            {task.title}
-                          </h4>
-                        </div>
-                        <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center">
-                            {getStatusIcon(task.status)}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Информационная секция */}
-                      <div className="mt-3 space-y-2 text-sm">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center text-gray-700">
-                            <CalendarIcon className="h-4 w-4 text-gray-500 mr-1.5" />
-                            <span
-                              className={`${
-                                new Date(task.deadline) < new Date() &&
-                                task.status !== "completed"
-                                  ? "text-red-600 font-medium"
-                                  : ""
-                              }`}
-                            >
-                              {formatDate(task.deadline)}
-                            </span>
-                          </div>
-                          <div>
+                          <div className="flex items-center">
                             <div
-                              className={`w-3 h-3 rounded-full ${
+                              className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${
                                 task.priority === "high"
                                   ? "bg-red-500"
                                   : task.priority === "medium"
@@ -1125,6 +1140,33 @@ export default function ManagerDashboard() {
                                   : "Низкий"
                               }`}
                             ></div>
+                            <h4 className="font-medium text-gray-900 line-clamp-2">
+                              {task.title}
+                            </h4>
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <div className="flex items-center justify-center">
+                            {getStatusIcon(task.status)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Информационная секция */}
+                      <div className="mt-3 space-y-2 text-sm">
+                        <div className="flex items-center">
+                          <div className="flex items-center text-gray-700">
+                            <CalendarIcon className="h-4 w-4 text-gray-500 mr-1.5" />
+                            <span
+                              className={`${
+                                new Date(task.deadline) < new Date() &&
+                                task.status !== "completed"
+                                  ? "text-red-600 font-medium"
+                                  : ""
+                              }`}
+                            >
+                              {formatDate(task.deadline)}
+                            </span>
                           </div>
                         </div>
 
@@ -1158,7 +1200,7 @@ export default function ManagerDashboard() {
                           <PencilIcon className="h-5 w-5" />
                         </button>
                         <button
-                          onClick={() => handleDeleteTask(task.id)}
+                          onClick={() => openDeleteTaskModal(task)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
                           title="Удалить задачу"
                           aria-label="Удалить задачу"
@@ -1214,24 +1256,7 @@ export default function ManagerDashboard() {
                               )}
                             </div>
                           </th>
-                          <th
-                            scope="col"
-                            className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[10%]"
-                            onClick={() => toggleSortDirection("priority")}
-                          >
-                            <div className="flex items-center justify-center">
-                              <span>Приоритет</span>
-                              {taskSortField === "priority" && (
-                                <span className="ml-1">
-                                  {taskSortDirection === "asc" ? (
-                                    <ArrowUpIcon className="h-3 w-3 text-gray-500" />
-                                  ) : (
-                                    <ArrowDownIcon className="h-3 w-3 text-gray-500" />
-                                  )}
-                                </span>
-                              )}
-                            </div>
-                          </th>
+
                           <th
                             scope="col"
                             className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[10%]"
@@ -1266,7 +1291,12 @@ export default function ManagerDashboard() {
                             scope="col"
                             className="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[90px]"
                           >
-                            <span className="sr-only">Действия</span>
+                            <div className="flex justify-end">
+                              <AdjustmentsVerticalIcon
+                                className="h-4 w-4 text-gray-500"
+                                title="Действия"
+                              />
+                            </div>
                           </th>
                         </tr>
                       </thead>
@@ -1277,8 +1307,26 @@ export default function ManagerDashboard() {
                             className="hover:bg-gray-50 transition-colors"
                           >
                             <td className="px-6 py-4">
-                              <div className="text-sm font-medium text-gray-900 truncate">
-                                {task.title}
+                              <div className="flex items-center">
+                                <div
+                                  className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${
+                                    task.priority === "high"
+                                      ? "bg-red-500"
+                                      : task.priority === "medium"
+                                      ? "bg-yellow-500"
+                                      : "bg-green-500"
+                                  }`}
+                                  title={`Приоритет: ${
+                                    task.priority === "high"
+                                      ? "Высокий"
+                                      : task.priority === "medium"
+                                      ? "Средний"
+                                      : "Низкий"
+                                  }`}
+                                ></div>
+                                <div className="text-sm font-medium text-gray-900 truncate">
+                                  {task.title}
+                                </div>
                               </div>
                             </td>
                             <td className="px-2 py-4">
@@ -1328,7 +1376,7 @@ export default function ManagerDashboard() {
                                   <span className="sr-only">Редактировать</span>
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteTask(task.id)}
+                                  onClick={() => openDeleteTaskModal(task)}
                                   className="text-red-600 hover:text-white hover:bg-red-500 p-1.5 rounded transition-colors focus:outline-none"
                                   title="Удалить задачу"
                                 >
@@ -1391,7 +1439,12 @@ export default function ManagerDashboard() {
                             className="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                             style={{ width: "80px" }}
                           >
-                            <span className="sr-only">Действия</span>
+                            <div className="flex justify-end">
+                              <AdjustmentsVerticalIcon
+                                className="h-4 w-4 text-gray-500"
+                                title="Действия"
+                              />
+                            </div>
                           </th>
                         </tr>
                       </thead>
@@ -1403,12 +1456,9 @@ export default function ManagerDashboard() {
                           >
                             <td className="px-4 py-3">
                               <div className="flex flex-col">
-                                <div className="text-sm font-medium text-gray-900 truncate">
-                                  {task.title}
-                                </div>
-                                <div className="flex items-center mt-1">
+                                <div className="flex items-center">
                                   <div
-                                    className={`w-2.5 h-2.5 rounded-full mr-2 ${
+                                    className={`w-2.5 h-2.5 rounded-full mr-2 flex-shrink-0 ${
                                       task.priority === "high"
                                         ? "bg-red-500"
                                         : task.priority === "medium"
@@ -1423,7 +1473,12 @@ export default function ManagerDashboard() {
                                         : "Низкий"
                                     }`}
                                   ></div>
-                                  <span className="text-xs text-gray-500 truncate">
+                                  <div className="text-sm font-medium text-gray-900 truncate">
+                                    {task.title}
+                                  </div>
+                                </div>
+                                <div className="flex items-center mt-1">
+                                  <span className="text-xs text-gray-500 truncate ml-4">
                                     {task.user_id
                                       ? getDisplayName(task.user_id)
                                       : "Не назначено"}
@@ -1462,7 +1517,7 @@ export default function ManagerDashboard() {
                                   <span className="sr-only">Редактировать</span>
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteTask(task.id)}
+                                  onClick={() => openDeleteTaskModal(task)}
                                   className="text-red-600 hover:text-red-900 bg-white hover:bg-red-50 p-1 rounded-full transition-colors"
                                   title="Удалить задачу"
                                 >
