@@ -122,7 +122,7 @@ const Profiles = () => {
 
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get(`${apiBaseUrl}/departments`, {
+        const response = await axios.get(`${apiBaseUrl}/api/departments`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Загружены отделы:", response.data);
@@ -1543,7 +1543,7 @@ const Profiles = () => {
           // Обновляем список пользователей и отделов после создания нового отдела
           const token = localStorage.getItem("token");
           axios
-            .get(`${apiBaseUrl}/departments`, {
+            .get(`${apiBaseUrl}/api/departments`, {
               headers: { Authorization: `Bearer ${token}` },
             })
             .then((response) => {

@@ -273,28 +273,33 @@ export const SelectField = ({
 /**
  * Стандартная карточка
  */
-export const Card = ({
-  children,
-  title,
-  subtitle,
-  footer,
-  className = "",
-  bodyClassName = "",
-  ...props
-}) => {
-  return (
-    <div className={`${CARD_STYLES.base} ${className}`} {...props}>
-      {(title || subtitle) && (
-        <div className={CARD_STYLES.header}>
-          {title && <h3 className={CARD_STYLES.title}>{title}</h3>}
-          {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
-        </div>
-      )}
-      <div className={`${CARD_STYLES.body} ${bodyClassName}`}>{children}</div>
-      {footer && <div className={CARD_STYLES.footer}>{footer}</div>}
-    </div>
-  );
-};
+export const Card = React.forwardRef(
+  (
+    {
+      children,
+      title,
+      subtitle,
+      footer,
+      className = "",
+      bodyClassName = "",
+      ...props
+    },
+    ref
+  ) => {
+    return (
+      <div ref={ref} className={`${CARD_STYLES.base} ${className}`} {...props}>
+        {(title || subtitle) && (
+          <div className={CARD_STYLES.header}>
+            {title && <h3 className={CARD_STYLES.title}>{title}</h3>}
+            {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+          </div>
+        )}
+        <div className={`${CARD_STYLES.body} ${bodyClassName}`}>{children}</div>
+        {footer && <div className={CARD_STYLES.footer}>{footer}</div>}
+      </div>
+    );
+  }
+);
 
 /**
  * Компонент для поля выбора приоритета задачи

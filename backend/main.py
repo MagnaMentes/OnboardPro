@@ -14,6 +14,16 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from integrations import send_telegram_notification, create_calendar_event, import_workable_employees, handle_telegram_webhook, sync_calendar_task_status, sync_workable_candidate
 from websocket_manager import websocket_manager
+# Импортируем новый модуль форматирования WebSocket сообщений
+from websocket_analytics import get_analytics_formatter
+# Импортируем модуль мониторинга WebSocket
+from websocket_monitor import (
+    websocket_monitor,
+    start_websocket_monitoring,
+    stop_websocket_monitoring,
+    get_websocket_statistics,
+    get_detailed_websocket_stats
+)
 # Импортируем роутеры API
 from api.task_templates import router as task_templates_router
 from api.portal import router as portal_router
@@ -647,7 +657,16 @@ async def create_task(
 
     # Обновляем аналитику в реальном времени
     analytics_data = await get_analytics_data_for_websocket()
-    await websocket_manager.broadcast_analytics_update(analytics_data)
+
+    # Используем форматтер аналитических сообщений для создания правильной структуры
+    formatter = get_analytics_formatter()
+    # Валидируем структуру данных аналитики
+    validated_data = formatter.validate_analytics_data(analytics_data)
+    # Форматируем сообщение в соответствии с ожиданиями фронтенда
+    formatted_analytics = formatter.format_analytics_message(
+        validated_data, db_task.id)
+
+    await websocket_manager.broadcast_analytics_update(formatted_analytics)
 
     return db_task
 
@@ -744,21 +763,21 @@ async def update_task_status(
         await websocket_manager.notify_task_status_change(task_data)
 
         # Добавляем небольшую задержку перед отправкой аналитических данных
-        await asyncio.sleep(0.5)
-
         # Всегда отправляем обновление аналитики при любом изменении статуса
+        await asyncio.sleep(0.5)
         # Получаем свежие данные аналитики
         analytics_data = await get_analytics_data_for_websocket()
 
-        # Добавляем метаинформацию о том, что это обновление задачи
-        analytics_data["metadata"] = {
-            "triggered_by_task_id": task_id,
-            "real_time_update": True,
-            "generated_at": datetime.now().isoformat()
-        }
+        # Используем форматтер аналитических сообщений для создания правильной структуры
+        formatter = get_analytics_formatter()
+        # Валидируем структуру данных аналитики
+        validated_data = formatter.validate_analytics_data(analytics_data)
+        # Форматируем сообщение в соответствии с ожиданиями фронтенда
+        formatted_analytics = formatter.format_analytics_message(
+            validated_data, task_id)
 
         # Отправляем через WebSocket HR пользователям
-        await websocket_manager.broadcast_analytics_update(analytics_data)
+        await websocket_manager.broadcast_analytics_update(formatted_analytics)
 
         # Логируем успешную отправку обновлений
         logger.info(
@@ -810,7 +829,16 @@ async def delete_task(
 
     # Обновляем аналитику в реальном времени
     analytics_data = await get_analytics_data_for_websocket()
-    await websocket_manager.broadcast_analytics_update(analytics_data)
+
+    # Используем форматтер аналитических сообщений для создания правильной структуры
+    formatter = get_analytics_formatter()
+    # Валидируем структуру данных аналитики
+    validated_data = formatter.validate_analytics_data(analytics_data)
+    # Форматируем сообщение в соответствии с ожиданиями фронтенда
+    formatted_analytics = formatter.format_analytics_message(
+        validated_data, task_id)
+
+    await websocket_manager.broadcast_analytics_update(formatted_analytics)
 
     return {"message": "Task deleted successfully"}
 
@@ -1126,14 +1154,22 @@ async def get_analytics_summary(
     completed_task_query = db.query(models.Task).filter(
         models.Task.status == "completed")
 
+    # Запрос для задач в процессе
+    in_progress_task_query = db.query(models.Task).filter(
+        models.Task.status == "in_progress")
+
     # Применяем фильтрацию по датам к задачам, если указаны
     if start_date:
         task_query = task_query.filter(models.Task.created_at >= start_date)
         completed_task_query = completed_task_query.filter(
             models.Task.created_at >= start_date)
+        in_progress_task_query = in_progress_task_query.filter(
+            models.Task.created_at >= start_date)
     if end_date:
         task_query = task_query.filter(models.Task.created_at <= end_date)
         completed_task_query = completed_task_query.filter(
+            models.Task.created_at <= end_date)
+        in_progress_task_query = in_progress_task_query.filter(
             models.Task.created_at <= end_date)
 
     # Фильтрация по отделу требует join с таблицей пользователей
@@ -1142,10 +1178,13 @@ async def get_analytics_summary(
             .filter(models.User.department == department)
         completed_task_query = completed_task_query.join(models.User, models.Task.user_id == models.User.id) \
             .filter(models.User.department == department)
+        in_progress_task_query = in_progress_task_query.join(models.User, models.Task.user_id == models.User.id) \
+            .filter(models.User.department == department)
 
     # Получаем статистику по задачам с применёнными фильтрами
     total_tasks = task_query.count()
     completed_tasks = completed_task_query.count()
+    in_progress_tasks = in_progress_task_query.count()
     completion_rate = completed_tasks / total_tasks if total_tasks > 0 else 0
 
     # Статистика по отзывам с учётом фильтров
@@ -1212,6 +1251,50 @@ async def get_analytics_summary(
         # Если расчет не удался, оставляем NPS = 0
         pass
 
+    # Получаем детальную информацию о задачах в процессе
+    in_progress_tasks_details = []
+    tasks_in_progress = in_progress_task_query.all()
+
+    for task in tasks_in_progress:
+        try:
+            # Получаем информацию о пользователе-исполнителе
+            assignee = db.query(models.User).filter(
+                models.User.id == task.user_id).first()
+
+            # Безопасное извлечение данных с проверками на None
+            task_details = {
+                "id": task.id,
+                "title": task.title if task.title else "Без названия",
+                "priority": task.priority if task.priority else "medium",
+                "status": task.status if task.status else "in_progress",
+                "created_at": task.created_at.isoformat() if task.created_at else None,
+                "deadline": task.deadline.isoformat() if task.deadline else None,
+            }
+
+            # Добавляем информацию о пользователе, если она доступна
+            if assignee:
+                full_name = " ".join(
+                    filter(None, [assignee.first_name, assignee.last_name])).strip()
+                task_details.update({
+                    "assignee_name": full_name if full_name else assignee.email,
+                    "assignee_id": assignee.id,
+                    "department": assignee.department if assignee.department else "Не указано",
+                    "user_id": assignee.id  # Добавляем для совместимости
+                })
+            else:
+                task_details.update({
+                    "assignee_name": "Не назначено",
+                    "assignee_id": None,
+                    "department": "Не указано",
+                    "user_id": task.user_id if hasattr(task, 'user_id') else None
+                })
+
+            in_progress_tasks_details.append(task_details)
+        except Exception as e:
+            logger.error(
+                f"Analytics: Ошибка при обработке задачи {task.id}: {str(e)}")
+            continue
+
     # Подготавливаем результат с метаданными версионирования
     timestamp = datetime.now().isoformat()
     version = int(time.time() * 1000)  # Уникальная версия для каждого запроса
@@ -1220,7 +1303,9 @@ async def get_analytics_summary(
         "task_stats": {
             "total": total_tasks,
             "completed": completed_tasks,
+            "in_progress": in_progress_tasks,  # Добавляем количество задач в процессе
             "completion_rate": completion_rate,
+            "in_progress_tasks_details": in_progress_tasks_details,  # Добавляем детали задач
             "priority": priority_stats
         },
         "feedback_stats": {
@@ -1586,6 +1671,73 @@ async def get_user_analytics(
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+# API маршруты для мониторинга WebSocket (примерно в конце файла, перед @app.websocket("/ws"))
+
+@app.on_event("startup")
+async def startup_event():
+    """Запуск сервисов при старте приложения"""
+    # Запускаем мониторинг WebSocket соединений с интервалом проверки 60 секунд
+    await start_websocket_monitoring(check_interval_seconds=60)
+    logger.info("WebSocket мониторинг запущен")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Остановка сервисов при завершении работы приложения"""
+    # Останавливаем мониторинг WebSocket соединений
+    await stop_websocket_monitoring()
+    logger.info("WebSocket мониторинг остановлен")
+
+
+@app.get("/api/websocket/stats")
+async def get_websocket_stats(
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Получение общей статистики WebSocket соединений"""
+    # Проверяем права доступа (только HR или администраторы)
+    if current_user.role.lower() not in ["hr", "admin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Недостаточно прав для просмотра статистики WebSocket"
+        )
+
+    # Получаем общую статистику WebSocket
+    stats = get_websocket_statistics()
+    # Добавляем статистику от WebSocketManager
+    manager_stats = websocket_manager.get_stats()
+
+    # Объединяем информацию
+    combined_stats = {
+        "connection_stats": stats,
+        "manager_stats": manager_stats,
+        "timestamp": datetime.now().isoformat()
+    }
+
+    return combined_stats
+
+
+@app.get("/api/websocket/connections")
+async def get_websocket_connections(
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Получение детальной информации о WebSocket соединениях"""
+    # Проверяем права доступа (только HR или администраторы)
+    if current_user.role.lower() not in ["hr", "admin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Недостаточно прав для просмотра статистики WebSocket"
+        )
+
+    # Получаем детальную статистику по каждому соединению
+    detailed_stats = get_detailed_websocket_stats()
+
+    return {
+        "connections": detailed_stats,
+        "total_count": len(detailed_stats),
+        "timestamp": datetime.now().isoformat()
+    }
 
 
 # WebSocket endpoint для подключения к серверу

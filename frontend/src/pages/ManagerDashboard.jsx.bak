@@ -38,10 +38,7 @@ import Modal from "../components/common/Modal"; // Импорт универса
 import TaskModal from "../components/TaskModal"; // Импорт компонента TaskModal
 import PlanForm from "../components/specific/PlanForm"; // Импорт компонента PlanForm
 import TaskTemplateForm from "../components/specific/TaskTemplateForm"; // Импорт компонента TaskTemplateForm
-import {
-  TaskFilterPanel,
-  TemplatesPanel,
-} from "../components/specific/manager/FilterPanels"; // Импорт компонентов фильтров для менеджера
+import { TaskFilterPanel, TemplatesPanel } from "../components/specific/manager/FilterPanels"; // Импорт компонентов фильтров для менеджера
 
 // Импортируем компоненты и стили из нашей новой системы темы
 import {
@@ -1019,23 +1016,16 @@ export default function ManagerDashboard() {
                   taskPlanFilter,
                   taskSortField,
                   taskSortDirection,
-                  taskSearchQuery,
+                  taskSearchQuery
                 }}
                 handleFilterChange={(newFilters) => {
-                  if (newFilters.taskStatusFilter !== undefined)
-                    setTaskStatusFilter(newFilters.taskStatusFilter);
-                  if (newFilters.taskPriorityFilter !== undefined)
-                    setTaskPriorityFilter(newFilters.taskPriorityFilter);
-                  if (newFilters.taskUserFilter !== undefined)
-                    setTaskUserFilter(newFilters.taskUserFilter);
-                  if (newFilters.taskPlanFilter !== undefined)
-                    setTaskPlanFilter(newFilters.taskPlanFilter);
-                  if (newFilters.taskSortField !== undefined)
-                    setTaskSortField(newFilters.taskSortField);
-                  if (newFilters.taskSortDirection !== undefined)
-                    setTaskSortDirection(newFilters.taskSortDirection);
-                  if (newFilters.taskSearchQuery !== undefined)
-                    setTaskSearchQuery(newFilters.taskSearchQuery);
+                  if (newFilters.taskStatusFilter !== undefined) setTaskStatusFilter(newFilters.taskStatusFilter);
+                  if (newFilters.taskPriorityFilter !== undefined) setTaskPriorityFilter(newFilters.taskPriorityFilter);
+                  if (newFilters.taskUserFilter !== undefined) setTaskUserFilter(newFilters.taskUserFilter);
+                  if (newFilters.taskPlanFilter !== undefined) setTaskPlanFilter(newFilters.taskPlanFilter);
+                  if (newFilters.taskSortField !== undefined) setTaskSortField(newFilters.taskSortField);
+                  if (newFilters.taskSortDirection !== undefined) setTaskSortDirection(newFilters.taskSortDirection);
+                  if (newFilters.taskSearchQuery !== undefined) setTaskSearchQuery(newFilters.taskSearchQuery);
                 }}
                 users={users}
                 plans={plans}
@@ -1547,9 +1537,9 @@ export default function ManagerDashboard() {
                   }`}
                 />
               </div>
-
+              
               {templatesListMounted && (
-                <TemplatesPanel
+                <TemplatesPanel 
                   templates={templates}
                   setIsTemplatesListOpen={setIsTemplatesListOpen}
                   handleCreateTemplate={() => {
@@ -1562,6 +1552,67 @@ export default function ManagerDashboard() {
                   isVisible={isTemplatesListOpen}
                 />
               )}
+            </div>
+          )}
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {templates.map((template) => (
+                          <tr key={template.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <DocumentDuplicateIcon className="h-4 w-4 text-purple-500 mr-2" />
+                                <span className="text-sm font-medium text-gray-900">
+                                  {template.title}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="text-sm text-gray-500 line-clamp-1">
+                                {template.description || "—"}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="text-sm text-gray-500">
+                                {template.role || "Любая"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="text-sm text-gray-500">
+                                {template.department || "Любой"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
+                              {hasRole(userRole, ["hr"]) ? (
+                                <div className="flex justify-end space-x-2">
+                                  <button
+                                    onClick={() => handleEditTemplate(template)}
+                                    className="text-blue-600 hover:text-blue-900 focus:outline-none"
+                                    title="Редактировать шаблон"
+                                  >
+                                    <PencilIcon className="h-5 w-5" />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      openDeleteTemplateModal(template)
+                                    }
+                                    className="text-red-600 hover:text-red-900 focus:outline-none"
+                                    title="Удалить шаблон"
+                                  >
+                                    <TrashIcon className="h-5 w-5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-xs">
+                                  Только просмотр
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

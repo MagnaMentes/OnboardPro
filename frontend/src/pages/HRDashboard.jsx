@@ -11,7 +11,6 @@ import {
   ArrowDownTrayIcon,
   ChartBarIcon,
   ExclamationTriangleIcon,
-  ArrowPathIcon,
   AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 import AnalyticsChart from "../components/specific/AnalyticsChart";
@@ -31,7 +30,6 @@ import {
   ChartFilterPanel,
 } from "../components/specific/hr/FilterPanels";
 import KPIPanel from "../components/specific/hr/KPIPanel";
-import InProgressTasksList from "../components/specific/hr/InProgressTasksList";
 
 // Импортируем вспомогательные утилиты для обработки данных и управления WebSocket
 import {
@@ -50,7 +48,6 @@ export default function HRDashboard() {
   const [userAnalytics, setUserAnalytics] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [departments, setDepartments] = useState([]);
   const [filters, setFilters] = useState(() => {
@@ -73,8 +70,38 @@ export default function HRDashboard() {
   const [activeTab, setActiveTab] = useState("analytics");
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [showChartFiltersPanel, setShowChartFiltersPanel] = useState(false);
-  const [hasRealtimeUpdates, setHasRealtimeUpdates] = useState(false);
+  const [filtersPanelMounted, setFiltersPanelMounted] = useState(false);
+  const [chartFiltersPanelMounted, setChartFiltersPanelMounted] =
+    useState(false);
   const [wsDisabled] = useState(false); // Флаг для отключения WebSocket
+
+  // Управление монтированием панелей фильтров для правильной анимации
+  useEffect(() => {
+    // Для панели фильтров - сразу монтируем при первом показе
+    if (showFiltersPanel && !filtersPanelMounted) {
+      setFiltersPanelMounted(true);
+    } else if (!showFiltersPanel && filtersPanelMounted) {
+      // Задержка размонтирования для завершения анимации
+      const timer = setTimeout(() => {
+        setFiltersPanelMounted(false);
+      }, 500); // Увеличиваем время для гарантии завершения анимации
+      return () => clearTimeout(timer);
+    }
+  }, [showFiltersPanel, filtersPanelMounted]);
+
+  // Отдельный эффект для управления панелью фильтров графиков
+  useEffect(() => {
+    // Для панели фильтров графиков - сразу монтируем при первом показе
+    if (showChartFiltersPanel && !chartFiltersPanelMounted) {
+      setChartFiltersPanelMounted(true);
+    } else if (!showChartFiltersPanel && chartFiltersPanelMounted) {
+      // Задержка размонтирования для завершения анимации
+      const timer = setTimeout(() => {
+        setChartFiltersPanelMounted(false);
+      }, 500); // Увеличиваем время для гарантии завершения анимации
+      return () => clearTimeout(timer);
+    }
+  }, [showChartFiltersPanel, chartFiltersPanelMounted]);
 
   useEffect(() => {
     localStorage.setItem("hrDashboardFilters", JSON.stringify(filters));
@@ -197,18 +224,16 @@ export default function HRDashboard() {
         await fetchUpdatedAnalytics();
         const now = new Date();
         setLastUpdate(now);
-        setIsRefreshing(false);
       } catch (err) {
         console.error("Ошибка при загрузке данных:", err);
         setError(err.message || "Не удалось загрузить данные");
-        setIsRefreshing(false);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [filters, isRefreshing, fetchUpdatedAnalytics]);
+  }, [filters, fetchUpdatedAnalytics]);
 
   // Инициализация WebSocket соединения
   useEffect(() => {
@@ -236,7 +261,7 @@ export default function HRDashboard() {
       setPreviousAnalytics,
       setTaskAnalytics,
       setUserAnalytics,
-      setHasRealtimeUpdates,
+      null, // раньше здесь было setHasRealtimeUpdates
       setLastUpdate,
       toast
     );
@@ -269,26 +294,16 @@ export default function HRDashboard() {
     }));
   };
 
+  // Пустая функция для совместимости с компонентами FilterPanels
   const refreshData = () => {
-    setIsRefreshing(true);
-    toast.info("Обновление данных...");
+    // Загружаем данные с сервера, не показывая загрузку в интерфейсе
+    fetchUpdatedAnalytics().catch((err) => {
+      console.error("Ошибка при обновлении данных:", err);
+    });
   };
 
   const handleExportCSV = async () => {
     // ... существующий код ...
-  };
-
-  // Эта функция теперь реализована в StatCard.jsx
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("ru-RU", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
   };
 
   // Теперь импортируем вместо локального определения
@@ -361,12 +376,6 @@ export default function HRDashboard() {
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <strong className="font-bold">Ошибка!</strong>
         <span className="block sm:inline"> {error}</span>
-        <button
-          onClick={refreshData}
-          className="mt-2 px-3 py-1 bg-red-200 text-red-800 rounded hover:bg-red-300"
-        >
-          Повторить
-        </button>
       </div>
     );
   }
@@ -422,32 +431,13 @@ export default function HRDashboard() {
 
         <div className="flex items-center space-x-3">
           <Button
-            onClick={() => setShowFiltersPanel(!showFiltersPanel)}
-            variant="secondary"
+            onClick={() => setShowFiltersPanel((prev) => !prev)}
+            variant={showFiltersPanel ? "primary" : "secondary"}
             size="sm"
             className="flex items-center"
           >
             <AdjustmentsHorizontalIcon className="h-4 w-4 mr-2" />
             Фильтры
-          </Button>
-
-          {lastUpdate && (
-            <span className="hidden sm:inline-block text-xs text-gray-500 mr-3">
-              Обновлено: {formatDate(lastUpdate)}
-              {hasRealtimeUpdates && " (real-time)"}
-            </span>
-          )}
-          <Button
-            onClick={refreshData}
-            disabled={isRefreshing}
-            variant="secondary"
-            size="sm"
-            className="flex items-center"
-          >
-            <ArrowPathIcon
-              className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            Обновить
           </Button>
         </div>
       </div>
@@ -464,23 +454,14 @@ export default function HRDashboard() {
           </div>
         )}
 
-        {showFiltersPanel && (
+        {filtersPanelMounted && (
           <FilterPanel
             filters={filters}
+            handleFilterChange={handleFilterChange}
             departments={departments}
-            onFilterChange={handleFilterChange}
-            onClose={() => setShowFiltersPanel(false)}
-            onApply={() => {
-              refreshData();
-              setShowFiltersPanel(false);
-            }}
-            onReset={() =>
-              handleFilterChange({
-                startDate: "",
-                endDate: "",
-                department: "",
-              })
-            }
+            setShowFiltersPanel={setShowFiltersPanel}
+            refreshData={refreshData}
+            isVisible={showFiltersPanel}
           />
         )}
 
@@ -603,13 +584,6 @@ export default function HRDashboard() {
                   </div>
                 </div>
 
-                {/* Компонент для отображения задач в процессе выполнения */}
-                {taskStats?.in_progress_tasks_details && (
-                  <InProgressTasksList
-                    inProgressTasks={taskStats.in_progress_tasks_details}
-                  />
-                )}
-
                 <div className="flex justify-end">
                   <Button
                     onClick={handleExportCSV}
@@ -631,9 +605,11 @@ export default function HRDashboard() {
                       </h3>
                       <Button
                         onClick={() =>
-                          setShowChartFiltersPanel(!showChartFiltersPanel)
+                          setShowChartFiltersPanel((prev) => !prev)
                         }
-                        variant="secondary"
+                        variant={
+                          showChartFiltersPanel ? "primary" : "secondary"
+                        }
                         size="sm"
                         className="flex items-center"
                       >
@@ -642,23 +618,14 @@ export default function HRDashboard() {
                       </Button>
                     </div>
 
-                    {showChartFiltersPanel && (
+                    {chartFiltersPanelMounted && (
                       <ChartFilterPanel
                         filters={filters}
+                        handleFilterChange={handleFilterChange}
                         departments={departments}
-                        onFilterChange={handleFilterChange}
-                        onClose={() => setShowChartFiltersPanel(false)}
-                        onApply={() => {
-                          refreshData();
-                          setShowChartFiltersPanel(false);
-                        }}
-                        onReset={() =>
-                          handleFilterChange({
-                            startDate: "",
-                            endDate: "",
-                            department: "",
-                          })
-                        }
+                        setShowChartFiltersPanel={setShowChartFiltersPanel}
+                        refreshData={refreshData}
+                        isVisible={showChartFiltersPanel}
                       />
                     )}
 

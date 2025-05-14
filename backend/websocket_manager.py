@@ -1,11 +1,15 @@
 import asyncio
 import json
 import logging
-import time  # Добавлен импорт модуля time
-from typing import Dict, Set, Any, List
-from starlette.websockets import WebSocket
+import time
+import uuid
+from typing import Dict, Set, Any, List, Optional
+from starlette.websockets import WebSocket, WebSocketState
 from collections import deque
 from datetime import datetime
+
+# Импортируем модуль мониторинга WebSocket
+from websocket_monitor import websocket_monitor
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
@@ -248,13 +252,20 @@ class WebSocketManager:
                 self.active_connections[user_id] = set()
             self.active_connections[user_id].add(websocket)
 
+            # Генерируем уникальный идентификатор клиента для мониторинга
+            client_id = f"user_{user_id}_{int(time.time())}"
+
             # Сохраняем данные пользователя для этого соединения
             self.connection_details[websocket] = {
                 "user_id": user_id,
                 "role": role,
                 "connected_at": datetime.now(),
                 "ip": websocket.client.host if hasattr(websocket, 'client') and websocket.client else "unknown",
+                "client_id": client_id  # Добавляем идентификатор для связи с монитором
             }
+
+            # Регистрируем соединение в мониторе WebSocket для отслеживания
+            await websocket_monitor.register_connection(websocket, client_id, user_id, role)
 
             logger.info(
                 f"WebSocket подключен: пользователь {user_id}, роль {role}, IP {websocket.client.host if hasattr(websocket, 'client') and websocket.client else 'unknown'}")
@@ -279,11 +290,17 @@ class WebSocketManager:
     async def disconnect(self, websocket: WebSocket):
         """Обрабатывает отключение WebSocket"""
         try:
-            # Находим пользователя, которому принадлежит соединение
+            # Находим пользователя и клиентский ID, которому принадлежит соединение
             user_id = None
+            client_id = None
             if websocket in self.connection_details:
                 user_id = self.connection_details[websocket]["user_id"]
+                client_id = self.connection_details[websocket].get("client_id")
                 del self.connection_details[websocket]
+
+            # Уведомляем монитор WebSocket об отключении, если есть client_id
+            if client_id:
+                websocket_monitor.unregister_connection(client_id)
 
             # Удаляем соединение из активных соединений пользователя
             if user_id is not None and user_id in self.active_connections:
@@ -291,9 +308,11 @@ class WebSocketManager:
                 # Если у пользователя больше нет соединений, удаляем его из словаря
                 if not self.active_connections[user_id]:
                     del self.active_connections[user_id]
-                logger.info(f"WebSocket отключен: пользователь {user_id}")
+                logger.info(
+                    f"WebSocket отключен: пользователь {user_id}, клиент {client_id}")
             else:
-                logger.warning("WebSocket отключен: неизвестный пользователь")
+                logger.warning(
+                    f"WebSocket отключен: неизвестный пользователь (client_id: {client_id})")
 
         except Exception as e:
             logger.error(f"Ошибка при отключении WebSocket: {str(e)}")
@@ -306,8 +325,23 @@ class WebSocketManager:
                 return
 
             user_id = self.connection_details[websocket]["user_id"]
+            client_id = self.connection_details[websocket].get("client_id")
+
+            # Логируем получение сообщения
             logger.debug(
                 f"Сообщение от пользователя {user_id}: {str(message)}")
+
+            # Получаем размер сообщения для отслеживания метрик
+            message_size = len(json.dumps(message).encode('utf-8'))
+
+            # Обновляем статистику в мониторе WebSocket
+            if client_id:
+                await websocket_monitor.update_activity(
+                    client_id,
+                    received=True,
+                    bytes_count=message_size,
+                    message=message.get("type")
+                )
 
             # Обрабатываем различные типы сообщений
             if message.get("type") == "request_analytics_update":
@@ -333,14 +367,31 @@ class WebSocketManager:
 
             elif message.get("type") == "ping":
                 # Отправляем pong напрямую без очереди
-                await websocket.send_text(json.dumps({
+                pong_message = {
                     "type": "pong",
                     "timestamp": message.get("timestamp", int(datetime.now().timestamp() * 1000))
-                }))
+                }
+                pong_json = json.dumps(pong_message)
+                await websocket.send_text(pong_json)
+
+                # Обновляем статистику отправленного pong сообщения
+                if client_id:
+                    await websocket_monitor.update_activity(
+                        client_id,
+                        sent=True,
+                        bytes_count=len(pong_json.encode('utf-8')),
+                        message="pong"
+                    )
 
         except Exception as e:
             logger.error(
                 f"Ошибка при обработке клиентского сообщения: {str(e)}")
+
+            # Записываем ошибку в мониторе
+            if websocket in self.connection_details:
+                client_id = self.connection_details[websocket].get("client_id")
+                if client_id:
+                    await websocket_monitor.record_error(client_id, f"Ошибка обработки сообщения: {str(e)}")
 
     async def notify_task_status_change(self, task_data: Dict[str, Any]):
         """Оповещает всех пользователей об изменении статуса задачи"""
@@ -486,13 +537,36 @@ class WebSocketManager:
             connections = list(self.active_connections[user_id])
             for websocket in connections:
                 try:
-                    await websocket.send_text(json.dumps(message_data))
+                    # Получаем client_id для мониторинга
+                    client_id = self.connection_details[websocket].get(
+                        "client_id")
+
+                    # Отправляем сообщение
+                    message_json = json.dumps(message_data)
+                    await websocket.send_text(message_json)
+
+                    # Обновляем статистику в мониторе
+                    if client_id:
+                        await websocket_monitor.update_activity(
+                            client_id,
+                            sent=True,
+                            bytes_count=len(message_json.encode("utf-8")),
+                            message=message_data.get("type")
+                        )
+
                     self.messages_sent += 1
                     logger.debug(
                         f"Сообщение отправлено пользователю {user_id}")
                 except Exception as e:
                     logger.error(
                         f"Ошибка при отправке сообщения пользователю {user_id}: {str(e)}")
+
+                    # Записываем ошибку в мониторе
+                    client_id = self.connection_details.get(
+                        websocket, {}).get("client_id")
+                    if client_id:
+                        await websocket_monitor.record_error(client_id, str(e))
+
                     self.message_errors += 1
                     # Если соединение не активно, удаляем его
                     await self.disconnect(websocket)
@@ -503,12 +577,33 @@ class WebSocketManager:
         for websocket, details in list(self.connection_details.items()):
             if details.get("role", "").lower() == role.lower():
                 try:
-                    await websocket.send_text(json.dumps(message_data))
+                    # Получаем client_id для мониторинга
+                    client_id = details.get("client_id")
+
+                    # Отправляем сообщение
+                    message_json = json.dumps(message_data)
+                    await websocket.send_text(message_json)
+
+                    # Обновляем статистику в мониторе
+                    if client_id:
+                        await websocket_monitor.update_activity(
+                            client_id,
+                            sent=True,
+                            bytes_count=len(message_json.encode("utf-8")),
+                            message=message_data.get("type")
+                        )
+
                     self.messages_sent += 1
                     sent_count += 1
                 except Exception as e:
                     logger.error(
                         f"Ошибка при отправке сообщения пользователю с ролью {role}: {str(e)}")
+
+                    # Записываем ошибку в мониторе
+                    client_id = details.get("client_id")
+                    if client_id:
+                        await websocket_monitor.record_error(client_id, str(e))
+
                     self.message_errors += 1
                     # Если соединение не активно, удаляем его
                     await self.disconnect(websocket)
@@ -523,12 +618,35 @@ class WebSocketManager:
             # Копируем набор соединений, чтобы избежать ошибок при модификации во время итерации
             for websocket in list(connections):
                 try:
-                    await websocket.send_text(json.dumps(message_data))
+                    # Получаем client_id для мониторинга
+                    client_id = self.connection_details.get(
+                        websocket, {}).get("client_id")
+
+                    # Отправляем сообщение
+                    message_json = json.dumps(message_data)
+                    await websocket.send_text(message_json)
+
+                    # Обновляем статистику в мониторе
+                    if client_id:
+                        await websocket_monitor.update_activity(
+                            client_id,
+                            sent=True,
+                            bytes_count=len(message_json.encode("utf-8")),
+                            message=message_data.get("type")
+                        )
+
                     self.messages_sent += 1
                     sent_count += 1
                 except Exception as e:
                     logger.error(
                         f"Ошибка при отправке сообщения пользователю {user_id}: {str(e)}")
+
+                    # Записываем ошибку в мониторе
+                    client_id = self.connection_details.get(
+                        websocket, {}).get("client_id")
+                    if client_id:
+                        await websocket_monitor.record_error(client_id, str(e))
+
                     self.message_errors += 1
                     # Если соединение не активно, удаляем его
                     await self.disconnect(websocket)
