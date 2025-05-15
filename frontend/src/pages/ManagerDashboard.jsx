@@ -604,7 +604,10 @@ export default function ManagerDashboard() {
       });
 
       if (!response.ok) {
-        throw new Error("Ошибка при создании шаблона задачи");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.detail || "Ошибка при создании шаблона задачи"
+        );
       }
 
       const createdTemplate = await response.json();
@@ -615,7 +618,7 @@ export default function ManagerDashboard() {
       return createdTemplate;
     } catch (err) {
       console.error("Ошибка при создании шаблона:", err);
-      toast.error(err.message);
+      toast.error(err.message || "Неизвестная ошибка при создании шаблона");
       throw err;
     }
   };
@@ -1009,6 +1012,242 @@ export default function ManagerDashboard() {
             действие нельзя отменить.
           </p>
         </Modal>
+
+        {/* Раздел управления планами адаптации */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="flex items-center text-xl font-semibold text-gray-700">
+              <ClipboardDocumentListIcon className="h-6 w-6 mr-2 text-blue-600" />
+              Управление планами адаптации
+            </h3>
+            <div className="flex space-x-2">
+              <button
+                onClick={refreshPlansFromDatabase}
+                className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                title="Обновить планы из базы данных"
+              >
+                <ArrowPathIcon className="h-4 w-4 mr-1" />
+                Обновить
+              </button>
+              {hasRole(userRole, ["hr"]) && (
+                <>
+                  <button
+                    onClick={() => {
+                      setEditingTemplate(null);
+                      setIsTaskTemplateModalOpen(true);
+                    }}
+                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <DocumentPlusIcon className="w-4 h-4 mr-2" />
+                    Создать шаблон задачи
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingPlan(null);
+                      setIsPlanModalOpen(true);
+                    }}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <FolderPlusIcon className="w-4 h-4 mr-2" />
+                    Создать план
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Раздел с шаблонами задач */}
+          {hasRole(userRole, ["hr", "manager", "Manager"]) && (
+            <div className="mb-6">
+              <div
+                className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
+                onClick={() => setIsTemplatesListOpen(!isTemplatesListOpen)}
+              >
+                <div className="flex items-center">
+                  <DocumentDuplicateIcon className="h-5 w-5 text-purple-600 mr-2" />
+                  <h4 className="text-lg font-medium text-gray-700">
+                    Шаблоны задач
+                  </h4>
+                  <span className="ml-3 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                    {templates.length} шт.
+                  </span>
+                </div>
+                <ChevronDownIcon
+                  className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
+                    isTemplatesListOpen ? "transform rotate-180" : ""
+                  }`}
+                />
+              </div>
+
+              {templatesListMounted && (
+                <TemplatesPanel
+                  templates={templates}
+                  setIsTemplatesListOpen={setIsTemplatesListOpen}
+                  handleCreateTemplate={() => {
+                    setEditingTemplate(null);
+                    setIsTaskTemplateModalOpen(true);
+                  }}
+                  handleEditTemplate={handleEditTemplate}
+                  handleDeleteTemplate={openDeleteTemplateModal}
+                  userRole={userRole}
+                  isVisible={isTemplatesListOpen}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Список планов адаптации */}
+          <div className="mt-4">
+            <h4 className="text-lg font-medium text-gray-700 mb-3">
+              Планы адаптации
+            </h4>
+
+            {plans.length === 0 ? (
+              <div className="bg-white px-4 py-6 text-center text-gray-500 border border-gray-200 rounded-lg">
+                <p>Нет активных планов адаптации</p>
+                {hasRole(userRole, ["hr"]) && (
+                  <button
+                    onClick={() => {
+                      setEditingPlan(null);
+                      setIsPlanModalOpen(true);
+                    }}
+                    className="mt-3 inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <PlusIcon className="w-4 h-4 mr-1" />
+                    Создать план адаптации
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {plans.map((plan) => {
+                  // Получаем все задачи, связанные с этим планом
+                  const planTasks = tasks.filter(
+                    (task) => task.plan_id === plan.id
+                  );
+                  // Считаем процент выполненных задач
+                  const completedTasks = planTasks.filter(
+                    (task) => task.status === "completed"
+                  ).length;
+                  const totalTasks = planTasks.length;
+                  const progressPercentage =
+                    totalTasks > 0
+                      ? Math.round((completedTasks / totalTasks) * 100)
+                      : 0;
+
+                  // Находим пользователя, связанного с планом (если есть)
+                  const assignedUser =
+                    planTasks.length > 0 ? planTasks[0].user_id : null;
+
+                  return (
+                    <div
+                      key={plan.id}
+                      className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+                    >
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          {/* Заголовок с именем сотрудника и фото */}
+                          <div className="flex items-center">
+                            {/* Фото пользователя */}
+                            {assignedUser &&
+                            users.find((u) => u.id === assignedUser)?.photo ? (
+                              <div className="h-8 w-8 rounded-full overflow-hidden mr-3 border border-gray-200 flex-shrink-0">
+                                <img
+                                  src={`${getApiBaseUrl()}${
+                                    users.find((u) => u.id === assignedUser)
+                                      ?.photo
+                                  }`}
+                                  alt="Фото"
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-8 w-8 rounded-full overflow-hidden mr-3 bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                <UserCircleIcon className="h-6 w-6 text-gray-500" />
+                              </div>
+                            )}
+
+                            {/* Имя сотрудника */}
+                            <h3
+                              className="text-lg font-medium text-gray-900 line-clamp-1"
+                              title={
+                                assignedUser
+                                  ? getDisplayName(assignedUser)
+                                  : plan.title
+                              }
+                            >
+                              {assignedUser
+                                ? getDisplayName(assignedUser)
+                                : plan.title}
+                            </h3>
+                          </div>
+
+                          {hasRole(userRole, ["hr"]) && (
+                            <div className="flex space-x-1">
+                              <button
+                                onClick={() => handleEditPlan(plan)}
+                                className="text-blue-600 hover:text-blue-900 focus:outline-none p-1 hover:bg-blue-50 rounded"
+                                title="Редактировать план"
+                              >
+                                <PencilIcon className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => openDeletePlanModal(plan)}
+                                className="text-red-600 hover:text-red-900 focus:outline-none p-1 hover:bg-red-50 rounded"
+                                title="Удалить план"
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Отображаем роль плана */}
+                        <div className="mb-2">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                              plan.role === "manager"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
+                          >
+                            {plan.role === "manager" ? "Менеджер" : "Сотрудник"}
+                          </span>
+                        </div>
+
+                        {/* Отображаем описание плана */}
+                        {plan.description && (
+                          <p
+                            className="text-sm text-gray-600 line-clamp-2 mb-3"
+                            title={plan.description}
+                          >
+                            {plan.description}
+                          </p>
+                        )}
+
+                        {/* Прогресс выполнения задач */}
+                        <div className="mt-2">
+                          <div className="flex justify-between items-center text-xs text-gray-500 mb-1">
+                            <span>
+                              {completedTasks} из {totalTasks} задач выполнено
+                            </span>
+                            <span>{progressPercentage}%</span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 rounded-full"
+                              style={{ width: `${progressPercentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Раздел управления задачами */}
         <div className="bg-white p-6 rounded-lg shadow-md overflow-hidden">
@@ -1537,242 +1776,6 @@ export default function ManagerDashboard() {
               </div>
             </>
           )}
-        </div>
-
-        {/* Раздел управления планами адаптации */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="flex items-center text-xl font-semibold text-gray-700">
-              <ClipboardDocumentListIcon className="h-6 w-6 mr-2 text-blue-600" />
-              Управление планами адаптации
-            </h3>
-            <div className="flex space-x-2">
-              <button
-                onClick={refreshPlansFromDatabase}
-                className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                title="Обновить планы из базы данных"
-              >
-                <ArrowPathIcon className="h-4 w-4 mr-1" />
-                Обновить
-              </button>
-              {hasRole(userRole, ["hr"]) && (
-                <>
-                  <button
-                    onClick={() => {
-                      setEditingTemplate(null);
-                      setIsTaskTemplateModalOpen(true);
-                    }}
-                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <DocumentPlusIcon className="w-4 h-4 mr-2" />
-                    Создать шаблон задачи
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingPlan(null);
-                      setIsPlanModalOpen(true);
-                    }}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <FolderPlusIcon className="w-4 h-4 mr-2" />
-                    Создать план
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Раздел с шаблонами задач */}
-          {hasRole(userRole, ["hr", "manager", "Manager"]) && (
-            <div className="mb-6">
-              <div
-                className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
-                onClick={() => setIsTemplatesListOpen(!isTemplatesListOpen)}
-              >
-                <div className="flex items-center">
-                  <DocumentDuplicateIcon className="h-5 w-5 text-purple-600 mr-2" />
-                  <h4 className="text-lg font-medium text-gray-700">
-                    Шаблоны задач
-                  </h4>
-                  <span className="ml-3 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                    {templates.length} шт.
-                  </span>
-                </div>
-                <ChevronDownIcon
-                  className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
-                    isTemplatesListOpen ? "transform rotate-180" : ""
-                  }`}
-                />
-              </div>
-
-              {templatesListMounted && (
-                <TemplatesPanel
-                  templates={templates}
-                  setIsTemplatesListOpen={setIsTemplatesListOpen}
-                  handleCreateTemplate={() => {
-                    setEditingTemplate(null);
-                    setIsTaskTemplateModalOpen(true);
-                  }}
-                  handleEditTemplate={handleEditTemplate}
-                  handleDeleteTemplate={openDeleteTemplateModal}
-                  userRole={userRole}
-                  isVisible={isTemplatesListOpen}
-                />
-              )}
-            </div>
-          )}
-
-          {/* Список планов адаптации */}
-          <div className="mt-4">
-            <h4 className="text-lg font-medium text-gray-700 mb-3">
-              Планы адаптации
-            </h4>
-
-            {plans.length === 0 ? (
-              <div className="bg-white px-4 py-6 text-center text-gray-500 border border-gray-200 rounded-lg">
-                <p>Нет активных планов адаптации</p>
-                {hasRole(userRole, ["hr"]) && (
-                  <button
-                    onClick={() => {
-                      setEditingPlan(null);
-                      setIsPlanModalOpen(true);
-                    }}
-                    className="mt-3 inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <PlusIcon className="w-4 h-4 mr-1" />
-                    Создать план адаптации
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {plans.map((plan) => {
-                  // Получаем все задачи, связанные с этим планом
-                  const planTasks = tasks.filter(
-                    (task) => task.plan_id === plan.id
-                  );
-                  // Считаем процент выполненных задач
-                  const completedTasks = planTasks.filter(
-                    (task) => task.status === "completed"
-                  ).length;
-                  const totalTasks = planTasks.length;
-                  const progressPercentage =
-                    totalTasks > 0
-                      ? Math.round((completedTasks / totalTasks) * 100)
-                      : 0;
-
-                  // Находим пользователя, связанного с планом (если есть)
-                  const assignedUser =
-                    planTasks.length > 0 ? planTasks[0].user_id : null;
-
-                  return (
-                    <div
-                      key={plan.id}
-                      className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
-                    >
-                      <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          {/* Заголовок с именем сотрудника и фото */}
-                          <div className="flex items-center">
-                            {/* Фото пользователя */}
-                            {assignedUser &&
-                            users.find((u) => u.id === assignedUser)?.photo ? (
-                              <div className="h-8 w-8 rounded-full overflow-hidden mr-3 border border-gray-200 flex-shrink-0">
-                                <img
-                                  src={`${getApiBaseUrl()}${
-                                    users.find((u) => u.id === assignedUser)
-                                      ?.photo
-                                  }`}
-                                  alt="Фото"
-                                  className="h-full w-full object-cover"
-                                />
-                              </div>
-                            ) : (
-                              <div className="h-8 w-8 rounded-full overflow-hidden mr-3 bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                <UserCircleIcon className="h-6 w-6 text-gray-500" />
-                              </div>
-                            )}
-
-                            {/* Имя сотрудника */}
-                            <h3
-                              className="text-lg font-medium text-gray-900 line-clamp-1"
-                              title={
-                                assignedUser
-                                  ? getDisplayName(assignedUser)
-                                  : plan.title
-                              }
-                            >
-                              {assignedUser
-                                ? getDisplayName(assignedUser)
-                                : plan.title}
-                            </h3>
-                          </div>
-
-                          {hasRole(userRole, ["hr"]) && (
-                            <div className="flex space-x-1">
-                              <button
-                                onClick={() => handleEditPlan(plan)}
-                                className="text-blue-600 hover:text-blue-900 focus:outline-none p-1 hover:bg-blue-50 rounded"
-                                title="Редактировать план"
-                              >
-                                <PencilIcon className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => openDeletePlanModal(plan)}
-                                className="text-red-600 hover:text-red-900 focus:outline-none p-1 hover:bg-red-50 rounded"
-                                title="Удалить план"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Отображаем роль плана */}
-                        <div className="mb-2">
-                          <span
-                            className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-                              plan.role === "manager"
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {plan.role === "manager" ? "Менеджер" : "Сотрудник"}
-                          </span>
-                        </div>
-
-                        {/* Отображаем описание плана */}
-                        {plan.description && (
-                          <p
-                            className="text-sm text-gray-600 line-clamp-2 mb-3"
-                            title={plan.description}
-                          >
-                            {plan.description}
-                          </p>
-                        )}
-
-                        {/* Прогресс выполнения задач */}
-                        <div className="mt-2">
-                          <div className="flex justify-between items-center text-xs text-gray-500 mb-1">
-                            <span>
-                              {completedTasks} из {totalTasks} задач выполнено
-                            </span>
-                            <span>{progressPercentage}%</span>
-                          </div>
-                          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-500 rounded-full"
-                              style={{ width: `${progressPercentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Добавление контейнера для уведомлений */}

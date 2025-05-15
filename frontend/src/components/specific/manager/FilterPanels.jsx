@@ -416,8 +416,9 @@ const TemplatesPanel = ({
           <div className="flex justify-end mt-4">
             <Button
               onClick={() => {
-                handleCreateTemplate();
+                // Просто открываем модальное окно создания шаблона вместо вызова функции создания
                 setIsTemplatesListOpen(false);
+                handleCreateTemplate(); // Эта функция теперь должна открывать модальное окно, а не создавать шаблон
               }}
               variant="primary"
               size="md"

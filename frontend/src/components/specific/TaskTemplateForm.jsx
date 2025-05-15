@@ -149,34 +149,10 @@ const TaskTemplateForm = ({
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token");
-
-      let response;
-
-      if (editTemplate) {
-        // Обновление существующего шаблона
-        response = await axios.put(
-          `${apiUrl}/api/task_templates/${editTemplate.id}`,
-          formData,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        toast.success(`Шаблон "${formData.title}" успешно обновлен`);
-      } else {
-        // Создание нового шаблона
-        response = await axios.post(`${apiUrl}/api/task_templates`, formData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        toast.success(`Шаблон "${formData.title}" успешно создан`);
-      }
-
-      // Инвалидация кэша шаблонов для обновления данных
-      queryClient.invalidateQueries(["taskTemplates"]);
-
-      // Вызов колбэка с данными созданного/обновленного шаблона
+      // Вызываем колбэк с данными формы
+      // Вместо самостоятельной отправки HTTP запросов, передаем данные наверх
       if (onTemplateCreated) {
-        onTemplateCreated(response.data);
+        await onTemplateCreated(formData);
       }
 
       // Очистка формы после успешного создания
@@ -189,11 +165,14 @@ const TaskTemplateForm = ({
           role: "employee",
           department: "",
         });
+
+        // Инвалидация кэша шаблонов для корректного обновления данных
+        queryClient.invalidateQueries(["taskTemplates"]);
       }
     } catch (error) {
       console.error("Ошибка при сохранении шаблона:", error);
       const errorMessage =
-        error.response?.data?.detail || "Ошибка при сохранении шаблона";
+        typeof error === "string" ? error : "Ошибка при сохранении шаблона";
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
