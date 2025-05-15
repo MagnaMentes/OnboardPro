@@ -42,6 +42,7 @@ import {
   TaskFilterPanel,
   TemplatesPanel,
 } from "../components/specific/manager/FilterPanels"; // Импорт компонентов фильтров для менеджера
+import TaskItem from "../components/specific/manager/TaskItem"; // Импорт компонента для визуального отличия типов задач
 
 // Импортируем компоненты и стили из нашей новой системы темы
 import {
@@ -99,6 +100,7 @@ export default function ManagerDashboard() {
   const [isUpdatingTask, setIsUpdatingTask] = useState(false);
   const [taskStatusFilter, setTaskStatusFilter] = useState("all");
   const [taskPriorityFilter, setTaskPriorityFilter] = useState("all");
+  const [taskTypeFilter, setTaskTypeFilter] = useState("all");
   const [taskUserFilter, setTaskUserFilter] = useState("all");
   const [taskPlanFilter, setTaskPlanFilter] = useState("all");
   const [taskSortField, setTaskSortField] = useState("deadline");
@@ -274,6 +276,7 @@ export default function ManagerDashboard() {
     setTaskPriorityFilter("all");
     setTaskUserFilter("all");
     setTaskPlanFilter("all");
+    setTaskTypeFilter("all");
     setTaskSearchQuery("");
   };
 
@@ -316,6 +319,15 @@ export default function ManagerDashboard() {
       );
     }
 
+    // Фильтр по типу задачи
+    if (taskTypeFilter !== "all") {
+      if (taskTypeFilter === "template") {
+        result = result.filter((task) => task.is_template === true);
+      } else if (taskTypeFilter === "custom") {
+        result = result.filter((task) => task.is_template !== true);
+      }
+    }
+
     // Затем применяем сортировку
     result.sort((a, b) => {
       let compareResult = 0;
@@ -351,6 +363,7 @@ export default function ManagerDashboard() {
     taskPriorityFilter,
     taskUserFilter,
     taskPlanFilter,
+    taskTypeFilter,
     taskSortField,
     taskSortDirection,
   ]);
@@ -1033,16 +1046,6 @@ export default function ManagerDashboard() {
                 <>
                   <button
                     onClick={() => {
-                      setEditingTemplate(null);
-                      setIsTaskTemplateModalOpen(true);
-                    }}
-                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <DocumentPlusIcon className="w-4 h-4 mr-2" />
-                    Создать шаблон задачи
-                  </button>
-                  <button
-                    onClick={() => {
                       setEditingPlan(null);
                       setIsPlanModalOpen(true);
                     }}
@@ -1056,45 +1059,7 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Раздел с шаблонами задач */}
-          {hasRole(userRole, ["hr", "manager", "Manager"]) && (
-            <div className="mb-6">
-              <div
-                className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
-                onClick={() => setIsTemplatesListOpen(!isTemplatesListOpen)}
-              >
-                <div className="flex items-center">
-                  <DocumentDuplicateIcon className="h-5 w-5 text-purple-600 mr-2" />
-                  <h4 className="text-lg font-medium text-gray-700">
-                    Шаблоны задач
-                  </h4>
-                  <span className="ml-3 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                    {templates.length} шт.
-                  </span>
-                </div>
-                <ChevronDownIcon
-                  className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
-                    isTemplatesListOpen ? "transform rotate-180" : ""
-                  }`}
-                />
-              </div>
-
-              {templatesListMounted && (
-                <TemplatesPanel
-                  templates={templates}
-                  setIsTemplatesListOpen={setIsTemplatesListOpen}
-                  handleCreateTemplate={() => {
-                    setEditingTemplate(null);
-                    setIsTaskTemplateModalOpen(true);
-                  }}
-                  handleEditTemplate={handleEditTemplate}
-                  handleDeleteTemplate={openDeleteTemplateModal}
-                  userRole={userRole}
-                  isVisible={isTemplatesListOpen}
-                />
-              )}
-            </div>
-          )}
+          {/* Место, где был удален раздел с шаблонами задач */}
 
           {/* Список планов адаптации */}
           <div className="mt-4">
@@ -1264,6 +1229,18 @@ export default function ManagerDashboard() {
                 <ArrowPathIcon className="h-4 w-4 mr-1" />
                 <span className="text-sm">Обновить</span>
               </button>
+              {hasRole(userRole, ["hr", "manager", "Manager"]) && (
+                <button
+                  onClick={() => {
+                    setEditingTemplate(null);
+                    setIsTaskTemplateModalOpen(true);
+                  }}
+                  className="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                >
+                  <DocumentDuplicateIcon className="w-4 h-4 mr-1" />
+                  <span className="text-sm">Создать шаблон задачи</span>
+                </button>
+              )}
               <button
                 onClick={() => setIsTaskModalOpen(true)}
                 className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
@@ -1303,6 +1280,7 @@ export default function ManagerDashboard() {
                   taskSortField,
                   taskSortDirection,
                   taskSearchQuery,
+                  taskTypeFilter,
                 }}
                 handleFilterChange={(newFilters) => {
                   if (newFilters.taskStatusFilter !== undefined)
@@ -1319,6 +1297,8 @@ export default function ManagerDashboard() {
                     setTaskSortDirection(newFilters.taskSortDirection);
                   if (newFilters.taskSearchQuery !== undefined)
                     setTaskSearchQuery(newFilters.taskSearchQuery);
+                  if (newFilters.taskTypeFilter !== undefined)
+                    setTaskTypeFilter(newFilters.taskTypeFilter);
                 }}
                 users={users}
                 plans={plans}
@@ -1328,6 +1308,46 @@ export default function ManagerDashboard() {
               />
             )}
           </div>
+
+          {/* Раздел с шаблонами задач */}
+          {hasRole(userRole, ["hr", "manager", "Manager"]) && (
+            <div className="mb-6">
+              <div
+                className="flex justify-between items-center py-3 px-4 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100"
+                onClick={() => setIsTemplatesListOpen(!isTemplatesListOpen)}
+              >
+                <div className="flex items-center">
+                  <DocumentDuplicateIcon className="h-5 w-5 text-purple-600 mr-2" />
+                  <h4 className="text-lg font-medium text-gray-700">
+                    Шаблоны задач
+                  </h4>
+                  <span className="ml-3 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                    {templates.length} шт.
+                  </span>
+                </div>
+                <ChevronDownIcon
+                  className={`h-5 w-5 text-purple-600 transition-transform duration-200 ${
+                    isTemplatesListOpen ? "transform rotate-180" : ""
+                  }`}
+                />
+              </div>
+
+              {templatesListMounted && (
+                <TemplatesPanel
+                  templates={templates}
+                  setIsTemplatesListOpen={setIsTemplatesListOpen}
+                  handleCreateTemplate={() => {
+                    setEditingTemplate(null);
+                    setIsTaskTemplateModalOpen(true);
+                  }}
+                  handleEditTemplate={handleEditTemplate}
+                  handleDeleteTemplate={openDeleteTemplateModal}
+                  userRole={userRole}
+                  isVisible={isTemplatesListOpen}
+                />
+              )}
+            </div>
+          )}
 
           {/* Таблица задач / Карточки задач */}
           {filteredAndSortedTasks.length === 0 ? (
@@ -1358,22 +1378,25 @@ export default function ManagerDashboard() {
                 {filteredAndSortedTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="bg-white rounded-lg shadow border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                    className={`bg-white rounded-lg shadow border ${
+                      task.is_template
+                        ? "border-l-4 border-purple-500 bg-purple-50"
+                        : "border-l-4 border-blue-500"
+                    }`}
                   >
                     <div className="p-4">
                       {/* Заголовок и статус */}
                       <div className="flex justify-between items-start">
                         <div className="flex-grow pr-3">
                           <div className="flex items-center">
+                            {task.is_template && (
+                              <div className="flex items-center text-purple-700 mr-2">
+                                <DocumentDuplicateIcon className="h-4 w-4 mr-1" />
+                                <span className="text-xs">Шаблон</span>
+                              </div>
+                            )}
                             <div
                               className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${
-                                task.priority === "high"
-                                  ? "bg-red-500"
-                                  : task.priority === "medium"
-                                  ? "bg-yellow-500"
-                                  : "bg-green-500"
-                              }`}
-                              title={`Приоритет: ${
                                 task.priority === "high"
                                   ? "Высокий"
                                   : task.priority === "medium"
@@ -1545,10 +1568,18 @@ export default function ManagerDashboard() {
                         {filteredAndSortedTasks.map((task) => (
                           <tr
                             key={task.id}
-                            className="hover:bg-gray-50 transition-colors"
+                            className={`hover:bg-gray-50 transition-colors ${
+                              task.is_template ? "bg-purple-50" : ""
+                            }`}
                           >
                             <td className="px-6 py-4">
                               <div className="flex items-center">
+                                {task.is_template && (
+                                  <div className="flex items-center text-purple-700 mr-2">
+                                    <DocumentDuplicateIcon className="h-4 w-4 mr-1" />
+                                    <span className="text-xs">Шаблон</span>
+                                  </div>
+                                )}
                                 <div
                                   className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${
                                     task.priority === "high"
@@ -1693,11 +1724,19 @@ export default function ManagerDashboard() {
                         {filteredAndSortedTasks.map((task) => (
                           <tr
                             key={task.id}
-                            className="hover:bg-gray-50 transition-colors"
+                            className={`hover:bg-gray-50 transition-colors ${
+                              task.is_template ? "bg-purple-50" : ""
+                            }`}
                           >
                             <td className="px-4 py-3">
                               <div className="flex flex-col">
                                 <div className="flex items-center">
+                                  {task.is_template && (
+                                    <div className="flex items-center text-purple-700 mr-2">
+                                      <DocumentDuplicateIcon className="h-4 w-4 mr-1" />
+                                      <span className="text-xs">Шаблон</span>
+                                    </div>
+                                  )}
                                   <div
                                     className={`w-2.5 h-2.5 rounded-full mr-2 flex-shrink-0 ${
                                       task.priority === "high"

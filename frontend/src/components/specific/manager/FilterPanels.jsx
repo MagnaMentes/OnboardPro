@@ -4,116 +4,13 @@ import { Card, Button, FORM_STYLES } from "../../../config/theme";
 import { CSSTransition } from "react-transition-group";
 
 /**
- * Компон          {templates.length === 0 ? (
-            <div className="bg-white px-4 py-6 text-center text-gray-500">
-              <p>Нет доступных шаблонов задач</p>
-            </div>
-          ) : (
-            <div className="overflow-auto max-h-[500px]">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Название
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Приоритет
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Срок (дни)
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Действия
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {templates.map((template) => (
-                    <tr
-                      key={template.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {template.title}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {template.priority === "high" && (
-                          <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                            Высокий
-                          </span>
-                        )}
-                        {template.priority === "medium" && (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                            Средний
-                          </span>
-                        )}
-                        {template.priority === "low" && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                            Низкий
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {template.durationDays}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        <div className="flex justify-center space-x-2">
-                          <button
-                            onClick={() => handleEditTemplate(template)}
-                            className="text-blue-600 hover:text-white hover:bg-blue-500 p-1.5 rounded transition-colors focus:outline-none"
-                            title="Редактировать шаблон задачи"
-                          >
-                            <PencilIcon className="h-5 w-5" />
-                            <span className="sr-only">Редактировать</span>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTemplate(template)}
-                            className="text-red-600 hover:text-white hover:bg-red-500 p-1.5 rounded transition-colors focus:outline-none"
-                            title="Удалить шаблон задачи"
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                            <span className="sr-only">Удалить</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="flex justify-end mt-4">
-            <Button
-              onClick={() => {
-                handleCreateTemplate();
-                setIsTemplatesListOpen(false);
-              }}
-              variant="primary"
-              size="md"
-            >
-              Создать шаблон
-            </Button>
-          </div> панели фильтров для Manager Dashboard
- *
- * @param {Object} filters - Текущие фильтры
- * @param {Function} handleFilterChange - Функция изменения фильтров
- * @param {Array} users - Массив пользователей
- * @param {Array} plans - Массив планов
- * @param {Function} setIsTaskFiltersVisible - Функция для скрытия панели фильтров
- * @param {Function} resetTaskFilters - Функция для сброса фильтров
+ * Компонент панели фильтрации задач
+ * @param {Object} filters - Объект с текущими значениями фильтров
+ * @param {Function} handleFilterChange - Функция для изменения значений фильтров
+ * @param {Array} users - Массив пользователей для фильтрации
+ * @param {Array} plans - Массив планов для фильтрации
+ * @param {Function} setIsTaskFiltersVisible - Функция для управления видимостью панели
+ * @param {Function} resetTaskFilters - Функция для сброса всех фильтров
  * @param {boolean} isVisible - Флаг видимости панели
  */
 const TaskFilterPanel = ({
@@ -150,11 +47,10 @@ const TaskFilterPanel = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
-            {/* Поиск задач */}
-            <div>
-              <label className={FORM_STYLES.label}>Поиск задач</label>
-              <div className="relative rounded-md shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Поиск по названию и описанию */}
+            <div className="lg:col-span-3">
+              <div className="relative">
                 <input
                   type="text"
                   value={filters.taskSearchQuery}
@@ -181,6 +77,7 @@ const TaskFilterPanel = ({
                 <option value="not_started">Не начато</option>
                 <option value="in_progress">В работе</option>
                 <option value="completed">Выполнено</option>
+                <option value="cancelled">Отменено</option>
               </select>
             </div>
 
@@ -201,7 +98,7 @@ const TaskFilterPanel = ({
               </select>
             </div>
 
-            {/* Фильтр по пользователю */}
+            {/* Фильтр по сотруднику */}
             <div>
               <label className={FORM_STYLES.label}>Сотрудник</label>
               <select
@@ -214,14 +111,14 @@ const TaskFilterPanel = ({
                 <option value="all">Все сотрудники</option>
                 {users.map((user) => (
                   <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name}
+                    {user.name} {user.surname}
                   </option>
                 ))}
               </select>
             </div>
 
             {/* Фильтр по плану */}
-            <div className="md:col-span-2">
+            <div>
               <label className={FORM_STYLES.label}>План</label>
               <select
                 value={filters.taskPlanFilter}
@@ -236,6 +133,22 @@ const TaskFilterPanel = ({
                     {plan.title}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Фильтр по типу задачи */}
+            <div>
+              <label className={FORM_STYLES.label}>Тип задачи</label>
+              <select
+                value={filters.taskTypeFilter}
+                onChange={(e) =>
+                  handleFilterChange({ taskTypeFilter: e.target.value })
+                }
+                className={FORM_STYLES.select}
+              >
+                <option value="all">Все типы</option>
+                <option value="template">Шаблонные</option>
+                <option value="custom">Кастомные</option>
               </select>
             </div>
 
@@ -271,19 +184,17 @@ const TaskFilterPanel = ({
             </div>
           </div>
 
-          <div className="flex justify-end mt-4">
+          <div className="flex justify-end mt-6">
             <Button
               onClick={resetTaskFilters}
               variant="secondary"
-              size="md"
-              className="mr-3"
+              className="mr-2"
             >
-              Сбросить все
+              Сбросить фильтры
             </Button>
             <Button
               onClick={() => setIsTaskFiltersVisible(false)}
               variant="primary"
-              size="md"
             >
               Применить
             </Button>
@@ -295,13 +206,12 @@ const TaskFilterPanel = ({
 };
 
 /**
- * Компонент панели шаблонов задач для Manager Dashboard
- *
- * @param {Array} templates - Массив шаблонов задач
- * @param {Function} setIsTemplatesListOpen - Функция для скрытия панели шаблонов задач
- * @param {Function} handleCreateTemplate - Функция создания шаблона задачи
- * @param {Function} handleEditTemplate - Функция редактирования шаблона задачи
- * @param {Function} handleDeleteTemplate - Функция удаления шаблона задачи
+ * Компонент панели шаблонов задач
+ * @param {Array} templates - Массив шаблонов
+ * @param {Function} setIsTemplatesListOpen - Функция для управления видимостью панели
+ * @param {Function} handleCreateTemplate - Функция для создания нового шаблона
+ * @param {Function} handleEditTemplate - Функция для редактирования шаблона
+ * @param {Function} handleDeleteTemplate - Функция для удаления шаблона
  * @param {string} userRole - Роль пользователя
  * @param {boolean} isVisible - Флаг видимости панели
  */
@@ -380,13 +290,34 @@ const TemplatesPanel = ({
                         <div className="text-sm font-medium text-gray-900">
                           {template.title}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-500 line-clamp-2">
-                          {template.description}
+                        <div className="text-xs text-gray-500 mt-1">
+                          Приоритет:{" "}
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded-full text-xs ${
+                              template.priority === "high"
+                                ? "bg-red-100 text-red-800"
+                                : template.priority === "medium"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
+                          >
+                            {template.priority === "high"
+                              ? "Высокий"
+                              : template.priority === "medium"
+                              ? "Средний"
+                              : "Низкий"}
+                          </span>
+                          <span className="ml-2">
+                            Срок: {template.days_to_complete || "Не указан"} дн.
+                          </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-500 whitespace-pre-wrap line-clamp-2">
+                          {template.description || "Описание не указано"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex justify-center space-x-2">
                           <button
                             onClick={() => handleEditTemplate(template)}
@@ -416,14 +347,13 @@ const TemplatesPanel = ({
           <div className="flex justify-end mt-4">
             <Button
               onClick={() => {
-                // Просто открываем модальное окно создания шаблона вместо вызова функции создания
+                handleCreateTemplate();
                 setIsTemplatesListOpen(false);
-                handleCreateTemplate(); // Эта функция теперь должна открывать модальное окно, а не создавать шаблон
               }}
               variant="primary"
-              size="md"
+              className="bg-purple-600 hover:bg-purple-700"
             >
-              Создать шаблон
+              Создать шаблон задачи
             </Button>
           </div>
         </Card>
