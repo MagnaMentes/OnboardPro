@@ -16,8 +16,9 @@
 export const formatUserDisplayName = (user) => {
   if (!user) return "";
 
-  if (user.first_name && user.last_name) {
-    return `${user.first_name} ${user.last_name}`;
+  // Возвращаем только имя, если оно доступно
+  if (user.first_name) {
+    return user.first_name;
   }
 
   return user.email || "";

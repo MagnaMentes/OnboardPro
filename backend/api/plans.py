@@ -63,12 +63,12 @@ async def create_plan(
 ):
     """
     Создание нового плана адаптации с возможностью добавления шаблонных и кастомных задач.
-    Только HR может создавать планы адаптации.
+    HR и менеджеры могут создавать планы адаптации.
     """
-    if current_user.role != "hr":
+    if current_user.role != "hr" and current_user.role != "manager":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only HR can create plans"
+            detail="Only HR and managers can create plans"
         )
 
     # Создаем новый план
@@ -217,10 +217,10 @@ async def update_plan(
     """
     Обновление плана адаптации. Только HR может обновлять планы.
     """
-    if current_user.role != "hr":
+    if current_user.role != "hr" and current_user.role != "manager":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only HR can update plans"
+            detail="Only HR and managers can update plans"
         )
 
     # Проверяем существование плана
@@ -240,10 +240,70 @@ async def update_plan(
     db.commit()
     db.refresh(db_plan)
 
-    # Подсчитываем количество задач для обновленного плана
-    tasks_count = db.query(models.Task).filter(
-        models.Task.plan_id == plan_id).count()
+    # Обрабатываем связанные задачи
+    tasks_count = 0
 
+    # Удаляем существующие задачи плана, если были переданы новые данные о задачах
+    if plan_data.template_ids or plan_data.custom_tasks:
+        # Удаляем только те задачи, которые еще не начаты (статус 'не начато' или null)
+        db.query(models.Task).filter(
+            models.Task.plan_id == plan_id,
+            (models.Task.status.is_(None) | (models.Task.status == 'not_started'))
+        ).delete(synchronize_session=False)
+
+        # Обрабатываем шаблонные задачи, если они указаны
+        if plan_data.template_ids:
+            templates = db.query(models.TaskTemplate).filter(
+                models.TaskTemplate.id.in_(plan_data.template_ids)
+            ).all()
+
+            template_map = {t.id: t for t in templates}
+
+            # Получаем пользователя, указанного для задач
+            if plan_data.custom_tasks and len(plan_data.custom_tasks) > 0 and 'user_id' in plan_data.custom_tasks[0]:
+                user_id = plan_data.custom_tasks[0]['user_id']
+            else:
+                # Если не указан пользователь, задачи создаются без привязки к пользователю
+                user_id = None
+
+            # Создаем задачи из шаблонов
+            for template_id in plan_data.template_ids:
+                if template_id in template_map:
+                    template = template_map[template_id]
+
+                    # Рассчитываем дедлайн на основе длительности шаблона
+                    deadline = datetime.now() + timedelta(days=template.duration_days)
+
+                    # Создаем задачу на основе шаблона
+                    db_task = models.Task(
+                        plan_id=db_plan.id,
+                        user_id=user_id,  # может быть None, если пользователь не указан
+                        title=template.title,
+                        description=template.description,
+                        priority=template.priority,
+                        deadline=deadline,
+                        template_id=template.id  # Связь с шаблоном
+                    )
+                    db.add(db_task)
+                    tasks_count += 1
+
+        # Обрабатываем кастомные задачи, если они указаны
+        if plan_data.custom_tasks:
+            for task_data in plan_data.custom_tasks:
+                db_task = models.Task(
+                    plan_id=db_plan.id,
+                    **task_data
+                )
+                db.add(db_task)
+                tasks_count += 1
+
+        db.commit()
+    else:
+        # Если не переданы новые данные о задачах, просто подсчитываем текущее количество
+        tasks_count = db.query(models.Task).filter(
+            models.Task.plan_id == plan_id).count()
+
+    # Формируем ответ
     result = PlanResponse(
         id=db_plan.id,
         role=db_plan.role,
@@ -263,13 +323,13 @@ async def delete_plan(
     db: Session = Depends(get_db)
 ):
     """
-    Удаление плана адаптации. Только HR может удалять планы.
+    Удаление плана адаптации. HR и менеджеры могут удалять планы.
     Если с планом связаны задачи, план не может быть удален.
     """
-    if current_user.role != "hr":
+    if current_user.role != "hr" and current_user.role != "manager":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only HR can delete plans"
+            detail="Only HR and managers can delete plans"
         )
 
     # Проверяем существование плана

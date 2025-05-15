@@ -34,7 +34,7 @@ import {
 } from "@heroicons/react/24/outline";
 import {
   Button,
-  FormField,
+  FormField, // FormField используется в других частях компонента
   Card,
   SelectField,
   CheckboxField,
@@ -82,7 +82,7 @@ const TaskPreviewTable = ({
                 colSpan={isDraggable ? 5 : 4}
                 className="px-3 py-4 text-center text-sm text-gray-500"
               >
-                Нет {taskType === "template" ? "шаблонных" : "кастомных"} задач
+                Нет {taskType === "template" ? "шаблонов" : "кастомных"} задач
               </td>
             </tr>
           ) : (
@@ -344,12 +344,31 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
     return [...new Set(users.map((user) => user.department).filter(Boolean))];
   }, [users]);
 
-  // Устанавливаем первого пользователя по умолчанию при загрузке списка
+  // Устанавливаем подходящего пользователя при загрузке списка или изменении целевой роли
   useEffect(() => {
-    if (users && users.length > 0 && !selectedUser) {
-      setSelectedUser(users[0]);
+    // Если в списке есть пользователи и нет выбранного пользователя или при смене целевой роли
+    if (
+      users &&
+      users.length > 0 &&
+      (!selectedUser || formData.role !== selectedUser.role)
+    ) {
+      // Ищем первого пользователя, соответствующего выбранной роли
+      const matchingUser = users.find((user) => {
+        if (formData.role === "manager") return user.role === "manager";
+        if (formData.role === "employee") return user.role === "employee";
+        // Для HR и других ролей берем первого попавшегося
+        return true;
+      });
+
+      // Если нашли подходящего пользователя - устанавливаем его
+      if (matchingUser) {
+        setSelectedUser(matchingUser);
+      } else {
+        // Если не нашли пользователя с соответствующей ролью, берем первого
+        setSelectedUser(users[0]);
+      }
     }
-  }, [users, selectedUser]);
+  }, [users, selectedUser, formData.role]);
 
   // Заполнение формы данными, если редактируем существующий план
   useEffect(() => {
@@ -373,7 +392,7 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
               }
             );
 
-            // Разделяем задачи на шаблонные и кастомные
+            // Разделяем задачи на шаблоны и кастомные
             const templateTasks = response.data.filter(
               (task) => task.template_id
             );
@@ -410,10 +429,20 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
   // Обновляем состояние формы при изменении полей
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+
+    // Обновляем данные формы
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
+
+    // Если изменилась целевая роль - сбросим выбранного пользователя
+    // Это нужно для корректной фильтрации пользователей по роли
+    if (name === "role") {
+      // После установки новой роли сбрасываем выбранного пользователя
+      // Корректный пользователь будет выбран автоматически из отфильтрованного списка
+      setSelectedUser(null);
+    }
   };
 
   // Добавляем шаблон задачи в выбранные
@@ -495,6 +524,20 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
     const userId = parseInt(e.target.value);
     const user = users.find((u) => u.id === userId);
     setSelectedUser(user);
+
+    // Автоматически заполняем название плана только с ФИО выбранного сотрудника (без префикса)
+    if (user) {
+      const userName =
+        user.first_name && user.last_name
+          ? `${user.first_name} ${user.last_name}`
+          : user.email;
+      // Удаляем префикс "План адаптации:" и используем только имя сотрудника
+      const planTitle = userName;
+      setFormData((prev) => ({
+        ...prev,
+        title: planTitle,
+      }));
+    }
   };
 
   // Обработчик drag-and-drop
@@ -625,6 +668,18 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
     setFilterRole(formData.role);
   }, [formData.role]);
 
+  // Фильтрация списка сотрудников по выбранной целевой роли
+  const filteredUsers = useMemo(() => {
+    if (!users || users.length === 0) return [];
+    // Фильтруем пользователей по соответствующей роли
+    return users.filter((user) => {
+      if (!formData.role) return true;
+      if (formData.role === "manager") return user.role === "manager";
+      if (formData.role === "employee") return user.role === "employee";
+      return false; // Если роль не определена или не соответствует ожидаемым значениям
+    });
+  }, [users, formData.role]);
+
   // Компонент заголовка секции
   const SectionHeader = ({ icon, title, count, children }) => (
     <div className="flex justify-between items-center mb-4">
@@ -665,25 +720,23 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
               title="Основная информация"
             />
 
-            <FormField
-              label="Название плана*"
+            {/* Скрытое поле для названия плана */}
+            <input
+              type="hidden"
               id="title"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="Введите название плана"
               required
             />
 
-            <FormField
-              label="Описание плана"
+            {/* Скрытое поле для описания плана */}
+            <input
+              type="hidden"
               id="description"
               name="description"
-              type="textarea"
-              rows={3}
               value={formData.description || ""}
               onChange={handleChange}
-              placeholder="Введите описание плана адаптации"
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -697,12 +750,11 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
                 options={[
                   { value: "employee", label: "Сотрудник" },
                   { value: "manager", label: "Менеджер" },
-                  { value: "hr", label: "HR" },
                 ]}
               />
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                <label className="flex text-sm font-medium text-gray-700 mb-1 items-center">
                   <UserIcon className="h-4 w-4 mr-1.5 text-gray-500" />
                   Сотрудник для задач
                 </label>
@@ -721,12 +773,12 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
                         r="10"
                         stroke="currentColor"
                         strokeWidth="4"
-                      ></circle>
+                      />
                       <path
                         className="opacity-75"
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      ></path>
+                      />
                     </svg>
                     <span>Загрузка списка сотрудников...</span>
                   </div>
@@ -736,7 +788,7 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
                     name="user"
                     value={selectedUser?.id || ""}
                     onChange={handleUserChange}
-                    options={users.map((user) => ({
+                    options={filteredUsers.map((user) => ({
                       value: user.id,
                       label: `${
                         user.first_name && user.last_name
@@ -765,7 +817,7 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
                 }}
               >
                 <PlusIcon className="h-4 w-4 mr-1.5" />
-                Создать шаблон
+                Создать шаблон задачи
               </Button>
             </SectionHeader>
 
@@ -926,7 +978,7 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
                               variant="secondary"
                               size="xs"
                               onClick={() => handleEditTemplate(template)}
-                              title="Редактировать шаблон"
+                              title="Редактировать шаблон задачи"
                             >
                               <PencilIcon className="h-3.5 w-3.5" />
                             </Button>
@@ -952,13 +1004,15 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
                 icon={
                   <ClipboardDocumentListIcon className="h-5 w-5 text-green-600" />
                 }
-                title="Выбранные шаблоны"
+                title="Выбранные шаблоны задач"
                 count={selectedTemplates.length}
               />
 
               {selectedTemplates.length === 0 ? (
                 <div className="bg-white p-4 rounded border border-dashed border-gray-300 text-center">
-                  <p className="text-gray-500 mb-2">Нет выбранных шаблонов</p>
+                  <p className="text-gray-500 mb-2">
+                    Нет выбранных шаблонов задач
+                  </p>
                   <p className="text-sm text-gray-400">
                     Добавьте шаблоны задач из списка выше
                   </p>
@@ -1175,7 +1229,7 @@ const PlanForm = ({ onPlanCreated, editPlan = null, onCancel }) => {
               onChange={(e) =>
                 setSelectedGoogleCalendarIntegration(e.target.checked)
               }
-              helpText="Отправить шаблонные задачи в календарь сотрудника после создания плана"
+              helpText="Отправить шаблоны задач в календарь сотрудника после создания плана"
             />
           </div>
 

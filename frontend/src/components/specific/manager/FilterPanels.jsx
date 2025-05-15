@@ -1,10 +1,112 @@
 import React from "react";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Card, Button, FORM_STYLES } from "../../../config/theme";
 import { CSSTransition } from "react-transition-group";
 
 /**
- * Компонент панели фильтров для Manager Dashboard
+ * Компон          {templates.length === 0 ? (
+            <div className="bg-white px-4 py-6 text-center text-gray-500">
+              <p>Нет доступных шаблонов задач</p>
+            </div>
+          ) : (
+            <div className="overflow-auto max-h-[500px]">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Название
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Приоритет
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Срок (дни)
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Действия
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {templates.map((template) => (
+                    <tr
+                      key={template.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {template.title}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {template.priority === "high" && (
+                          <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                            Высокий
+                          </span>
+                        )}
+                        {template.priority === "medium" && (
+                          <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                            Средний
+                          </span>
+                        )}
+                        {template.priority === "low" && (
+                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                            Низкий
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {template.durationDays}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        <div className="flex justify-center space-x-2">
+                          <button
+                            onClick={() => handleEditTemplate(template)}
+                            className="text-blue-600 hover:text-white hover:bg-blue-500 p-1.5 rounded transition-colors focus:outline-none"
+                            title="Редактировать шаблон задачи"
+                          >
+                            <PencilIcon className="h-5 w-5" />
+                            <span className="sr-only">Редактировать</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTemplate(template)}
+                            className="text-red-600 hover:text-white hover:bg-red-500 p-1.5 rounded transition-colors focus:outline-none"
+                            title="Удалить шаблон задачи"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                            <span className="sr-only">Удалить</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="flex justify-end mt-4">
+            <Button
+              onClick={() => {
+                handleCreateTemplate();
+                setIsTemplatesListOpen(false);
+              }}
+              variant="primary"
+              size="md"
+            >
+              Создать шаблон
+            </Button>
+          </div> панели фильтров для Manager Dashboard
  *
  * @param {Object} filters - Текущие фильтры
  * @param {Function} handleFilterChange - Функция изменения фильтров
@@ -195,11 +297,11 @@ const TaskFilterPanel = ({
 /**
  * Компонент панели шаблонов задач для Manager Dashboard
  *
- * @param {Array} templates - Массив шаблонов
- * @param {Function} setIsTemplatesListOpen - Функция для скрытия панели шаблонов
- * @param {Function} handleCreateTemplate - Функция создания шаблона
- * @param {Function} handleEditTemplate - Функция редактирования шаблона
- * @param {Function} handleDeleteTemplate - Функция удаления шаблона
+ * @param {Array} templates - Массив шаблонов задач
+ * @param {Function} setIsTemplatesListOpen - Функция для скрытия панели шаблонов задач
+ * @param {Function} handleCreateTemplate - Функция создания шаблона задачи
+ * @param {Function} handleEditTemplate - Функция редактирования шаблона задачи
+ * @param {Function} handleDeleteTemplate - Функция удаления шаблона задачи
  * @param {string} userRole - Роль пользователя
  * @param {boolean} isVisible - Флаг видимости панели
  */
@@ -288,15 +390,19 @@ const TemplatesPanel = ({
                         <div className="flex justify-center space-x-2">
                           <button
                             onClick={() => handleEditTemplate(template)}
-                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                            className="text-blue-600 hover:text-white hover:bg-blue-500 p-1.5 rounded transition-colors focus:outline-none"
+                            title="Редактировать шаблон задачи"
                           >
-                            Изменить
+                            <PencilIcon className="h-5 w-5" />
+                            <span className="sr-only">Редактировать</span>
                           </button>
                           <button
-                            onClick={() => handleDeleteTemplate(template.id)}
-                            className="text-red-600 hover:text-red-900 transition-colors"
+                            onClick={() => handleDeleteTemplate(template)}
+                            className="text-red-600 hover:text-white hover:bg-red-500 p-1.5 rounded transition-colors focus:outline-none"
+                            title="Удалить шаблон задачи"
                           >
-                            Удалить
+                            <TrashIcon className="h-5 w-5" />
+                            <span className="sr-only">Удалить</span>
                           </button>
                         </div>
                       </td>

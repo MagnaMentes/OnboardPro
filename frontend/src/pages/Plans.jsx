@@ -16,6 +16,8 @@ import usePageTitle from "../utils/usePageTitle";
 import Modal from "../components/common/Modal";
 import ConfirmDialog from "../components/common/ConfirmDialog";
 import PlanForm from "../components/specific/PlanForm";
+import PlanEditModal from "../components/specific/PlanEditModal";
+import EditableCard from "../components/specific/EditableCard";
 import {
   Button,
   Card,
@@ -290,7 +292,11 @@ const Plans = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPlans.map((plan) => (
-            <Card key={plan.id} className="overflow-hidden">
+            <EditableCard
+              key={plan.id}
+              className="overflow-hidden"
+              onClick={() => handleEditPlan(plan)}
+            >
               <div className="px-4 py-5 sm:p-6">
                 {/* Заголовок и действия */}
                 <div className="flex justify-between items-start">
@@ -381,7 +387,7 @@ const Plans = () => {
                   </span>
                 </div>
               </div>
-            </Card>
+            </EditableCard>
           ))}
         </div>
       )}

@@ -351,12 +351,19 @@ async def create_user(user: UserCreate, db: Session = Depends(auth.get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return {"email": db_user.email, "role": db_user.role}
+    return {"email": db_user.email, "role": db_user.role, "id": db_user.id}
 
 
 @app.get("/users/me")
 async def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
-    return {"email": current_user.email, "role": current_user.role, "department": current_user.department}
+    return {
+        "email": current_user.email,
+        "role": current_user.role,
+        "department": current_user.department,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "middle_name": current_user.middle_name
+    }
 
 
 @app.get('/users/departments')
@@ -952,14 +959,36 @@ async def upload_user_photo(
             old_photo_path.unlink()
 
     # Сохраняем новую фотографию
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    # Обновляем путь к фотографии в базе данных
-    # Путь должен быть доступен через URL
-    user.photo = f"/static/photos/{file_name}"
-    db.commit()
-    db.refresh(user)
+        logger.info(f"Фото сохранено по пути {file_path}")
+
+        # Проверяем существование файла после сохранения
+        if Path(file_path).exists():
+            logger.info(f"Файл успешно создан и существует")
+        else:
+            logger.error(f"Файл не был создан по пути {file_path}")
+            raise HTTPException(
+                status_code=500,
+                detail="Ошибка при сохранении фотографии на сервере"
+            )
+
+        # Обновляем путь к фотографии в базе данных
+        # Путь должен быть доступен через URL
+        user.photo = f"/static/photos/{file_name}"
+        db.commit()
+        db.refresh(user)
+
+        # Проверяем, что путь к фото был обновлен в БД
+        logger.info(f"Путь к фото в БД обновлен: {user.photo}")
+    except Exception as e:
+        logger.error(f"Ошибка при сохранении фото: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при сохранении фото: {str(e)}"
+        )
 
     return user
 

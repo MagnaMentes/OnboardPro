@@ -609,7 +609,7 @@ export default function ManagerDashboard() {
 
       const createdTemplate = await response.json();
       setTemplates((prev) => [...prev, createdTemplate]);
-      toast.success(`Шаблон "${createdTemplate.title}" успешно создан`);
+      toast.success(`Шаблон задачи "${createdTemplate.title}" успешно создан`);
       setIsTaskTemplateModalOpen(false);
 
       return createdTemplate;
@@ -654,7 +654,9 @@ export default function ManagerDashboard() {
         )
       );
 
-      toast.success(`Шаблон "${updatedTemplate.title}" успешно обновлен`);
+      toast.success(
+        `Шаблон задачи "${updatedTemplate.title}" успешно обновлен`
+      );
       setEditingTemplate(null);
       setIsTaskTemplateModalOpen(false);
 
@@ -702,7 +704,7 @@ export default function ManagerDashboard() {
       setTemplates((prev) =>
         prev.filter((tmpl) => tmpl.id !== templateToDelete.id)
       );
-      toast.success(`Шаблон "${templateToDelete.title}" успешно удален`);
+      toast.success(`Шаблон задачи "${templateToDelete.title}" успешно удален`);
 
       setIsDeleteTemplateModalOpen(false);
       setTemplateToDelete(null);
@@ -970,8 +972,8 @@ export default function ManagerDashboard() {
           }
         >
           <p className="text-sm text-gray-500">
-            Вы действительно хотите удалить шаблон "{templateToDelete?.title}"?
-            Это действие нельзя отменить.
+            Вы действительно хотите удалить шаблон задачи "
+            {templateToDelete?.title}"? Это действие нельзя отменить.
           </p>
         </Modal>
 
@@ -1289,9 +1291,9 @@ export default function ManagerDashboard() {
                           </th>
                           <th
                             scope="col"
-                            className="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[90px]"
+                            className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[90px]"
                           >
-                            <div className="flex justify-end">
+                            <div className="flex justify-center">
                               <AdjustmentsVerticalIcon
                                 className="h-4 w-4 text-gray-500"
                                 title="Действия"
@@ -1366,7 +1368,7 @@ export default function ManagerDashboard() {
                               </div>
                             </td>
                             <td className="px-2 py-4 whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-center gap-2">
                                 <button
                                   onClick={() => handleEditTask(task)}
                                   className="text-blue-600 hover:text-white hover:bg-blue-500 p-1.5 rounded transition-colors focus:outline-none"
@@ -1436,10 +1438,10 @@ export default function ManagerDashboard() {
                           </th>
                           <th
                             scope="col"
-                            className="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
                             style={{ width: "80px" }}
                           >
-                            <div className="flex justify-end">
+                            <div className="flex justify-center">
                               <AdjustmentsVerticalIcon
                                 className="h-4 w-4 text-gray-500"
                                 title="Действия"
@@ -1506,8 +1508,8 @@ export default function ManagerDashboard() {
                                 </span>
                               </div>
                             </td>
-                            <td className="px-2 py-3 whitespace-nowrap text-right">
-                              <div className="flex justify-end space-x-1">
+                            <td className="px-2 py-3 whitespace-nowrap text-center">
+                              <div className="flex justify-center space-x-1">
                                 <button
                                   onClick={() => handleEditTask(task)}
                                   className="text-blue-600 hover:text-blue-900 bg-white hover:bg-blue-50 p-1 rounded-full transition-colors"
@@ -1563,7 +1565,7 @@ export default function ManagerDashboard() {
                     className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <DocumentPlusIcon className="w-4 h-4 mr-2" />
-                    Создать шаблон
+                    Создать шаблон задачи
                   </button>
                   <button
                     onClick={() => {
