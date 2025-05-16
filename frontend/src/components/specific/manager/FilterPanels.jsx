@@ -35,33 +35,38 @@ const TaskFilterPanel = ({
     >
       <div ref={nodeRef} className="filter-animation-wrapper">
         <Card className="filter-panel transform transition-all shadow-lg border border-blue-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-800">
-              Фильтры и поиск задач
-            </h3>
+          <div className="flex items-center mb-4 gap-2">
+            <div className="flex-grow relative">
+              <input
+                type="text"
+                value={filters.taskSearchQuery}
+                onChange={(e) =>
+                  handleFilterChange({ taskSearchQuery: e.target.value })
+                }
+                placeholder="Поиск по названию или описанию"
+                className={FORM_STYLES.input}
+              />
+              {filters.taskSearchQuery && (
+                <button
+                  onClick={() => handleFilterChange({ taskSearchQuery: "" })}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  title="Очистить поиск"
+                >
+                  <XMarkIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setIsTaskFiltersVisible(false)}
               className="text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Закрыть панель фильтров"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Поиск по названию и описанию */}
-            <div className="lg:col-span-3">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={filters.taskSearchQuery}
-                  onChange={(e) =>
-                    handleFilterChange({ taskSearchQuery: e.target.value })
-                  }
-                  placeholder="Поиск по названию или описанию"
-                  className={FORM_STYLES.input}
-                />
-              </div>
-            </div>
+            {/* Фильтры */}
 
             {/* Фильтр по статусу */}
             <div>
@@ -136,21 +141,23 @@ const TaskFilterPanel = ({
               </select>
             </div>
 
-            {/* Фильтр по типу задачи */}
-            <div>
-              <label className={FORM_STYLES.label}>Тип задачи</label>
-              <select
-                value={filters.taskTypeFilter}
-                onChange={(e) =>
-                  handleFilterChange({ taskTypeFilter: e.target.value })
-                }
-                className={FORM_STYLES.select}
-              >
-                <option value="all">Все типы</option>
-                <option value="template">Шаблонные</option>
-                <option value="custom">Кастомные</option>
-              </select>
-            </div>
+            {/* Фильтр по типу задачи (отображается только при активной вкладке "Все задачи") */}
+            {filters.activeTaskTab === "all" && (
+              <div>
+                <label className={FORM_STYLES.label}>Тип задачи</label>
+                <select
+                  value={filters.taskTypeFilter}
+                  onChange={(e) =>
+                    handleFilterChange({ taskTypeFilter: e.target.value })
+                  }
+                  className={FORM_STYLES.select}
+                >
+                  <option value="all">Все типы</option>
+                  <option value="template">Шаблонные</option>
+                  <option value="custom">Кастомные</option>
+                </select>
+              </div>
+            )}
 
             {/* Сортировка */}
             <div>
@@ -191,12 +198,6 @@ const TaskFilterPanel = ({
               className="mr-2"
             >
               Сбросить фильтры
-            </Button>
-            <Button
-              onClick={() => setIsTaskFiltersVisible(false)}
-              variant="primary"
-            >
-              Применить
             </Button>
           </div>
         </Card>

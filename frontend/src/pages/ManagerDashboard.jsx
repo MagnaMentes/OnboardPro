@@ -42,7 +42,9 @@ import {
   TaskFilterPanel,
   TemplatesPanel,
 } from "../components/specific/manager/FilterPanels"; // Импорт компонентов фильтров для менеджера
+import PlanFilterPanel from "../components/specific/manager/PlanFilterPanel"; // Импорт компонента фильтра планов
 import TaskItem from "../components/specific/manager/TaskItem"; // Импорт компонента для визуального отличия типов задач
+import TabPanel from "../components/common/TabPanel"; // Импорт компонента для системы вкладок
 
 // Импортируем компоненты и стили из нашей новой системы темы
 import {
@@ -77,7 +79,6 @@ export default function ManagerDashboard() {
   // Состояния для управления планами и шаблонами
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [isTaskTemplateModalOpen, setIsTaskTemplateModalOpen] = useState(false);
-  const [isTemplatesListOpen, setIsTemplatesListOpen] = useState(false);
   const [isEditingPlan, setIsEditingPlan] = useState(false);
   const [isEditingTemplate, setIsEditingTemplate] = useState(false);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
@@ -99,6 +100,13 @@ export default function ManagerDashboard() {
   const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
   const [isUpdatingTask, setIsUpdatingTask] = useState(false);
   const [taskStatusFilter, setTaskStatusFilter] = useState("all");
+
+  // Состояния для фильтрации планов адаптации
+  const [planSearchQuery, setPlanSearchQuery] = useState("");
+  const [planRoleFilter, setPlanRoleFilter] = useState("all");
+  const [planDepartmentFilter, setPlanDepartmentFilter] = useState("all");
+  const [isPlanFilterPanelOpen, setIsPlanFilterPanelOpen] = useState(false);
+  const [planFiltersMounted, setPlanFiltersMounted] = useState(false);
   const [taskPriorityFilter, setTaskPriorityFilter] = useState("all");
   const [taskTypeFilter, setTaskTypeFilter] = useState("all");
   const [taskUserFilter, setTaskUserFilter] = useState("all");
@@ -108,9 +116,14 @@ export default function ManagerDashboard() {
   const [isTaskFiltersVisible, setIsTaskFiltersVisible] = useState(false);
   const [taskSearchQuery, setTaskSearchQuery] = useState("");
 
-  // Добавляем состояния для анимации монтирования/размонтирования
+  // Состояние для активной вкладки в блоке управления задачами
+  const [activeTaskTab, setActiveTaskTab] = useState("all");
+
+  // Состояние для анимации монтирования/размонтирования фильтров
   const [taskFiltersMounted, setTaskFiltersMounted] = useState(false);
-  const [templatesListMounted, setTemplatesListMounted] = useState(false);
+
+  // Состояние для отслеживания типа создаваемой задачи (шаблонная или кастомная)
+  const [isCreatingTemplateTask, setIsCreatingTemplateTask] = useState(false);
 
   const apiBaseUrl = getApiBaseUrl();
 
@@ -187,7 +200,13 @@ export default function ManagerDashboard() {
     fetchData();
   }, [apiBaseUrl]);
 
-  // Эффект для управления монтированием/размонтированием фильтров
+  // Эффект для синхронизации активной вкладки и фильтра типа задач
+  useEffect(() => {
+    // Когда активная вкладка изменяется, обновляем фильтр типа задач
+    setTaskTypeFilter(activeTaskTab);
+  }, [activeTaskTab]);
+
+  // Эффект для управления монтированием/размонтированием фильтров задач
   useEffect(() => {
     if (isTaskFiltersVisible && !taskFiltersMounted) {
       setTaskFiltersMounted(true);
@@ -200,18 +219,20 @@ export default function ManagerDashboard() {
     }
   }, [isTaskFiltersVisible, taskFiltersMounted]);
 
-  // Эффект для управления монтированием/размонтированием шаблонов задач
+  // Эффект для управления монтированием/размонтированием фильтров планов
   useEffect(() => {
-    if (isTemplatesListOpen && !templatesListMounted) {
-      setTemplatesListMounted(true);
-    } else if (!isTemplatesListOpen && templatesListMounted) {
+    if (isPlanFilterPanelOpen && !planFiltersMounted) {
+      setPlanFiltersMounted(true);
+    } else if (!isPlanFilterPanelOpen && planFiltersMounted) {
       // Задержка размонтирования для завершения анимации
       const timer = setTimeout(() => {
-        setTemplatesListMounted(false);
+        setPlanFiltersMounted(false);
       }, 500); // Увеличиваем время для гарантии завершения анимации
       return () => clearTimeout(timer);
     }
-  }, [isTemplatesListOpen, templatesListMounted]);
+  }, [isPlanFilterPanelOpen, planFiltersMounted]);
+
+  // Эффект для управления монтированием/размонтированием удален, так как секция шаблонов не используется
 
   // Функция для обновления списка задач из базы данных
   const refreshTasksFromDatabase = async () => {
@@ -270,13 +291,18 @@ export default function ManagerDashboard() {
     }
   };
 
-  // Функция сброса всех фильтров
+  // Функция сброса всех фильтров с учетом активной вкладки
   const resetTaskFilters = () => {
     setTaskStatusFilter("all");
     setTaskPriorityFilter("all");
     setTaskUserFilter("all");
     setTaskPlanFilter("all");
-    setTaskTypeFilter("all");
+    // Устанавливаем тип задачи в соответствии с активной вкладкой
+    if (activeTaskTab !== "all") {
+      setTaskTypeFilter(activeTaskTab);
+    } else {
+      setTaskTypeFilter("all");
+    }
     setTaskSearchQuery("");
   };
 
@@ -319,8 +345,15 @@ export default function ManagerDashboard() {
       );
     }
 
-    // Фильтр по типу задачи
-    if (taskTypeFilter !== "all") {
+    // Фильтр по типу задачи - учитываем активную вкладку и выбранный фильтр
+    // Приоритет имеет активная вкладка, затем фильтр
+    if (activeTaskTab !== "all") {
+      if (activeTaskTab === "template") {
+        result = result.filter((task) => task.is_template === true);
+      } else if (activeTaskTab === "custom") {
+        result = result.filter((task) => task.is_template !== true);
+      }
+    } else if (taskTypeFilter !== "all") {
       if (taskTypeFilter === "template") {
         result = result.filter((task) => task.is_template === true);
       } else if (taskTypeFilter === "custom") {
@@ -366,6 +399,70 @@ export default function ManagerDashboard() {
     taskTypeFilter,
     taskSortField,
     taskSortDirection,
+    activeTaskTab, // Добавляем зависимость от активной вкладки
+  ]);
+
+  // Функция для получения отфильтрованного списка планов
+  const filteredPlans = useMemo(() => {
+    return plans.filter((plan) => {
+      // Фильтрация по поисковому запросу
+      if (planSearchQuery) {
+        const query = planSearchQuery.toLowerCase();
+        const titleMatch =
+          plan.title && plan.title.toLowerCase().includes(query);
+        const descriptionMatch =
+          plan.description && plan.description.toLowerCase().includes(query);
+
+        // Поиск по имени сотрудника, если есть задачи, связанные с планом
+        const userMatch = users.some((user) => {
+          // Проверяем, есть ли задачи этого пользователя в данном плане
+          const userTasks = tasks.filter(
+            (task) => task.plan_id === plan.id && task.user_id === user.id
+          );
+
+          if (userTasks.length > 0) {
+            const fullName =
+              `${user.first_name} ${user.last_name}`.toLowerCase();
+            return fullName.includes(query);
+          }
+          return false;
+        });
+
+        if (!(titleMatch || descriptionMatch || userMatch)) {
+          return false;
+        }
+      }
+
+      // Фильтрация по роли
+      if (planRoleFilter !== "all" && plan.role !== planRoleFilter) {
+        return false;
+      }
+
+      // Фильтрация по отделу (через задачи плана)
+      if (planDepartmentFilter !== "all") {
+        // Получаем пользователей, связанных с задачами этого плана
+        const planUsers = tasks
+          .filter((task) => task.plan_id === plan.id)
+          .map((task) => users.find((u) => u.id === task.user_id))
+          .filter(Boolean);
+
+        // Проверяем, есть ли среди них пользователи из выбранного отдела
+        if (
+          !planUsers.some((user) => user.department === planDepartmentFilter)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    plans,
+    planSearchQuery,
+    planRoleFilter,
+    planDepartmentFilter,
+    tasks,
+    users,
   ]);
 
   // Отображение иконки сортировки возле заголовка столбца
@@ -806,11 +903,20 @@ export default function ManagerDashboard() {
         {/* Модальные окна */}
         <TaskModal
           isOpen={isTaskModalOpen}
-          onClose={() => setIsTaskModalOpen(false)}
+          onClose={() => {
+            setIsTaskModalOpen(false);
+            setIsCreatingTemplateTask(false); // Сбрасываем флаг при закрытии
+          }}
           onSave={async (taskData) => {
             try {
               const token = localStorage.getItem("token");
               if (!token) throw new Error("Не авторизован");
+
+              // Добавляем флаг is_template, если создается шаблонная задача
+              const taskToCreate = {
+                ...taskData,
+                is_template: isCreatingTemplateTask,
+              };
 
               const response = await fetch(`${apiBaseUrl}/tasks`, {
                 method: "POST",
@@ -818,7 +924,7 @@ export default function ManagerDashboard() {
                   Authorization: `Bearer ${token}`,
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify(taskData),
+                body: JSON.stringify(taskToCreate),
               });
 
               if (!response.ok) {
@@ -827,8 +933,13 @@ export default function ManagerDashboard() {
 
               const createdTask = await response.json();
               setTasks((prev) => [...prev, createdTask]);
-              toast.success("Задача успешно создана");
+              toast.success(
+                isCreatingTemplateTask
+                  ? "Шаблонная задача успешно создана"
+                  : "Задача успешно создана"
+              );
               setIsTaskModalOpen(false);
+              setIsCreatingTemplateTask(false);
             } catch (err) {
               toast.error(err.message);
             }
@@ -837,6 +948,7 @@ export default function ManagerDashboard() {
           plans={plans}
           task={null}
           mode="create"
+          isTemplate={isCreatingTemplateTask}
         />
 
         {/* Модальное окно для редактирования задачи */}
@@ -1028,7 +1140,7 @@ export default function ManagerDashboard() {
 
         {/* Раздел управления планами адаптации */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-4">
             <h3 className="flex items-center text-xl font-semibold text-gray-700">
               <ClipboardDocumentListIcon className="h-6 w-6 mr-2 text-blue-600" />
               Управление планами адаптации
@@ -1059,33 +1171,76 @@ export default function ManagerDashboard() {
             </div>
           </div>
 
-          {/* Место, где был удален раздел с шаблонами задач */}
+          {/* Кнопка переключения фильтров планов */}
+          <div className="mb-6">
+            <div
+              className="flex justify-between items-center py-2 px-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+              onClick={() => setIsPlanFilterPanelOpen(!isPlanFilterPanelOpen)}
+            >
+              <div className="flex items-center">
+                <AdjustmentsVerticalIcon className="h-5 w-5 text-blue-600 mr-2" />
+                <span className="text-sm font-medium text-gray-800">
+                  Фильтры и поиск планов
+                </span>
+              </div>
+              <div className="flex items-center">
+                {/* Индикатор активных фильтров */}
+                {(planRoleFilter !== "all" ||
+                  planDepartmentFilter !== "all" ||
+                  planSearchQuery.trim() !== "") && (
+                  <span className="inline-flex items-center justify-center w-5 h-5 mr-2 text-xs font-semibold text-white bg-blue-600 rounded-full">
+                    {[
+                      planRoleFilter !== "all" ? 1 : 0,
+                      planDepartmentFilter !== "all" ? 1 : 0,
+                      planSearchQuery.trim() !== "" ? 1 : 0,
+                    ].reduce((a, b) => a + b, 0)}
+                  </span>
+                )}
+                <ChevronDownIcon
+                  className={`h-5 w-5 text-blue-600 transition-transform duration-200 ${
+                    isPlanFilterPanelOpen ? "transform rotate-180" : ""
+                  }`}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Панель фильтрации планов адаптации */}
+          {planFiltersMounted && (
+            <PlanFilterPanel
+              searchQuery={planSearchQuery}
+              onSearchChange={setPlanSearchQuery}
+              roleFilter={planRoleFilter}
+              onRoleFilterChange={setPlanRoleFilter}
+              departmentFilter={planDepartmentFilter}
+              onDepartmentFilterChange={setPlanDepartmentFilter}
+              departments={[
+                ...new Set(
+                  users.map((user) => user.department).filter(Boolean)
+                ),
+              ].sort()}
+              isOpen={isPlanFilterPanelOpen}
+              onToggle={() => setIsPlanFilterPanelOpen(!isPlanFilterPanelOpen)}
+            />
+          )}
 
           {/* Список планов адаптации */}
           <div className="mt-4">
-            <h4 className="text-lg font-medium text-gray-700 mb-3">
-              Планы адаптации
-            </h4>
-
-            {plans.length === 0 ? (
-              <div className="bg-white px-4 py-6 text-center text-gray-500 border border-gray-200 rounded-lg">
-                <p>Нет активных планов адаптации</p>
-                {hasRole(userRole, ["hr"]) && (
-                  <button
-                    onClick={() => {
-                      setEditingPlan(null);
-                      setIsPlanModalOpen(true);
-                    }}
-                    className="mt-3 inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <PlusIcon className="w-4 h-4 mr-1" />
-                    Создать план адаптации
-                  </button>
-                )}
+            {filteredPlans.length === 0 ? (
+              <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                <ClipboardDocumentListIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-base font-medium text-gray-900">
+                  Нет доступных планов адаптации
+                </h3>
+                <p className="mt-1 text-sm text-gray-500 max-w-sm mx-auto">
+                  {plans.length === 0
+                    ? "Планы адаптации еще не были созданы."
+                    : "Нет планов, соответствующих заданным фильтрам."}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {plans.map((plan) => {
+                {filteredPlans.map((plan) => {
                   // Получаем все задачи, связанные с этим планом
                   const planTasks = tasks.filter(
                     (task) => task.plan_id === plan.id
@@ -1107,7 +1262,11 @@ export default function ManagerDashboard() {
                   return (
                     <div
                       key={plan.id}
-                      className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+                      className={`border rounded-lg shadow-sm overflow-hidden ${
+                        plan.role === "manager"
+                          ? "bg-purple-50 border-purple-200"
+                          : "bg-white border-gray-200"
+                      }`}
                     >
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-2">
@@ -1170,13 +1329,23 @@ export default function ManagerDashboard() {
                         {/* Отображаем роль плана */}
                         <div className="mb-2">
                           <span
-                            className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                            className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full ${
                               plan.role === "manager"
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-blue-100 text-blue-800"
+                                ? "bg-purple-100 text-purple-800 border border-purple-200"
+                                : "bg-blue-100 text-blue-800 border border-blue-200"
                             }`}
                           >
-                            {plan.role === "manager" ? "Менеджер" : "Сотрудник"}
+                            {plan.role === "manager" ? (
+                              <>
+                                <UserPlusIcon className="h-3 w-3 mr-1" /> Для
+                                менеджера
+                              </>
+                            ) : (
+                              <>
+                                <UsersIcon className="h-3 w-3 mr-1" /> Для
+                                сотрудника
+                              </>
+                            )}
                           </span>
                         </div>
 
@@ -1216,7 +1385,7 @@ export default function ManagerDashboard() {
 
         {/* Раздел управления задачами */}
         <div className="bg-white p-6 rounded-lg shadow-md overflow-hidden">
-          <div className="flex flex-wrap justify-between items-center mb-6">
+          <div className="flex flex-wrap justify-between items-center mb-3">
             <h3 className="text-xl font-semibold text-gray-700">
               Управление задачами
             </h3>
@@ -1229,27 +1398,96 @@ export default function ManagerDashboard() {
                 <ArrowPathIcon className="h-4 w-4 mr-1" />
                 <span className="text-sm">Обновить</span>
               </button>
-              {hasRole(userRole, ["hr", "manager", "Manager"]) && (
+
+              {/* Показываем кнопку для шаблонов только на вкладке "Шаблоны задач" или "Все задачи" */}
+              {hasRole(userRole, ["hr", "manager", "Manager"]) &&
+                activeTaskTab === "template" && (
+                  <button
+                    onClick={() => {
+                      setIsCreatingTemplateTask(true);
+                      setIsTaskModalOpen(true);
+                    }}
+                    className="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                  >
+                    <DocumentDuplicateIcon className="w-4 h-4 mr-1" />
+                    <span className="text-sm">Новая шаблонная задача</span>
+                  </button>
+                )}
+
+              {/* Показываем кнопку для кастомных задач только на вкладке "Кастомные задачи" или "Все задачи" */}
+              {activeTaskTab === "custom" && (
                 <button
                   onClick={() => {
-                    setEditingTemplate(null);
-                    setIsTaskTemplateModalOpen(true);
+                    setIsCreatingTemplateTask(false);
+                    setIsTaskModalOpen(true);
                   }}
-                  className="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                  className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                 >
-                  <DocumentDuplicateIcon className="w-4 h-4 mr-1" />
-                  <span className="text-sm">Создать шаблон задачи</span>
+                  <PlusIcon className="w-4 h-4 mr-1" />
+                  <span className="text-sm">Новая кастомная задача</span>
                 </button>
               )}
-              <button
-                onClick={() => setIsTaskModalOpen(true)}
-                className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
-              >
-                <PlusIcon className="w-4 h-4 mr-1" />
-                <span className="text-sm">Новая задача</span>
-              </button>
+
+              {/* На вкладке "Все задачи" показываем две кнопки для разных типов задач */}
+              {activeTaskTab === "all" && (
+                <div className="flex space-x-2">
+                  {/* Кнопка создания кастомной задачи */}
+                  <button
+                    onClick={() => {
+                      setIsCreatingTemplateTask(false);
+                      setIsTaskModalOpen(true);
+                    }}
+                    className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  >
+                    <PlusIcon className="w-4 h-4 mr-1" />
+                    <span className="text-sm">Новая кастомная задача</span>
+                  </button>
+
+                  {/* Кнопка создания шаблонной задачи если у пользователя есть права */}
+                  {hasRole(userRole, ["hr", "manager", "Manager"]) && (
+                    <button
+                      onClick={() => {
+                        setIsCreatingTemplateTask(true);
+                        setIsTaskModalOpen(true);
+                      }}
+                      className="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                    >
+                      <DocumentDuplicateIcon className="w-4 h-4 mr-1" />
+                      <span className="text-sm">Новая шаблонная задача</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Система вкладок для отображения типов задач */}
+          <TabPanel
+            tabs={[
+              {
+                id: "all",
+                label: "Все задачи",
+                count: tasks.length,
+              },
+              {
+                id: "template",
+                label: "Шаблоны задач",
+                count: tasks.filter((task) => task.is_template === true).length,
+              },
+              {
+                id: "custom",
+                label: "Кастомные задачи",
+                count: tasks.filter((task) => task.is_template !== true).length,
+              },
+            ]}
+            activeTab={activeTaskTab}
+            onTabChange={(tabId) => {
+              setActiveTaskTab(tabId);
+              // При переключении вкладки также меняем фильтр по типу задачи
+              setTaskTypeFilter(tabId === "all" ? "all" : tabId);
+            }}
+            className="mb-3"
+          />
 
           {/* Фильтры для задач */}
           <div className="mb-6">
@@ -1260,7 +1498,7 @@ export default function ManagerDashboard() {
               <div className="flex items-center">
                 <AdjustmentsVerticalIcon className="h-5 w-5 text-blue-600 mr-2" />
                 <span className="text-sm font-medium text-gray-800">
-                  Фильтры и поиск
+                  Фильтры и поиск задач
                 </span>
               </div>
               <ChevronDownIcon
@@ -1281,6 +1519,7 @@ export default function ManagerDashboard() {
                   taskSortDirection,
                   taskSearchQuery,
                   taskTypeFilter,
+                  activeTaskTab, // Передаем информацию об активной вкладке
                 }}
                 handleFilterChange={(newFilters) => {
                   if (newFilters.taskStatusFilter !== undefined)
@@ -1309,45 +1548,7 @@ export default function ManagerDashboard() {
             )}
           </div>
 
-          {/* Раздел с шаблонами задач */}
-          {hasRole(userRole, ["hr", "manager", "Manager"]) && (
-            <div className="mb-6">
-              <div
-                className="flex justify-between items-center py-3 px-4 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100"
-                onClick={() => setIsTemplatesListOpen(!isTemplatesListOpen)}
-              >
-                <div className="flex items-center">
-                  <DocumentDuplicateIcon className="h-5 w-5 text-purple-600 mr-2" />
-                  <h4 className="text-lg font-medium text-gray-700">
-                    Шаблоны задач
-                  </h4>
-                  <span className="ml-3 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                    {templates.length} шт.
-                  </span>
-                </div>
-                <ChevronDownIcon
-                  className={`h-5 w-5 text-purple-600 transition-transform duration-200 ${
-                    isTemplatesListOpen ? "transform rotate-180" : ""
-                  }`}
-                />
-              </div>
-
-              {templatesListMounted && (
-                <TemplatesPanel
-                  templates={templates}
-                  setIsTemplatesListOpen={setIsTemplatesListOpen}
-                  handleCreateTemplate={() => {
-                    setEditingTemplate(null);
-                    setIsTaskTemplateModalOpen(true);
-                  }}
-                  handleEditTemplate={handleEditTemplate}
-                  handleDeleteTemplate={openDeleteTemplateModal}
-                  userRole={userRole}
-                  isVisible={isTemplatesListOpen}
-                />
-              )}
-            </div>
-          )}
+          {/* Секция шаблонов задач удалена, так как теперь используется система вкладок */}
 
           {/* Таблица задач / Карточки задач */}
           {filteredAndSortedTasks.length === 0 ? (
@@ -1361,15 +1562,7 @@ export default function ManagerDashboard() {
                   ? "Нет задач, соответствующих заданным фильтрам."
                   : "Задачи еще не были созданы. Создайте первую задачу!"}
               </p>
-              <div className="mt-6">
-                <button
-                  onClick={() => setIsTaskModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                >
-                  <PlusIcon className="h-5 w-5 mr-1.5" />
-                  Создать новую задачу
-                </button>
-              </div>
+              {/* Убрали дублирующую кнопку "Создать новую задачу" */}
             </div>
           ) : (
             <>
