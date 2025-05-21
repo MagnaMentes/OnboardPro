@@ -15,6 +15,22 @@ services:
     depends_on:
       - db
     command: bash -c "sleep 5 && chmod +x /app/wait-for-db.sh && /app/wait-for-db.sh db 5432 -- python backend/manage.py runserver 0.0.0.0:8000"
+    networks:
+      - onboardpro_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - onboardpro_network
 
   db:
     image: postgres:14
@@ -24,6 +40,12 @@ services:
       - .env.dev
     ports:
       - "5434:5432"
+    networks:
+      - onboardpro_network
 
 volumes:
   postgres_data:
+
+networks:
+  onboardpro_network:
+    driver: bridge
