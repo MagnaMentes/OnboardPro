@@ -1,107 +1,101 @@
 # OnboardPro Backend
 
-Backend-сервис для платформы онбординга сотрудников OnboardPro, разработанный на Django 5 с Django REST Framework.
+Бэкенд-часть проекта OnboardPro, разработанная на Django REST Framework.
 
 ## Технологии
 
-- Django 5.x
-- Django REST Framework
-- PostgreSQL
-- Docker
-- Swagger/OpenAPI (drf-spectacular)
+- Python 3.11+
+- Django 5.0+
+- Django REST Framework 3.14+
+- PostgreSQL 14+
+- JWT (djangorestframework-simplejwt)
+- Docker & Docker Compose
 
-## Быстрый старт
+## Основные компоненты
 
-### Запуск проекта
+- Кастомная модель пользователя с ролевой системой
+- JWT-аутентификация
+- API документация (drf-spectacular)
+- Миграции для настройки базы данных
+
+## Пользователи и авторизация
+
+Система использует кастомную модель пользователя, расширяющую стандартного пользователя Django:
+
+- Вход по email вместо username
+- Роли: admin, hr, manager, employee
+- Аутентификация через JWT-токены
+- Защита маршрутов на основе ролей
+
+### API endpoints аутентификации
+
+- `POST /api/auth/login/` - получение access/refresh токенов
+- `POST /api/auth/refresh/` - обновление access-токена
+- `GET /api/users/me/` - информация о текущем пользователе
+
+Подробная документация по системе пользователей доступна в [backend_users.md](../KnowledgeStorage/backend_users.md)
+
+## Онбординг
+
+Система онбординга позволяет создавать программы онбординга для новых сотрудников, состоящие из различных шагов и заданий.
+
+### Основные функции
+
+- Создание и управление программами онбординга
+- Добавление шагов разных типов (задачи, встречи, обучение)
+- Назначение программ пользователям
+- Отслеживание прогресса выполнения
+
+### API endpoints онбординга
+
+- `GET /api/onboarding/programs/` - список всех программ онбординга
+- `POST /api/onboarding/programs/` - создание новой программы
+- `GET /api/onboarding/programs/{id}/` - детали программы
+- `POST /api/onboarding/programs/{id}/assign/` - назначение программы пользователю
+- `GET /api/onboarding/assignments/my/` - назначенные программы текущего пользователя
+- `POST /api/onboarding/steps/{id}/complete/` - отметить шаг как выполненный
+- `GET /api/onboarding/assignments/{id}/progress/` - прогресс по назначенной программе
+
+Подробная документация по моделям онбординга доступна в [backend_onboarding_models.md](../KnowledgeStorage/backend_onboarding_models.md)
+
+## Система обратной связи
+
+Система обратной связи позволяет собирать отзывы от сотрудников о процессе онбординга:
+
+- Настроение (FeedbackMood) по ходу выполнения программы
+- Комментарии к отдельным шагам (StepFeedback)
+
+### API endpoints обратной связи
+
+- `POST /api/feedback/mood/` - отправка настроения по назначению (ограничение - один раз в день)
+- `POST /api/feedback/step/` - отзыв по конкретному шагу
+- `GET /api/feedback/assignment/{id}/` - весь фидбек по конкретному назначению (для HR/Admin)
+
+Подробная документация по системе обратной связи доступна в [backend_feedback.md](../KnowledgeStorage/backend_feedback.md)
+
+## Установка и запуск
+
+### С использованием Docker (рекомендуется)
+
+1. Запустите контейнеры:
 
 ```bash
-# Сборка и запуск
-docker-compose up --build
-
-# Запуск существующих контейнеров
-docker-compose up
+docker-compose up -d
 ```
 
-### Основные команды
+2. Примените миграции:
 
 ```bash
-# Создать миграции
-docker-compose exec backend python manage.py makemigrations
-
-# Применить миграции
-docker-compose exec backend python manage.py migrate
-
-# Создать суперпользователя
-docker-compose exec backend python manage.py createsuperuser
+docker-compose exec backend python backend/manage.py migrate
 ```
 
-## Доступные URL
+3. Создайте суперпользователя:
 
-- Admin: [http://localhost:8000/admin/](http://localhost:8000/admin/)
-- API Health Check: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
-- API Documentation: [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)
-- ReDoc: [http://localhost:8000/api/redoc/](http://localhost:8000/api/redoc/)
-
-## Структура проекта
-
-```
-backend/
-├── config/     # Настройки и маршруты
-├── core/       # Общие классы, базовые модели
-├── users/      # Пользователи, роли, авторизация
-└── onboarding/ # Модуль онбординга
+```bash
+docker-compose exec backend python backend/manage.py createsuperuser
 ```
 
-## API Endpoints
+### Доступ к API
 
-### Health Check
-
-- **URL**: `/api/health/`
-- **Метод**: GET
-- **Ответ**: `{"status": "ok"}`
-- **Назначение**: Проверка работоспособности API
-
-## Настройки среды
-
-Настройки среды хранятся в файле `.env.dev` в корне проекта.
-
-### Порты
-
-- **Django**: 8000
-- **PostgreSQL (внешний)**: 5434
-- **PostgreSQL (внутренний)**: 5432
-
-## Docker конфигурация
-
-Проект настроен для работы с Docker и Docker Compose:
-
-- **Dockerfile.backend**: Образ бэкенда
-- **docker-compose.yml**: Настройки для развертывания
-- **entrypoint.sh**: Скрипт инициализации
-- **wait-for-db.sh**: Скрипт ожидания базы данных
-
-## База данных
-
-- **Тип**: PostgreSQL 14
-- **Имя базы данных**: onboardpro
-- **Пользователь**: postgres
-- **Пароль**: postgres (для разработки)
-
-## Документация
-
-Дополнительная документация доступна в каталоге KnowledgeStorage:
-
-- `/KnowledgeStorage/project_structure.md`
-- `/KnowledgeStorage/backend_setup.md`
-  └── onboarding_module/ # Модуль онбординга
-
-```
-
-## Разработка
-
-Вся разработка происходит в Docker-контейнере. Изменения в коде отслеживаются и автоматически применяются благодаря volume монтированию локальной директории.
-
-## Дополнительная документация
-
-Более подробная документация доступна в каталоге `/KnowledgeStorage/`
-```
+Backend API доступен по адресу: [http://localhost:8000/api/](http://localhost:8000/api/)
+Документация API (Swagger): [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)
