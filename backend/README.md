@@ -93,7 +93,8 @@ backend/
 
 - `/KnowledgeStorage/project_structure.md`
 - `/KnowledgeStorage/backend_setup.md`
-└── onboarding_module/ # Модуль онбординга
+  └── onboarding_module/ # Модуль онбординга
+
 ```
 
 ## Разработка
@@ -103,3 +104,4 @@ backend/
 ## Дополнительная документация
 
 Более подробная документация доступна в каталоге `/KnowledgeStorage/`
+```

@@ -1,0 +1,39 @@
+# Ignore Python bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore virtual environment directories
+venv/
+env/
+ENV/
+
+# Ignore database files
+*.sqlite3
+*.db
+
+# Ignore environment variables
+.env
+.env.local
+
+# Ignore IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Ignore logs
+*.log
+
+# Ignore reports directory - содержит внутреннюю документацию
+/reports/
+
+# Ignore Docker volumes
+postgres_data/
+
+# Ignore Django static files collection
+staticfiles/
+static/
+
+# Ignore project sensitive data
+.env.prod
