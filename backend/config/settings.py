@@ -50,12 +50,14 @@ INSTALLED_APPS = [
     # Сторонние приложения
     'rest_framework',
     'drf_spectacular',
+    'drf_spectacular_sidecar',  # required for Django collectstatic discovery
     'corsheaders',
 
     # Внутренние приложения
     'core',
     'users',
     'onboarding',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -167,6 +169,17 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API платформы для онбординга сотрудников',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    # Настройки Swagger UI
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': False,
+    },
+    'COMPONENT_SPLIT_REQUEST': True,
+    'COMPONENT_NO_READ_ONLY_REQUIRED': False,
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
 }
 
 # Настройки JWT

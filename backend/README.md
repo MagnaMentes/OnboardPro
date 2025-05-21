@@ -117,6 +117,37 @@ curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/analytics/
 
 Подробная документация по аналитическому API доступна в [backend_analytics.md](../KnowledgeStorage/backend_analytics.md)
 
+## Notifications API
+
+Система уведомлений предоставляет API для получения и управления уведомлениями:
+
+- Автоматические уведомления о новых назначениях
+- Напоминания о приближающихся дедлайнах
+- Уведомления о пропущенных шагах и провале тестов
+
+### API endpoints уведомлений
+
+- `GET /api/notifications/` - список всех уведомлений пользователя
+- `POST /api/notifications/{id}/read/` - отметка уведомления как прочитанное
+- `POST /api/notifications/read-all/` - отметка всех уведомлений как прочитанные
+
+Все эндпоинты уведомлений доступны только авторизованным пользователям и возвращают только уведомления, предназначенные для текущего пользователя.
+
+Пример использования с cURL:
+
+```bash
+# Получение JWT-токена
+curl -X POST -H "Content-Type: application/json" -d '{"email": "user@example.com", "password": "password"}' http://localhost:8000/api/auth/login/
+
+# Получение списка уведомлений
+curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/notifications/
+
+# Отметка уведомления как прочитанное
+curl -X POST -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/notifications/1/read/
+```
+
+Подробная документация по системе уведомлений доступна в [backend_notifications.md](../KnowledgeStorage/backend_notifications.md)
+
 ## Установка и запуск
 
 ### С использованием Docker (рекомендуется)

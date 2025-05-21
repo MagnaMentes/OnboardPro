@@ -1,0 +1,1412 @@
+openapi: 3.0.3
+info:
+  title: OnboardPro API
+  version: 1.0.0
+  description: API платформы для онбординга сотрудников
+paths:
+  /api/analytics/assignments/:
+    get:
+      operationId: analytics_assignments_retrieve
+      description: API для получения таблицы всех назначений с прогрессом в процентах.
+        Включает ФИО, должность, программу, статус, процент прогресса и дату начала.
+      summary: Получение таблицы назначений с прогрессом
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Таблица назначений с прогрессом
+  /api/analytics/feedback-summary/:
+    get:
+      operationId: analytics_feedback_summary_retrieve
+      description: API для получения сводки по настроениям пользователей за последние
+        14 дней. Группирует отзывы по дням для построения графика.
+      summary: Получение сводки по настроениям пользователей
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Сводка по настроениям пользователей
+  /api/analytics/summary/:
+    get:
+      operationId: analytics_summary_retrieve
+      description: API для получения общей сводки по онбордингу. Включает количество
+        сотрудников на онбординге, количество завершённых назначений, средний процент
+        прогресса, статистику по фидбеку и тестам.
+      summary: Получение общей сводки по онбордингу
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Общая сводка по онбордингу
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Кастомное представление для получения токенов JWT
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomTokenObtainPair'
+          description: ''
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/feedback/assignment/{id}/:
+    get:
+      operationId: feedback_assignment_retrieve
+      description: |-
+        Представление для получения всей обратной связи по конкретному назначению
+        Доступно только для HR и ADMIN
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentFeedback'
+          description: ''
+  /api/feedback/mood/:
+    post:
+      operationId: feedback_mood_create
+      description: |-
+        Представление для создания записи о настроении (FeedbackMood)
+        Доступно всем авторизованным пользователям
+      tags:
+      - feedback
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackMood'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FeedbackMood'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FeedbackMood'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackMood'
+          description: ''
+  /api/feedback/step/:
+    post:
+      operationId: feedback_step_create
+      description: |-
+        Представление для создания отзыва о шаге (StepFeedback)
+        Доступно всем авторизованным пользователям
+      tags:
+      - feedback
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StepFeedback'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StepFeedback'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StepFeedback'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StepFeedback'
+          description: ''
+  /api/health/:
+    get:
+      operationId: health_retrieve
+      description: API endpoint для проверки статуса работы сервера.
+      tags:
+      - health
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/lms/module/{step_id}/:
+    get:
+      operationId: lms_module_list
+      description: Представление для получения списка обучающих модулей для шага онбординга
+      parameters:
+      - in: path
+        name: step_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - lms
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LMSModule'
+          description: ''
+  /api/lms/test/{step_id}/:
+    get:
+      operationId: lms_test_retrieve
+      description: Представление для получения теста для шага онбординга
+      parameters:
+      - in: path
+        name: step_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - lms
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LMSTest'
+          description: ''
+  /api/lms/test/{step_id}/result/:
+    get:
+      operationId: lms_test_result_retrieve
+      description: Представление для получения результата прохождения теста пользователем
+      parameters:
+      - in: path
+        name: step_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - lms
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LMSUserTestResult'
+          description: ''
+  /api/lms/test/{step_id}/submit/:
+    post:
+      operationId: lms_test_submit_create
+      description: Обработка отправки ответов на тест
+      parameters:
+      - in: path
+        name: step_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - lms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSubmit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TestSubmit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestSubmit'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSubmit'
+          description: ''
+  /api/notifications/:
+    get:
+      operationId: notifications_list
+      description: |-
+        ViewSet для работы с уведомлениями пользователя.
+
+        Поддерживаемые операции:
+        - GET /api/notifications/ - получение списка своих уведомлений
+        - GET /api/notifications/{id}/ - получение деталей одного уведомления
+        - POST /api/notifications/{id}/read/ - отметка уведомления как прочитанное
+        - POST /api/notifications/read-all/ - отметка всех уведомлений как прочитанные
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/{id}/:
+    get:
+      operationId: notifications_retrieve
+      description: |-
+        ViewSet для работы с уведомлениями пользователя.
+
+        Поддерживаемые операции:
+        - GET /api/notifications/ - получение списка своих уведомлений
+        - GET /api/notifications/{id}/ - получение деталей одного уведомления
+        - POST /api/notifications/{id}/read/ - отметка уведомления как прочитанное
+        - POST /api/notifications/read-all/ - отметка всех уведомлений как прочитанные
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/{id}/read/:
+    post:
+      operationId: notifications_read_create
+      description: Отмечает уведомление как прочитанное
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/read_all/:
+    post:
+      operationId: notifications_read_all_create
+      description: Отмечает все уведомления пользователя как прочитанные
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Notification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/onboarding/assignments/{id}/progress/:
+    get:
+      operationId: onboarding_assignments_progress_retrieve
+      description: Доступно пользователю, которому назначена программа, или HR/Admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProgress'
+          description: ''
+  /api/onboarding/assignments/my/:
+    get:
+      operationId: onboarding_assignments_my_list
+      description: Представление для получения списка назначений текущего пользователя
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserOnboardingAssignment'
+          description: ''
+  /api/onboarding/programs/:
+    get:
+      operationId: onboarding_programs_list
+      description: Представление для получения списка и создания онбординг-программ
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnboardingProgram'
+          description: ''
+    post:
+      operationId: onboarding_programs_create
+      description: Представление для получения списка и создания онбординг-программ
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingProgram'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OnboardingProgram'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OnboardingProgram'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingProgram'
+          description: ''
+  /api/onboarding/programs/{id}/:
+    get:
+      operationId: onboarding_programs_retrieve
+      description: Представление для получения, обновления и удаления онбординг-программы
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingProgram'
+          description: ''
+    put:
+      operationId: onboarding_programs_update
+      description: Представление для получения, обновления и удаления онбординг-программы
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingProgram'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OnboardingProgram'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OnboardingProgram'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingProgram'
+          description: ''
+    patch:
+      operationId: onboarding_programs_partial_update
+      description: Представление для получения, обновления и удаления онбординг-программы
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOnboardingProgram'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOnboardingProgram'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOnboardingProgram'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingProgram'
+          description: ''
+    delete:
+      operationId: onboarding_programs_destroy
+      description: Представление для получения, обновления и удаления онбординг-программы
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/onboarding/programs/{id}/assign/:
+    post:
+      operationId: onboarding_programs_assign_create
+      description: |-
+        Представление для назначения программы пользователю
+        Доступно только для HR и Admin
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignProgram'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssignProgram'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignProgram'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignProgram'
+          description: ''
+  /api/onboarding/programs/{program_id}/steps/:
+    get:
+      operationId: onboarding_programs_steps_list
+      description: Представление для получения списка и создания шагов онбординга
+        для программы
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnboardingStep'
+          description: ''
+    post:
+      operationId: onboarding_programs_steps_create
+      description: Представление для получения списка и создания шагов онбординга
+        для программы
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingStep'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OnboardingStep'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OnboardingStep'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingStep'
+          description: ''
+  /api/onboarding/steps/{id}/complete/:
+    post:
+      operationId: onboarding_steps_complete_create
+      description: Представление для отметки шага как выполненного
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteStep'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompleteStep'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompleteStep'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteStep'
+          description: ''
+  /api/users/me/:
+    get:
+      operationId: users_me_retrieve
+      description: Представление для получения данных текущего пользователя
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+components:
+  schemas:
+    AssignProgram:
+      type: object
+      description: Сериализатор для назначения программы пользователю
+      properties:
+        user_id:
+          type: integer
+      required:
+      - user_id
+    AssignmentFeedback:
+      type: object
+      description: Сериализатор для получения всей обратной связи по конкретному назначению
+      properties:
+        assignment_id:
+          type: integer
+        program_name:
+          type: string
+          readOnly: true
+        user_email:
+          type: string
+          readOnly: true
+        moods:
+          type: string
+          readOnly: true
+        step_feedbacks:
+          type: string
+          readOnly: true
+      required:
+      - assignment_id
+      - moods
+      - program_name
+      - step_feedbacks
+      - user_email
+    CompleteStep:
+      type: object
+      description: Сериализатор для отметки шага как выполненного
+      properties:
+        user_id:
+          type: integer
+    ContentTypeEnum:
+      enum:
+      - video
+      - text
+      - file
+      type: string
+      description: |-
+        * `video` - Video
+        * `text` - Text
+        * `file` - File
+    CustomTokenObtainPair:
+      type: object
+      description: |-
+        Кастомный сериализатор для получения JWT-токенов
+        Добавляет дополнительную информацию о пользователе в токен
+      properties:
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    FeedbackMood:
+      type: object
+      description: Сериализатор для модели настроения по назначению
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        user_email:
+          type: string
+          format: email
+          readOnly: true
+        assignment:
+          type: integer
+        assignment_program_name:
+          type: string
+          readOnly: true
+        value:
+          $ref: '#/components/schemas/ValueEnum'
+        value_display:
+          type: string
+          readOnly: true
+        comment:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assignment
+      - assignment_program_name
+      - created_at
+      - id
+      - user
+      - user_email
+      - value
+      - value_display
+    LMSModule:
+      type: object
+      description: Сериализатор для модели обучающего модуля LMS
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        content_type:
+          $ref: '#/components/schemas/ContentTypeEnum'
+        content:
+          type: string
+          description: URL видео, текстовое содержимое или путь к файлу
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        step:
+          type: integer
+          title: Onboarding step
+        step_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content
+      - content_type
+      - created_at
+      - id
+      - order
+      - step
+      - step_name
+      - title
+      - updated_at
+    LMSOption:
+      type: object
+      description: Сериализатор для модели варианта ответа LMS
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+          title: Option text
+          maxLength: 255
+        is_correct:
+          type: boolean
+          writeOnly: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - id
+      - text
+    LMSQuestion:
+      type: object
+      description: Сериализатор для модели вопроса теста LMS
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+          title: Question text
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/LMSOption'
+          readOnly: true
+      required:
+      - id
+      - options
+      - text
+    LMSTest:
+      type: object
+      description: Сериализатор для модели теста LMS
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        step:
+          type: integer
+          title: Onboarding step
+        step_name:
+          type: string
+          readOnly: true
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/LMSQuestion'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_completed:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - is_completed
+      - questions
+      - step
+      - step_name
+      - title
+      - updated_at
+    LMSUserTestResult:
+      type: object
+      description: Сериализатор для результата прохождения теста пользователем
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+        test:
+          type: integer
+          readOnly: true
+        test_title:
+          type: string
+          readOnly: true
+        is_passed:
+          type: boolean
+          readOnly: true
+        score:
+          type: integer
+          readOnly: true
+        max_score:
+          type: integer
+          readOnly: true
+        percentage:
+          type: string
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - completed_at
+      - id
+      - is_passed
+      - max_score
+      - percentage
+      - score
+      - test
+      - test_title
+      - user
+    Notification:
+      type: object
+      description: Сериализатор для модели уведомлений
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        notification_type:
+          allOf:
+          - $ref: '#/components/schemas/NotificationTypeEnum'
+          readOnly: true
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message
+      - notification_type
+      - title
+    NotificationTypeEnum:
+      enum:
+      - info
+      - warning
+      - deadline
+      - system
+      type: string
+      description: |-
+        * `info` - Information
+        * `warning` - Warning
+        * `deadline` - Deadline
+        * `system` - System
+    OnboardingProgram:
+      type: object
+      description: Сериализатор для модели онбординг-программы
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        author:
+          type: integer
+          readOnly: true
+        author_email:
+          type: string
+          format: email
+          readOnly: true
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnboardingStep'
+          readOnly: true
+      required:
+      - author
+      - author_email
+      - created_at
+      - id
+      - name
+      - steps
+    OnboardingStep:
+      type: object
+      description: Сериализатор для модели шага онбординга
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        step_type:
+          $ref: '#/components/schemas/StepTypeEnum'
+        order:
+          type: integer
+          readOnly: true
+        program:
+          type: integer
+          readOnly: true
+        is_required:
+          type: boolean
+        deadline_days:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Number of days to complete after assignment
+      required:
+      - id
+      - name
+      - order
+      - program
+    PatchedOnboardingProgram:
+      type: object
+      description: Сериализатор для модели онбординг-программы
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        author:
+          type: integer
+          readOnly: true
+        author_email:
+          type: string
+          format: email
+          readOnly: true
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnboardingStep'
+          readOnly: true
+    ProgramProgress:
+      type: object
+      description: Сериализатор для отображения прогресса по программе
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        program:
+          type: integer
+        program_name:
+          type: string
+          readOnly: true
+        assigned_at:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        total_steps:
+          type: string
+          readOnly: true
+        completed_steps:
+          type: string
+          readOnly: true
+        progress_percentage:
+          type: string
+          readOnly: true
+        steps_progress:
+          type: string
+          readOnly: true
+      required:
+      - completed_steps
+      - id
+      - program
+      - program_name
+      - progress_percentage
+      - steps_progress
+      - total_steps
+    RoleEnum:
+      enum:
+      - admin
+      - hr
+      - manager
+      - employee
+      type: string
+      description: |-
+        * `admin` - Administrator
+        * `hr` - HR Manager
+        * `manager` - Department Manager
+        * `employee` - Employee
+    StatusEnum:
+      enum:
+      - active
+      - completed
+      type: string
+      description: |-
+        * `active` - Active
+        * `completed` - Completed
+    StepFeedback:
+      type: object
+      description: Сериализатор для модели отзыва по конкретному шагу
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        user_email:
+          type: string
+          format: email
+          readOnly: true
+        step:
+          type: integer
+        step_name:
+          type: string
+          readOnly: true
+        assignment:
+          type: integer
+        comment:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assignment
+      - comment
+      - created_at
+      - id
+      - step
+      - step_name
+      - user
+      - user_email
+    StepTypeEnum:
+      enum:
+      - task
+      - meeting
+      - training
+      type: string
+      description: |-
+        * `task` - Task
+        * `meeting` - Meeting
+        * `training` - Training
+    TestSubmit:
+      type: object
+      description: Сериализатор для отправки ответов на тест
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: integer
+      required:
+      - answers
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      description: Сериализатор для модели пользователя
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        full_name:
+          type: string
+          maxLength: 255
+        position:
+          type: string
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+          title: Active
+          description: Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - id
+      - username
+    UserOnboardingAssignment:
+      type: object
+      description: Сериализатор для модели назначения онбординг-программы пользователю
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        user_email:
+          type: string
+          format: email
+          readOnly: true
+        program:
+          type: integer
+        program_name:
+          type: string
+          readOnly: true
+        assigned_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - assigned_at
+      - id
+      - program
+      - program_name
+      - user
+      - user_email
+    ValueEnum:
+      enum:
+      - great
+      - good
+      - neutral
+      - bad
+      - terrible
+      type: string
+      description: |-
+        * `great` - Great
+        * `good` - Good
+        * `neutral` - Neutral
+        * `bad` - Bad
+        * `terrible` - Terrible
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
