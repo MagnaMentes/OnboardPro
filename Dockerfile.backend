@@ -1,0 +1,24 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка зависимостей Python
+RUN pip install --upgrade pip
+COPY backend/requirements.txt .
+RUN pip install -r requirements.txt
+
+# Копирование проекта
+COPY backend/ backend/
+
+# Скрипты запуска
+COPY entrypoint.sh .
+COPY wait-for-db.sh .
+RUN chmod +x entrypoint.sh wait-for-db.sh
+
+# Открытие порта
+EXPOSE 8000
