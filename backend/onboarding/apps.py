@@ -6,3 +6,6 @@ class OnboardingConfig(AppConfig):
     name = 'onboarding'
     label = 'onboarding'
     verbose_name = 'Onboarding Programs'
+
+    def ready(self):
+        import onboarding.lms_models  # Регистрация моделей LMS

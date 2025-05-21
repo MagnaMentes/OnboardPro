@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from .views import (
     OnboardingProgramListView, OnboardingProgramDetailView,
     AssignProgramView, UserAssignmentsView,
@@ -38,4 +38,10 @@ urlpatterns = [
          name='feedback-step-create'),
     path('feedback/assignment/<int:pk>/', AssignmentFeedbackView.as_view(),
          name='assignment-feedback'),
+
+    # LMS URLs
+    path('', include('onboarding.lms_urls')),
+
+    # Analytics URLs
+    path('analytics/', include('onboarding.analytics_urls')),
 ]

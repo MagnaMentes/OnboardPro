@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import OnboardingProgram, OnboardingStep, UserOnboardingAssignment, UserStepProgress
 from .feedback_models import FeedbackMood, StepFeedback
+from .lms_models import LMSModule, LMSTest, LMSQuestion, LMSOption, LMSUserAnswer, LMSUserTestResult
 
 # Register your models here.
 
@@ -53,3 +54,68 @@ class StepFeedbackAdmin(admin.ModelAdmin):
     list_filter = ('step__program', 'created_at')
     search_fields = ('user__email', 'step__name', 'comment')
     raw_id_fields = ('user', 'step', 'assignment')
+
+
+# LMS Admin Models
+class LMSOptionInline(admin.TabularInline):
+    model = LMSOption
+    extra = 3
+
+
+class LMSQuestionInline(admin.StackedInline):
+    model = LMSQuestion
+    extra = 1
+
+
+@admin.register(LMSModule)
+class LMSModuleAdmin(admin.ModelAdmin):
+    list_display = ('title', 'step', 'content_type', 'order', 'created_at')
+    list_filter = ('content_type', 'step__program')
+    search_fields = ('title', 'description', 'content')
+    raw_id_fields = ('step',)
+    list_editable = ('order',)
+
+
+@admin.register(LMSTest)
+class LMSTestAdmin(admin.ModelAdmin):
+    list_display = ('title', 'step', 'created_at')
+    list_filter = ('step__program', 'created_at')
+    search_fields = ('title', 'description')
+    raw_id_fields = ('step',)
+    inlines = [LMSQuestionInline]
+
+
+@admin.register(LMSQuestion)
+class LMSQuestionAdmin(admin.ModelAdmin):
+    list_display = ('text', 'test', 'order')
+    list_filter = ('test__step__program',)
+    search_fields = ('text',)
+    raw_id_fields = ('test',)
+    list_editable = ('order',)
+    inlines = [LMSOptionInline]
+
+
+@admin.register(LMSOption)
+class LMSOptionAdmin(admin.ModelAdmin):
+    list_display = ('text', 'question', 'is_correct', 'order')
+    list_filter = ('is_correct',)
+    search_fields = ('text',)
+    raw_id_fields = ('question',)
+    list_editable = ('is_correct', 'order')
+
+
+@admin.register(LMSUserAnswer)
+class LMSUserAnswerAdmin(admin.ModelAdmin):
+    list_display = ('user', 'question', 'selected_option', 'answered_at')
+    list_filter = ('question__test__step__program', 'answered_at')
+    search_fields = ('user__email',)
+    raw_id_fields = ('user', 'question', 'selected_option')
+
+
+@admin.register(LMSUserTestResult)
+class LMSUserTestResultAdmin(admin.ModelAdmin):
+    list_display = ('user', 'test', 'is_passed',
+                    'score', 'max_score', 'completed_at')
+    list_filter = ('is_passed', 'test__step__program', 'completed_at')
+    search_fields = ('user__email', 'test__title')
+    raw_id_fields = ('user', 'test')
