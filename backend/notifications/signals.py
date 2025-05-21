@@ -67,43 +67,36 @@ def check_approaching_deadlines():
     now = timezone.now()
 
     for step_progress in active_steps:
-        # Проверяем, есть ли дедлайн для этого шага
-        if step_progress.step.deadline_days is not None:
-            # Получаем дату дедлайна
-            assignment = UserOnboardingAssignment.objects.filter(
-                user=step_progress.user,
-                program=step_progress.step.program
-            ).first()
+        # Проверяем наличие запланированной даты окончания
+        if step_progress.planned_date_end:
+            deadline = step_progress.planned_date_end
 
-            if assignment:
-                deadline = assignment.assigned_at + \
-                    timezone.timedelta(days=step_progress.step.deadline_days)
-                # Если до дедлайна осталось менее 24 часов
-                if now + timezone.timedelta(hours=24) >= deadline and now < deadline:
-                    # Создаем уведомление о приближающемся дедлайне
+            # Если до дедлайна осталось менее 24 часов
+            if now + timezone.timedelta(hours=24) >= deadline and now < deadline:
+                # Создаем уведомление о приближающемся дедлайне
+                Notification.objects.create(
+                    recipient=step_progress.user,
+                    title=_('Deadline approaching'),
+                    message=_(
+                        f'You have less than 24 hours to complete the step "{step_progress.step.name}" in program "{step_progress.step.program.name}".'),
+                    notification_type=NotificationType.DEADLINE
+                )
+
+            # Если дедлайн пропущен, уведомляем HR/менеджера
+            elif now > deadline and not step_progress.completed_at:
+                # Находим HR/менеджеров
+                from users.models import User, UserRole
+                hr_managers = User.objects.filter(
+                    role__in=[UserRole.HR, UserRole.MANAGER])
+
+                for hr in hr_managers:
                     Notification.objects.create(
-                        recipient=step_progress.user,
-                        title=_('Deadline approaching'),
+                        recipient=hr,
+                        title=_('Deadline missed'),
                         message=_(
-                            f'You have less than 24 hours to complete the step "{step_progress.step.name}" in program "{step_progress.step.program.name}".'),
-                        notification_type=NotificationType.DEADLINE
+                            f'Employee {step_progress.user.get_full_name()} missed the deadline for step "{step_progress.step.name}" in program "{step_progress.step.program.name}".'),
+                        notification_type=NotificationType.WARNING
                     )
-
-                # Если дедлайн пропущен, уведомляем HR/менеджера
-                elif now > deadline and not step_progress.completed_at:
-                    # Находим HR/менеджеров
-                    from users.models import User, UserRole
-                    hr_managers = User.objects.filter(
-                        role__in=[UserRole.HR, UserRole.MANAGER])
-
-                    for hr in hr_managers:
-                        Notification.objects.create(
-                            recipient=hr,
-                            title=_('Deadline missed'),
-                            message=_(
-                                f'Employee {step_progress.user.get_full_name()} missed the deadline for step "{step_progress.step.name}" in program "{step_progress.step.program.name}".'),
-                            notification_type=NotificationType.WARNING
-                        )
 
 
 def notify_on_test_failure(user, step):

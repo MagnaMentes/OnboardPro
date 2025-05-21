@@ -139,6 +139,13 @@ class UserStepProgress(models.Model):
     )
     completed_at = models.DateTimeField(
         _('completed at'), null=True, blank=True)
+    # Smart Scheduler fields
+    planned_date_start = models.DateTimeField(
+        _('planned start date'), null=True, blank=True)
+    planned_date_end = models.DateTimeField(
+        _('planned end date'), null=True, blank=True)
+    actual_completed_at = models.DateTimeField(
+        _('actual completion date'), null=True, blank=True)
 
     class Meta:
         verbose_name = _('user step progress')
@@ -153,6 +160,8 @@ class UserStepProgress(models.Model):
         """
         Отмечает шаг как выполненный и устанавливает дату завершения
         """
+        now = timezone.now()
         self.status = self.ProgressStatus.DONE
-        self.completed_at = timezone.now()
+        self.completed_at = now
+        self.actual_completed_at = now
         self.save()

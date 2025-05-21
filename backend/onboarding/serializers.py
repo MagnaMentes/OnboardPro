@@ -62,9 +62,13 @@ class UserStepProgressSerializer(serializers.ModelSerializer):
         model = UserStepProgress
         fields = [
             'id', 'user', 'step', 'step_name', 'step_type',
-            'status', 'completed_at'
+            'status', 'completed_at', 'planned_date_start',
+            'planned_date_end', 'actual_completed_at'
         ]
-        read_only_fields = ['completed_at', 'step_name', 'step_type']
+        read_only_fields = [
+            'completed_at', 'step_name', 'step_type', 'planned_date_start',
+            'planned_date_end', 'actual_completed_at'
+        ]
 
 
 class AssignProgramSerializer(serializers.Serializer):

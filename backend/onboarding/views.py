@@ -12,6 +12,7 @@ from .serializers import (
     UserOnboardingAssignmentSerializer, UserStepProgressSerializer,
     AssignProgramSerializer, CompleteStepSerializer, ProgramProgressSerializer
 )
+from .services import SmartSchedulerService
 
 User = get_user_model()
 
@@ -75,8 +76,11 @@ class AssignProgramView(generics.GenericAPIView):
                         'status': UserStepProgress.ProgressStatus.NOT_STARTED}
                 )
 
+            # Применяем умное планирование с использованием SmartSchedulerService
+            SmartSchedulerService.schedule_steps(assignment)
+
         return Response(
-            {'message': 'Программа успешно назначена пользователю'},
+            {'message': 'Программа успешно назначена пользователю и спланирована'},
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
 
