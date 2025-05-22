@@ -14,7 +14,7 @@ services:
       - .env.dev
     depends_on:
       - db
-    command: bash -c "sleep 5 && chmod +x /app/wait-for-db.sh && /app/wait-for-db.sh db 5432 -- python backend/manage.py runserver 0.0.0.0:8000"
+    command: bash -c "sleep 5 && chmod +x /app/wait-for-db.sh && /app/wait-for-db.sh db 5432 -- python backend/manage.py migrate && python backend/manage.py runserver 0.0.0.0:8000"
     networks:
       - onboardpro_network
 
