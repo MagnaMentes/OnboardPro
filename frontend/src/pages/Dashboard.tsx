@@ -5,13 +5,20 @@ import {
   Flex,
   Grid,
   Heading,
-  Icon,
   Text,
   VStack,
+  Link,
+  HStack,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import toast from "react-hot-toast";
+import { FiBarChart2 } from "react-icons/fi";
+import { useAuthStore } from "../store/authStore";
 
 function Dashboard() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(
@@ -19,28 +26,26 @@ function Dashboard() {
   );
   const navigate = useNavigate();
 
+  const { user: authUser, isAuthenticated } = useAuthStore();
+
   useEffect(() => {
     // Проверяем аутентификацию
-    const token = localStorage.getItem("authToken");
-    const userData = localStorage.getItem("user");
-
-    if (!token || !userData) {
+    if (!isAuthenticated || !authUser) {
       toast.error("Требуется авторизация");
       navigate("/login");
       return;
     }
 
-    try {
-      setUser(JSON.parse(userData));
-    } catch (e) {
-      localStorage.removeItem("user");
-      navigate("/login");
-    }
-  }, [navigate]);
+    setUser({
+      name: authUser.full_name,
+      email: authUser.email,
+    });
+  }, [navigate, authUser, isAuthenticated]);
+
+  const { logout } = useAuthStore();
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
+    logout();
     toast.success("Вы вышли из системы");
     navigate("/login");
   };
@@ -69,6 +74,24 @@ function Dashboard() {
 
         <Flex align="center">
           <Text mr={4}>Привет, {user.name}!</Text>
+
+          {/* Навигация для HR и админов */}
+          {authUser &&
+            (authUser.role === "admin" || authUser.role === "hr") && (
+              <Box mr={4}>
+                <Link
+                  as={RouterLink}
+                  to="/admin/analytics"
+                  color="white"
+                  display="flex"
+                  alignItems="center"
+                >
+                  <Box as={FiBarChart2} mr={2} />
+                  BI-аналитика
+                </Link>
+              </Box>
+            )}
+
           <Button onClick={handleLogout} colorScheme="whiteAlpha">
             Выйти
           </Button>

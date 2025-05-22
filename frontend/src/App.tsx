@@ -8,6 +8,7 @@ import {
 import { Toaster } from "react-hot-toast";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Analytics from "./pages/admin/Analytics";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
 import { useAuthStore } from "./store/authStore";
@@ -60,7 +61,7 @@ function App() {
 
           {/* Маршруты для HR и админов */}
           <Route element={<ProtectedRoute requiredRole={["admin", "hr"]} />}>
-            {/* Здесь будут маршруты доступные HR и администраторам */}
+            <Route path="/admin/analytics" element={<Analytics />} />
           </Route>
         </Routes>
       </Router>
