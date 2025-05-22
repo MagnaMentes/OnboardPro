@@ -165,3 +165,25 @@ class UserStepProgress(models.Model):
         self.completed_at = now
         self.actual_completed_at = now
         self.save()
+
+
+class AIHint(models.Model):
+    """
+    Модель для хранения AI-подсказок к шагам онбординга
+    """
+    assignment_step = models.ForeignKey(
+        UserStepProgress,
+        on_delete=models.CASCADE,
+        related_name='ai_hints',
+        verbose_name=_('assignment step')
+    )
+    generated_hint = models.TextField(_('generated hint'))
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('AI hint')
+        verbose_name_plural = _('AI hints')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Hint for {self.assignment_step}"

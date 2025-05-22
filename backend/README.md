@@ -186,6 +186,38 @@ curl -X POST -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/no
 
 Подробная документация по системе уведомлений доступна в [backend_notifications.md](../KnowledgeStorage/backend_notifications.md)
 
+## AI Copilot (Solomia)
+
+Интеллектуальный ассистент Solomia помогает сотрудникам проходить этапы онбординга, предоставляя контекстно-зависимые подсказки на основании описания текущего шага и предыдущего фидбэка.
+
+### Основные функции
+
+- Генерация персонализированных подсказок для шагов онбординга
+- Учёт фидбэка по предыдущим шагам
+- Сохранение истории подсказок
+
+### API endpoints AI Copilot
+
+- `GET /api/ai/step/{id}/hint/` - получение существующей подсказки для шага
+- `POST /api/ai/step/{id}/hint/` - генерация новой подсказки для шага
+
+Все эндпоинты AI Copilot доступны только авторизованным пользователям и работают только с шагами, назначенными текущему пользователю.
+
+Пример использования с cURL:
+
+```bash
+# Получение JWT-токена
+curl -X POST -H "Content-Type: application/json" -d '{"email": "user@example.com", "password": "password"}' http://localhost:8000/api/auth/login/
+
+# Получение существующей подсказки
+curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/ai/step/1/hint/
+
+# Генерация новой подсказки
+curl -X POST -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/ai/step/1/hint/
+```
+
+Подробная документация по AI Copilot доступна в [backend_ai_copilot.md](../KnowledgeStorage/backend_ai_copilot.md)
+
 ## Установка и запуск
 
 ### С использованием Docker (рекомендуется)

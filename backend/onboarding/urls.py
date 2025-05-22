@@ -44,4 +44,7 @@ urlpatterns = [
 
     # Analytics URLs
     path('analytics/', include('onboarding.analytics_urls')),
+
+    # AI Copilot (Solomia) URLs
+    path('ai/', include('onboarding.ai_urls')),
 ]
