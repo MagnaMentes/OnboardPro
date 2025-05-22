@@ -17,6 +17,7 @@ OnboardPro - платформа для автоматизации процесс
 - Защищенный REST API
 - Современный веб-интерфейс
 - Smart Feedback Loop для автоматического анализа обратной связи
+- AI Copilot (Solomia) - интеллектуальный ассистент для сотрудников
 
 ## Структура проекта
 
@@ -41,6 +42,8 @@ OnboardPro - платформа для автоматизации процесс
 - [Smart Feedback Loop (Backend)](KnowledgeStorage/backend_smart_feedback.md)
 - [Smart Feedback Loop (Frontend)](KnowledgeStorage/frontend_smart_feedback.md)
 - [HR Alerts System](KnowledgeStorage/backend_hr_alerts.md)
+- [AI Copilot (Solomia)](KnowledgeStorage/backend_ai_copilot.md)
+- [AI Copilot (Frontend)](KnowledgeStorage/frontend_ai_copilot.md)
 
 ## Установка и запуск
 
@@ -59,6 +62,12 @@ docker-compose exec backend python backend/manage.py createsuperuser
 
 ## Последние обновления
 
+- **Sprint 0.13**: Внедрен AI Copilot (Solomia) - интеллектуальный ассистент для сотрудников:
+  - Генерация контекстуальных подсказок на основе текущего прогресса и предыдущих отзывов
+  - Сервис для анализа данных о шагах и формирования релевантных рекомендаций
+  - API для работы с интеллектуальными подсказками
+  - Интуитивный интерфейс для отображения подсказок в процессе онбординга
+  - Возможность персонализации подсказок под конкретного пользователя
 - **Sprint 0.12**: Добавлена система HR Alerts для автоматического уведомления о негативной обратной связи:
   - Автоматическое создание уведомлений при негативных отзывах сотрудников
   - Мгновенные оповещения для HR и администраторов о проблемах в процессе онбординга
@@ -105,3 +114,7 @@ docker-compose exec backend python backend/manage.py createsuperuser
 ## Статус проекта
 
 Проект активно разрабатывается. Последнее обновление: 22 мая 2025 г.
+
+## Команда разработки
+
+Проект разрабатывается с помощью GitHub Copilot и энтузиазма команды разработчиков.
