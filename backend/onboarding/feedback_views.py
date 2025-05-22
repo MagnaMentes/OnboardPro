@@ -35,8 +35,22 @@ class StepFeedbackCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        # Устанавливаем текущего пользователя
-        serializer.save(user=self.request.user)
+        # Получаем текст комментария из данных
+        comment = self.request.data.get('comment', '')
+
+        # Импортируем здесь, чтобы избежать циклического импорта
+        from .services.smart_feedback import SmartFeedbackService
+
+        # Анализируем текст комментария с помощью SmartFeedbackService
+        auto_tag, sentiment_score = SmartFeedbackService.analyze_feedback(
+            comment)
+
+        # Устанавливаем текущего пользователя и результаты анализа
+        serializer.save(
+            user=self.request.user,
+            auto_tag=auto_tag,
+            sentiment_score=sentiment_score
+        )
 
 
 class AssignmentFeedbackView(generics.GenericAPIView):

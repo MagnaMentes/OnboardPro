@@ -12,7 +12,8 @@ from .serializers import (
     UserOnboardingAssignmentSerializer, UserStepProgressSerializer,
     AssignProgramSerializer, CompleteStepSerializer, ProgramProgressSerializer
 )
-from .services import SmartSchedulerService
+# Импортируем из модуля services
+from .services.smart_scheduler import SmartSchedulerService
 
 User = get_user_model()
 

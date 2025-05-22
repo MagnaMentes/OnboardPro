@@ -50,6 +50,13 @@ class StepFeedback(models.Model):
     """
     Модель для отзыва пользователя о конкретном шаге онбординга
     """
+    class AutoTagChoices(models.TextChoices):
+        POSITIVE = 'positive', _('Positive')
+        NEUTRAL = 'neutral', _('Neutral')
+        NEGATIVE = 'negative', _('Negative')
+        UNCLEAR_INSTRUCTION = 'unclear_instruction', _('Unclear Instruction')
+        DELAY_WARNING = 'delay_warning', _('Delay Warning')
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -69,6 +76,18 @@ class StepFeedback(models.Model):
         verbose_name=_('assignment')
     )
     comment = models.TextField(_('comment'))
+    auto_tag = models.CharField(
+        _('auto tag'),
+        max_length=30,
+        choices=AutoTagChoices.choices,
+        blank=True,
+        null=True
+    )
+    sentiment_score = models.FloatField(
+        _('sentiment score'),
+        blank=True,
+        null=True
+    )
     created_at = models.DateTimeField(_('created at'), default=timezone.now)
 
     class Meta:

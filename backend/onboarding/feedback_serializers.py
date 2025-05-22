@@ -57,14 +57,20 @@ class StepFeedbackSerializer(serializers.ModelSerializer):
     """
     user_email = serializers.EmailField(source='user.email', read_only=True)
     step_name = serializers.CharField(source='step.name', read_only=True)
+    auto_tag_display = serializers.CharField(
+        source='get_auto_tag_display', read_only=True)
 
     class Meta:
         model = StepFeedback
         fields = [
             'id', 'user', 'user_email', 'step', 'step_name',
-            'assignment', 'comment', 'created_at'
+            'assignment', 'comment', 'auto_tag', 'auto_tag_display',
+            'sentiment_score', 'created_at'
         ]
-        read_only_fields = ['created_at', 'user_email', 'step_name']
+        read_only_fields = [
+            'created_at', 'user_email', 'step_name',
+            'auto_tag', 'auto_tag_display', 'sentiment_score'
+        ]
 
     def validate(self, data):
         """

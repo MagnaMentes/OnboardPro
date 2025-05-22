@@ -1,10 +1,10 @@
 """
-[DEPRECATED] Этот файл устарел и будет удалён в следующем релизе.
-Используйте вместо него модуль services/smart_scheduler.py
+Smart Scheduler Service для управления дедлайнами шагов онбординга
 """
 
-# Импорт для обратной совместимости
-from .services.smart_scheduler import SmartSchedulerService
+from django.utils import timezone
+from datetime import timedelta, date
+from ..models import OnboardingStep, UserOnboardingAssignment, UserStepProgress
 
 
 class SmartSchedulerService:
