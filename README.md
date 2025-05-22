@@ -40,6 +40,7 @@ OnboardPro - платформа для автоматизации процесс
 - [BI-аналитика (Frontend)](KnowledgeStorage/frontend_bi_analytics.md)
 - [Smart Feedback Loop (Backend)](KnowledgeStorage/backend_smart_feedback.md)
 - [Smart Feedback Loop (Frontend)](KnowledgeStorage/frontend_smart_feedback.md)
+- [HR Alerts System](KnowledgeStorage/backend_hr_alerts.md)
 
 ## Установка и запуск
 
@@ -58,6 +59,12 @@ docker-compose exec backend python backend/manage.py createsuperuser
 
 ## Последние обновления
 
+- **Sprint 0.12**: Добавлена система HR Alerts для автоматического уведомления о негативной обратной связи:
+  - Автоматическое создание уведомлений при негативных отзывах сотрудников
+  - Мгновенные оповещения для HR и администраторов о проблемах в процессе онбординга
+  - Связь уведомлений с конкретными отзывами для быстрого доступа к деталям
+  - Защита от дублирования уведомлений для одного отзыва
+  - Подробная информация о сотруднике, программе и шаге в тексте уведомления
 - **Sprint 0.11**: Внедрен Smart Feedback Loop для автоматической обработки обратной связи:
   - Автоматический анализ тональности отзывов (sentiment analysis)
   - Автоматическая категоризация отзывов по тегам

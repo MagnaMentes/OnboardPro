@@ -46,11 +46,14 @@ class StepFeedbackCreateView(generics.CreateAPIView):
             comment)
 
         # Устанавливаем текущего пользователя и результаты анализа
-        serializer.save(
+        step_feedback = serializer.save(
             user=self.request.user,
             auto_tag=auto_tag,
             sentiment_score=sentiment_score
         )
+
+        # Вызываем метод для создания уведомлений HR и Admin о негативном отзыве
+        SmartFeedbackService.notify_hr_on_negative_feedback(step_feedback)
 
 
 class AssignmentFeedbackView(generics.GenericAPIView):

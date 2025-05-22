@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 
 class NotificationType(models.TextChoices):
@@ -32,6 +34,18 @@ class Notification(models.Model):
     )
     is_read = models.BooleanField(_('is read'), default=False)
     created_at = models.DateTimeField(_('created at'), default=timezone.now)
+
+    # Связь с другими моделями через ContentType (для StepFeedback и др.)
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name=_('content type')
+    )
+    object_id = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name=_('object id'))
+    content_object = GenericForeignKey('content_type', 'object_id')
 
     class Meta:
         verbose_name = _('notification')

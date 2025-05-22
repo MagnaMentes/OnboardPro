@@ -8,7 +8,7 @@ class NotificationService:
     """
 
     @staticmethod
-    def send_notification(recipient, title, message, notification_type=NotificationType.INFO):
+    def send_notification(recipient, title, message, notification_type=NotificationType.INFO, content_object=None):
         """
         Создает и сохраняет новое уведомление
 
@@ -17,6 +17,7 @@ class NotificationService:
             title: Заголовок уведомления
             message: Текст уведомления
             notification_type: Тип уведомления из NotificationType
+            content_object: Связанный объект (например, StepFeedback)
 
         Returns:
             Notification: Созданное уведомление
@@ -27,6 +28,12 @@ class NotificationService:
             message=message,
             notification_type=notification_type
         )
+
+        # Если передан связанный объект, добавляем связь
+        if content_object:
+            notification.content_object = content_object
+            notification.save()
+
         return notification
 
     @staticmethod
@@ -89,4 +96,21 @@ class NotificationService:
             title=title,
             message=message,
             notification_type=NotificationType.DEADLINE
+        )
+
+    @staticmethod
+    def get_notifications_by_content_object(content_type, object_id):
+        """
+        Возвращает уведомления, связанные с указанным объектом
+
+        Args:
+            content_type: ContentType объект связанной модели
+            object_id: ID связанного объекта
+
+        Returns:
+            QuerySet: Набор уведомлений, связанных с объектом
+        """
+        return Notification.objects.filter(
+            content_type=content_type,
+            object_id=object_id
         )

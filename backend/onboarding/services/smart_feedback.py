@@ -1,5 +1,9 @@
 from textblob import TextBlob
 import re
+from django.contrib.contenttypes.models import ContentType
+from notifications.services import NotificationService
+from notifications.models import NotificationType
+from users.models import User, UserRole
 
 
 class SmartFeedbackService:
@@ -73,3 +77,59 @@ class SmartFeedbackService:
             return 'negative'
         else:
             return 'neutral'
+
+    @staticmethod
+    def notify_hr_on_negative_feedback(step_feedback):
+        """
+        Уведомляет HR и Admin пользователей о негативной обратной связи
+
+        Args:
+            step_feedback: Объект StepFeedback с негативным отзывом
+
+        Returns:
+            list: Список созданных уведомлений
+        """
+        # Проверяем, соответствует ли фидбэк критериям для уведомления
+        if (step_feedback.auto_tag in ['negative', 'delay_warning', 'unclear_instruction'] or
+                (step_feedback.sentiment_score is not None and step_feedback.sentiment_score < -0.3)):
+
+            # Получаем информацию о программе и пользователе
+            user_full_name = step_feedback.user.get_full_name()
+            step_name = step_feedback.step.name
+            program_name = step_feedback.assignment.program.name
+
+            # Формируем сообщение
+            title = "Негативный отзыв от сотрудника"
+            message = f"Сотрудник {user_full_name} оставил негативный отзыв по шагу '{step_name}' в программе '{program_name}'"
+
+            # Получаем всех HR и Admin пользователей
+            hr_admin_users = User.objects.filter(
+                role__in=[UserRole.HR, UserRole.ADMIN])
+
+            notifications = []
+
+            # Проверяем, не было ли уже создано уведомление для этого фидбэка
+            content_type = ContentType.objects.get_for_model(step_feedback)
+            existing_notifications = list(NotificationService.get_notifications_by_content_object(
+                content_type=content_type,
+                object_id=step_feedback.id
+            ))
+
+            # Если уведомления уже есть, возвращаем их
+            if existing_notifications:
+                return existing_notifications
+
+            # Создаем уведомления для каждого HR и Admin
+            for user in hr_admin_users:
+                notification = NotificationService.send_notification(
+                    recipient=user,
+                    title=title,
+                    message=message,
+                    notification_type=NotificationType.WARNING,
+                    content_object=step_feedback
+                )
+                notifications.append(notification)
+
+            return notifications
+
+        return []
