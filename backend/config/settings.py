@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'onboarding',
     'notifications',
     'gamification',
+    'ai_insights',
 ]
 
 MIDDLEWARE = [
