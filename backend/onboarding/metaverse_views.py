@@ -33,12 +33,19 @@ class VirtualMeetingSlotListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         """
         Только HR и admin могут создавать встречи
+        После создания отправляется email-уведомление
         """
         user = self.request.user
         if user.role not in ['admin', 'hr']:
             raise ValidationError(
                 "Только HR и администраторы могут создавать встречи.")
-        serializer.save()
+
+        # Сохраняем объект встречи
+        meeting = serializer.save()
+
+        # Отправляем уведомление о создании встречи
+        from notifications.email_services import EmailNotificationService
+        EmailNotificationService.send_new_meeting_notification(meeting)
 
 
 class VirtualMeetingSlotDetailView(generics.RetrieveDestroyAPIView):

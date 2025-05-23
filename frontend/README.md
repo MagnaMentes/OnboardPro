@@ -12,6 +12,7 @@
 - Zustand
 - Axios
 - React Hot Toast
+- React Icons
 
 ## Инструкция по разработке
 
@@ -228,5 +229,31 @@ AI Copilot (Solomia) - интеллектуальный ассистент, ко
 - `GET /api/assistant/insights/` - получение списка активных подсказок
 - `POST /api/assistant/insights/{id}/dismiss/` - скрытие подсказки
 - `GET /api/assistant/step/{step_id}/insight/` - генерация подсказки для шага
+
+## Email-уведомления и Экспорт Календаря
+
+Функционал для работы с email-уведомлениями и экспортом встреч в формате календаря.
+
+### Основные функции
+
+- Кнопка "Экспорт в календарь" на странице встреч пользователя (MyMeetingsPage)
+- Иконки экспорта календаря для отдельных встреч в карточках (MeetingCard)
+- Отображение подтверждения отправки письма при создании встречи
+- Интеграция с iCalendar форматом для совместимости с различными календарными приложениями
+
+### Компоненты
+
+- **MeetingCard**: Обновлён для отображения иконки экспорта календаря
+- **MyMeetingsPage**: Добавлена кнопка для экспорта всех встреч
+- **MeetingSchedulerForm**: Обновлён для отображения информации об отправке уведомления
+
+### Интеграция с Backend
+
+Модуль использует следующие API эндпоинты бэкенда:
+
+- `GET /api/booking/calendar/ical/` - экспорт всех встреч пользователя в формате .ics
+- `GET /api/booking/calendar/ical/?id={meeting_id}` - экспорт конкретной встречи
+
+Более подробная информация доступна в [frontend_email_calendar.md](../KnowledgeStorage/frontend_email_calendar.md)
 
 Более подробная информация о клиентском ассистенте доступна в [frontend_client_assistant.md](../KnowledgeStorage/frontend_client_assistant.md)

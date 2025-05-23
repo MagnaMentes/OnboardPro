@@ -9,12 +9,15 @@
 - Django REST Framework 3.14+
 - PostgreSQL 14+
 - JWT (djangorestframework-simplejwt)
+- ics (для экспорта календарей)
 - Docker & Docker Compose
 
 ## Основные компоненты
 
 - Кастомная модель пользователя с ролевой системой
 - JWT-аутентификация
+- Система email-уведомлений для виртуальных встреч
+- Экспорт встреч в формате iCalendar (.ics)
 - API документация (drf-spectacular)
 - Миграции для настройки базы данных
 
@@ -290,6 +293,32 @@ curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/assistant/
 ```
 
 Подробная документация по клиентскому ассистенту доступна в [backend_client_assistant.md](../KnowledgeStorage/backend_client_assistant.md)
+
+## Система email-уведомлений и экспорт календаря
+
+Система для отправки email-уведомлений о виртуальных встречах и экспорта встреч в формате iCalendar.
+
+### Основные функции
+
+- Отправка email-уведомлений при создании новой встречи
+- Отправка напоминаний за 24 часа до начала встречи
+- Экспорт встреч в формате .ics (iCalendar)
+- Настройка уведомлений в профиле пользователя
+- Поддержка HTML-шаблонов для писем
+
+### API endpoints экспорта календаря
+
+- `GET /api/booking/calendar/ical/` - экспорт встреч пользователя в формате .ics
+- `GET /api/booking/calendar/ical/?id={meeting_id}` - экспорт конкретной встречи
+
+### Управление уведомлениями через команду
+
+```bash
+# Отправка напоминаний о встречах через 24 часа
+python manage.py send_meeting_reminders
+```
+
+Подробная документация доступна в [backend_email_calendar.md](../KnowledgeStorage/backend_email_calendar.md)
 
 ## Установка и запуск
 

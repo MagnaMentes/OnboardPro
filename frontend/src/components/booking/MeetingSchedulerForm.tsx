@@ -66,7 +66,8 @@ const MeetingSchedulerForm: React.FC<MeetingSchedulerFormProps> = ({
 
       toast({
         title: "Встреча создана",
-        description: "Виртуальная встреча успешно запланирована",
+        description:
+          "Виртуальная встреча успешно запланирована. На почту отправлено письмо с деталями встречи.",
         status: "success",
         duration: 5000,
         isClosable: true,

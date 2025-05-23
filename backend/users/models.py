@@ -63,6 +63,8 @@ class User(AbstractUser):
         default=UserRole.EMPLOYEE,
     )
     created_at = models.DateTimeField(_('created at'), default=timezone.now)
+    notifications_enabled = models.BooleanField(
+        _('notifications enabled'), default=True)
 
     USERNAME_FIELD = 'email'
     # username всё еще требуется для совместимости с Django admin

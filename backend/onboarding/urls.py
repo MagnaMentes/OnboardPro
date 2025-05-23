@@ -50,6 +50,7 @@ urlpatterns = [
 
     # Metaverse Booking URLs
     path('booking/', include('onboarding.metaverse_urls')),
+    path('booking/', include('onboarding.calendar_urls')),
 
     # AI Chat (Solomia Chat) URLs
     path('solomia/chat/', include('onboarding.chat_urls')),

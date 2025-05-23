@@ -113,19 +113,30 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting }) => {
         </Flex>
       </HStack>
 
-      {meeting.meeting_link && (
-        <Flex align="center">
-          <Icon as={FiVideo} mr={2} color="purple.500" />
+      <Flex justify="space-between" align="center">
+        {meeting.meeting_link && (
+          <Flex align="center">
+            <Icon as={FiVideo} mr={2} color="purple.500" />
+            <Link
+              href={meeting.meeting_link}
+              isExternal
+              color="purple.500"
+              fontWeight="medium"
+            >
+              Присоединиться к встрече
+            </Link>
+          </Flex>
+        )}
+        <Tooltip label="Добавить встречу в календарь" hasArrow placement="top">
           <Link
-            href={meeting.meeting_link}
-            isExternal
-            color="purple.500"
-            fontWeight="medium"
+            href={`/api/booking/calendar/ical/?id=${meeting.id}`}
+            download
+            ml="auto"
           >
-            Присоединиться к встрече
+            <Icon as={FiCalendar} boxSize={5} color="purple.400" />
           </Link>
-        </Flex>
-      )}
+        </Tooltip>
+      </Flex>
     </Box>
   );
 };

@@ -17,7 +17,7 @@ import {
   SimpleGrid,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
-import { FiArrowLeft, FiFilter } from "react-icons/fi";
+import { FiArrowLeft, FiFilter, FiCalendar } from "react-icons/fi";
 import bookingApi, {
   VirtualMeetingSlot,
   MeetingsFilter,
@@ -127,7 +127,13 @@ const MyMeetingsPage: React.FC = () => {
           <Heading as="h1" size="xl">
             Мои виртуальные встречи
           </Heading>
-          <Box></Box> {/* Пустой блок для выравнивания */}
+          <Button
+            colorScheme="purple"
+            rightIcon={<FiCalendar />}
+            onClick={() => window.open("/api/booking/calendar/ical/", "_blank")}
+          >
+            Экспорт в календарь
+          </Button>
         </HStack>
 
         {/* Блок фильтров */}
