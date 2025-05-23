@@ -11,6 +11,7 @@ from .feedback_serializers import (
 from .models import UserOnboardingAssignment, OnboardingStep
 from users.permissions import IsAdminOrHR
 from .permissions import IsAssignedUserOrHRorAdmin
+from gamification.services import GamificationService
 
 
 class FeedbackMoodCreateView(generics.CreateAPIView):
@@ -54,6 +55,15 @@ class StepFeedbackCreateView(generics.CreateAPIView):
 
         # Вызываем метод для создания уведомлений HR и Admin о негативном отзыве
         SmartFeedbackService.notify_hr_on_negative_feedback(step_feedback)
+
+        # Интеграция с GamificationService
+        try:
+            GamificationService.handle_feedback_submission(
+                request.user, step_feedback)
+        except Exception as e:
+            # Логируем ошибку, но не прерываем основной процесс
+            print(
+                f"Error in GamificationService.handle_feedback_submission: {e}")
 
 
 class AssignmentFeedbackView(generics.GenericAPIView):

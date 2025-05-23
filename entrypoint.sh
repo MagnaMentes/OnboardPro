@@ -10,6 +10,9 @@ cd backend
 python manage.py makemigrations
 python manage.py migrate
 
+# Создание суперпользователя
+python manage.py create_superuser
+
 cd ..
 
 exec "$@"

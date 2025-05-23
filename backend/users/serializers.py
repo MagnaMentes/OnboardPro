@@ -21,6 +21,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
     Кастомный сериализатор для получения JWT-токенов
     Добавляет дополнительную информацию о пользователе в токен
+    и возвращает данные пользователя в ответе
     """
     @classmethod
     def get_token(cls, user):
@@ -33,3 +34,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['role'] = user.role
 
         return token
+        
+    def validate(self, attrs):
+        # Получаем данные из родительского метода
+        data = super().validate(attrs)
+        
+        # Добавляем данные пользователя в ответ
+        user = self.user
+        data['user'] = {
+            'id': str(user.id),
+            'email': user.email,
+            'username': user.username,
+            'full_name': user.full_name,
+            'position': user.position,
+            'role': user.role,
+            'is_active': user.is_active,
+            'created_at': user.created_at.isoformat() if user.created_at else None
+        }
+        
+        return data

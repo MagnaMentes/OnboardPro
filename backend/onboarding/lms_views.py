@@ -7,6 +7,7 @@ from .permissions import IsAssignedUserOrHRorAdmin
 from .lms_models import (
     LMSModule, LMSTest, LMSQuestion, LMSOption, LMSUserAnswer, LMSUserTestResult
 )
+from gamification.services import GamificationService
 from .lms_serializers import (
     LMSModuleSerializer, LMSTestSerializer, TestSubmitSerializer, LMSUserTestResultSerializer
 )
@@ -98,6 +99,15 @@ class LMSTestSubmitView(generics.GenericAPIView):
 
         # Возвращаем результат теста
         result_serializer = LMSUserTestResultSerializer(test_result)
+
+        # Интеграция с GamificationService
+        try:
+            GamificationService.handle_test_completion(
+                request.user, test_result)
+        except Exception as e:
+            # Логируем ошибку, но не прерываем основной процесс
+            print(f"Error in GamificationService.handle_test_completion: {e}")
+
         return Response(result_serializer.data, status=status.HTTP_201_CREATED)
 
     def _get_assignment_for_check(self, step):

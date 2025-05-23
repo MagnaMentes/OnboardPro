@@ -165,6 +165,7 @@ class TestSubmitSerializer(serializers.Serializer):
         answers = self.validated_data['answers']
 
         test = LMSTest.objects.get(step_id=step_id)
+        step = test.step
 
         with transaction.atomic():
             # Сохраняем ответы пользователя
@@ -196,6 +197,7 @@ class TestSubmitSerializer(serializers.Serializer):
             test_result = LMSUserTestResult.objects.create(
                 user=user,
                 test=test,
+                step=step,  # Добавляем связь с шагом
                 is_passed=is_passed,
                 score=correct_answers,
                 max_score=total_questions
@@ -205,7 +207,7 @@ class TestSubmitSerializer(serializers.Serializer):
             if is_passed:
                 progress, created = UserStepProgress.objects.get_or_create(
                     user=user,
-                    step_id=step_id,
+                    step=step,
                     defaults={
                         'status': UserStepProgress.ProgressStatus.NOT_STARTED}
                 )

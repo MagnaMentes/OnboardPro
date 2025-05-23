@@ -7,6 +7,7 @@ services:
       - ./backend:/app/backend
       - ./entrypoint.sh:/app/entrypoint.sh
       - ./wait-for-db.sh:/app/wait-for-db.sh
+      - ./init_django.sh:/app/init_django.sh
       - ./.env.dev:/app/.env.dev
     ports:
       - "8000:8000"
@@ -14,7 +15,7 @@ services:
       - .env.dev
     depends_on:
       - db
-    command: bash -c "sleep 5 && chmod +x /app/wait-for-db.sh && /app/wait-for-db.sh db 5432 -- python backend/manage.py migrate && python backend/manage.py runserver 0.0.0.0:8000"
+    command: bash -c "sleep 5 && chmod +x /app/wait-for-db.sh && chmod +x /app/init_django.sh && /app/wait-for-db.sh db 5432 -- /app/init_django.sh"
     networks:
       - onboardpro_network
 
@@ -26,9 +27,6 @@ services:
       - "3000:80"
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     networks:
       - onboardpro_network
 

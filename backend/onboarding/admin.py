@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import OnboardingProgram, OnboardingStep, UserOnboardingAssignment, UserStepProgress
 from .feedback_models import FeedbackMood, StepFeedback
 from .lms_models import LMSModule, LMSTest, LMSQuestion, LMSOption, LMSUserAnswer, LMSUserTestResult
+from .solomia_models import AIChatMessage
 
 # Register your models here.
 
@@ -119,3 +120,25 @@ class LMSUserTestResultAdmin(admin.ModelAdmin):
     list_filter = ('is_passed', 'test__step__program', 'completed_at')
     search_fields = ('user__email', 'test__title')
     raw_id_fields = ('user', 'test')
+
+
+@admin.register(AIChatMessage)
+class AIChatMessageAdmin(admin.ModelAdmin):
+    """
+    Административная модель для сообщений AI-чата
+    """
+    list_display = ('user', 'role', 'message_preview',
+                    'step_progress', 'created_at')
+    list_filter = ('role', 'created_at', 'step_progress__step__program')
+    search_fields = ('user__email', 'message', 'step_progress__step__name')
+    raw_id_fields = ('user', 'step_progress')
+    readonly_fields = ('created_at',)
+    ordering = ('-created_at',)
+    list_per_page = 50
+
+    def message_preview(self, obj):
+        """Возвращает сокращенную версию сообщения для отображения в списке"""
+        if len(obj.message) > 50:
+            return f"{obj.message[:50]}..."
+        return obj.message
+    message_preview.short_description = 'Сообщение'

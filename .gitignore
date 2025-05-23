@@ -37,3 +37,6 @@ static/
 
 # Ignore project sensitive data
 .env.prod
+
+# Ignore Node.js modules
+node_modules/

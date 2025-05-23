@@ -1,4 +1,5 @@
-import axios from "../api";
+// @ts-ignore
+import axios from "./client";
 
 export interface AIHintResponse {
   hint: string;

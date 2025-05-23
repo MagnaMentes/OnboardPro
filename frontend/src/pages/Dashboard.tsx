@@ -15,12 +15,18 @@ import {
   MenuItem,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
+import { gamificationApi, UserLevel, UserReward } from "../api/gamificationApi";
+import LevelProgressBar from "../components/gamification/LevelProgressBar";
+import RewardCard from "../components/gamification/RewardCard";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FiBarChart2 } from "react-icons/fi";
 import { useAuthStore } from "../store/authStore";
 
 function Dashboard() {
+  const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
+  const [userRewards, setUserRewards] = useState<UserReward[]>([]);
+  const [gamificationLoading, setGamificationLoading] = useState(true);
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null
   );
@@ -40,6 +46,29 @@ function Dashboard() {
       name: authUser.full_name,
       email: authUser.email,
     });
+
+    // Загрузка данных геймификации
+    const fetchGamificationData = async () => {
+      if (authUser) {
+        try {
+          setGamificationLoading(true);
+          const levelData = await gamificationApi.getUserLevel();
+          setUserLevel(levelData);
+          const rewardsData = await gamificationApi.getUserRewards(); // Получаем все награды
+          // Отображаем только последние 3 награды для дашборда
+          setUserRewards(rewardsData.slice(0, 3));
+        } catch (error) {
+          console.error("Ошибка загрузки данных геймификации:", error);
+          toast.error("Не удалось загрузить данные геймификации.");
+        } finally {
+          setGamificationLoading(false);
+        }
+      }
+    };
+
+    if (isAuthenticated && authUser) {
+      fetchGamificationData();
+    }
   }, [navigate, authUser, isAuthenticated]);
 
   const { logout } = useAuthStore();
@@ -74,6 +103,20 @@ function Dashboard() {
 
         <Flex align="center">
           <Text mr={4}>Привет, {user.name}!</Text>
+
+          {/* Ссылка на онбординг для всех пользователей */}
+          <Box mr={4}>
+            <Link
+              as={RouterLink}
+              to="/onboarding/progress"
+              color="white"
+              display="flex"
+              alignItems="center"
+            >
+              <Box mr={2}>📋</Box>
+              Мой онбординг
+            </Link>
+          </Box>
 
           {/* Навигация для HR и админов */}
           {authUser &&
@@ -117,16 +160,26 @@ function Dashboard() {
           >
             {/* Здесь будут компоненты для панели управления */}
             <Box
+              as={RouterLink}
+              to="/onboarding/progress"
               p={5}
               shadow="md"
               borderWidth="1px"
               borderRadius="md"
               bg="white"
+              cursor="pointer"
+              _hover={{
+                shadow: "lg",
+                borderColor: "blue.400",
+              }}
             >
-              <Heading fontSize="xl">Задачи онбординга</Heading>
+              <Heading fontSize="xl">Мой онбординг-план</Heading>
               <Text mt={4}>
-                Отслеживайте и управляйте задачами онбординга для новых
-                сотрудников.
+                Отслеживайте свой прогресс по онбордингу и общайтесь с
+                AI-ассистентом Solomia.
+              </Text>
+              <Text color="blue.500" mt={2}>
+                Перейти к моему плану →
               </Text>
             </Box>
 
@@ -156,6 +209,45 @@ function Dashboard() {
               </Text>
             </Box>
           </Grid>
+
+          {/* Блок геймификации */}
+          <Box mt={10}>
+            <Heading as="h3" size="lg" mb={4}>
+              Ваш прогресс и достижения
+            </Heading>
+            <Grid templateColumns={{ base: "1fr", md: "1fr 2fr" }} gap={6}>
+              <VStack spacing={4} align="stretch">
+                <LevelProgressBar
+                  userLevel={userLevel}
+                  isLoading={gamificationLoading}
+                />
+              </VStack>
+              <VStack spacing={4} align="stretch">
+                <Heading as="h4" size="md">
+                  Последние награды
+                </Heading>
+                {gamificationLoading ? (
+                  <Text>Загрузка наград...</Text>
+                ) : userRewards.length > 0 ? (
+                  userRewards.map((reward) => (
+                    <RewardCard key={reward.id} reward={reward} />
+                  ))
+                ) : (
+                  <Text>У вас пока нет наград.</Text>
+                )}
+                {userRewards.length > 0 && (
+                  <Button
+                    as={RouterLink}
+                    to="/rewards"
+                    colorScheme="blue"
+                    alignSelf="flex-start"
+                  >
+                    Все награды
+                  </Button>
+                )}
+              </VStack>
+            </Grid>
+          </Box>
         </VStack>
       </Container>
     </Box>

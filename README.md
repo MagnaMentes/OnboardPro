@@ -18,6 +18,7 @@ OnboardPro - платформа для автоматизации процесс
 - Современный веб-интерфейс
 - Smart Feedback Loop для автоматического анализа обратной связи
 - AI Copilot (Solomia) - интеллектуальный ассистент для сотрудников
+- Система геймификации с уровнями, наградами и достижениями для повышения вовлеченности
 
 ## Структура проекта
 
@@ -44,6 +45,10 @@ OnboardPro - платформа для автоматизации процесс
 - [HR Alerts System](KnowledgeStorage/backend_hr_alerts.md)
 - [AI Copilot (Solomia)](KnowledgeStorage/backend_ai_copilot.md)
 - [AI Copilot (Frontend)](KnowledgeStorage/frontend_ai_copilot.md)
+- [Solomia Chat (Backend)](KnowledgeStorage/backend_solomia_chat.md)
+- [Solomia Chat (Frontend)](KnowledgeStorage/frontend_solomia_chat.md)
+- [Система геймификации (Backend)](KnowledgeStorage/backend_gamification.md)
+- [Система геймификации (Frontend)](KnowledgeStorage/frontend_gamification.md)
 
 ## Установка и запуск
 

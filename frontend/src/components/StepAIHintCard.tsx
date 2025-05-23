@@ -41,7 +41,7 @@ const StepAIHintCard: React.FC<StepAIHintCardProps> = ({
         const response = await AICopilotService.getHint(stepId);
         setHint(response.hint);
         setIsInitialFetched(true);
-      } catch (err) {
+      } catch (err: any) {
         // Если подсказки нет (код 404), это нормальное состояние - просто не показываем её
         if (err.response && err.response.status !== 404) {
           setError("Ошибка при загрузке подсказки");
@@ -80,7 +80,7 @@ const StepAIHintCard: React.FC<StepAIHintCardProps> = ({
         duration: 5000,
         isClosable: true,
       });
-    } catch (err) {
+    } catch (err: any) {
       setError("Ошибка при генерации подсказки");
       toast({
         title: "Ошибка",

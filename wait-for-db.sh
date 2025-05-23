@@ -13,11 +13,8 @@ until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$host" -p "$port" -U "$POSTGRES_USE
   sleep 1
 done
 
-echo "Postgres готов - выполняем миграции..."
-cd backend
-python manage.py makemigrations users core onboarding
-python manage.py migrate
-cd ..
+echo "Postgres готов"
 
-echo "Запускаем сервер..."
+# Запускаем следующую команду
+echo "Запускаем: $cmd"
 exec $cmd

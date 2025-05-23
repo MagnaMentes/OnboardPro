@@ -166,6 +166,13 @@ class LMSUserTestResult(models.Model):
         related_name='user_results',
         verbose_name=_('test')
     )
+    step = models.ForeignKey(
+        OnboardingStep,
+        on_delete=models.CASCADE,
+        related_name='test_results',
+        verbose_name=_('step'),
+        null=True  # Делаем поле опциональным на время миграции
+    )
     is_passed = models.BooleanField(_('is passed'), default=False)
     score = models.PositiveIntegerField(_('score'), default=0)
     max_score = models.PositiveIntegerField(_('max score'), default=0)
@@ -175,8 +182,14 @@ class LMSUserTestResult(models.Model):
     class Meta:
         verbose_name = _('LMS user test result')
         verbose_name_plural = _('LMS user test results')
-        # Один результат теста для пользователя
+        # Убираем step из unique_together пока поле опционально
         unique_together = ['user', 'test']
 
     def __str__(self):
         return f"{self.user} - {self.test.title} - {self.score}/{self.max_score}"
+
+    def save(self, *args, **kwargs):
+        # Автоматически заполняем поле step при сохранении
+        if not self.step and self.test:
+            self.step = self.test.step
+        super().save(*args, **kwargs)

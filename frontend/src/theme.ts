@@ -1,5 +1,7 @@
+// @ts-ignore
 import { extendTheme } from "@chakra-ui/react";
 
+// Создаем кастомную тему для Chakra UI
 export const theme = extendTheme({
   colors: {
     brand: {

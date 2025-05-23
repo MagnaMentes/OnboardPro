@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'users',
     'onboarding',
     'notifications',
+    'gamification',
 ]
 
 MIDDLEWARE = [

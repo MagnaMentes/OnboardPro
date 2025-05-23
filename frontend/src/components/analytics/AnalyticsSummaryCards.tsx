@@ -15,7 +15,8 @@ import {
   Center,
 } from "@chakra-ui/react";
 import { FC } from "react";
-import { AnalyticsSummary } from "../api/analytics";
+// @ts-ignore
+import { AnalyticsSummary } from "../../api/analytics";
 import {
   FiUsers,
   FiCheckCircle,

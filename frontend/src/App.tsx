@@ -8,7 +8,9 @@ import {
 import { Toaster } from "react-hot-toast";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import RewardsPage from "./pages/RewardsPage"; // Добавляем импорт страницы наград
 import Analytics from "./pages/admin/Analytics";
+import OnboardingProgressDemo from "./pages/OnboardingProgressDemo";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
 import { useAuthStore } from "./store/authStore";
@@ -52,6 +54,11 @@ function App() {
           {/* Защищенные маршруты */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/rewards" element={<RewardsPage />} />
+            <Route
+              path="/onboarding/progress"
+              element={<OnboardingProgressDemo />}
+            />
           </Route>
 
           {/* Маршруты только для админов */}

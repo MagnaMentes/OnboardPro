@@ -9,3 +9,4 @@ class OnboardingConfig(AppConfig):
 
     def ready(self):
         import onboarding.lms_models  # Регистрация моделей LMS
+        import onboarding.solomia_models  # Регистрация моделей Solomia

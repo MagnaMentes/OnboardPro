@@ -33,7 +33,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     // Проверяем наличие данных аутентификации при загрузке
-    const storedToken = localStorage.getItem("authToken");
+    const storedToken = localStorage.getItem("accessToken");
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
@@ -43,7 +43,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsAuthenticated(true);
       } catch (error) {
         // В случае ошибки парсинга, очищаем localStorage
-        localStorage.removeItem("authToken");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
       }
     }
@@ -51,7 +52,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = (newToken: string, newUser: User) => {
     // Сохраняем данные аутентификации в localStorage
-    localStorage.setItem("authToken", newToken);
+    localStorage.setItem("accessToken", newToken);
     localStorage.setItem("user", JSON.stringify(newUser));
 
     // Обновляем состояние
@@ -62,7 +63,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = () => {
     // Очищаем данные аутентификации из localStorage
-    localStorage.removeItem("authToken");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
 
     // Сбрасываем состояние

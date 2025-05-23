@@ -14,6 +14,7 @@ from .serializers import (
 )
 # Импортируем из модуля services
 from .services.smart_scheduler import SmartSchedulerService
+from gamification.services import GamificationService
 
 User = get_user_model()
 
@@ -149,6 +150,13 @@ class CompleteStepView(generics.GenericAPIView):
         if completed_required_steps == required_steps.count():
             assignment.status = UserOnboardingAssignment.AssignmentStatus.COMPLETED
             assignment.save()
+
+        # Интеграция с GamificationService
+        try:
+            GamificationService.handle_step_completion(user, step)
+        except Exception as e:
+            # Логируем ошибку, но не прерываем основной процесс
+            print(f"Error in GamificationService.handle_step_completion: {e}")
 
         return Response({'message': 'Шаг успешно отмечен как выполненный'}, status=status.HTTP_200_OK)
 

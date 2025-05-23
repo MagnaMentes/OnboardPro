@@ -47,4 +47,7 @@ urlpatterns = [
 
     # AI Copilot (Solomia) URLs
     path('ai/', include('onboarding.ai_urls')),
+
+    # AI Chat (Solomia Chat) URLs
+    path('solomia/chat/', include('onboarding.chat_urls')),
 ]

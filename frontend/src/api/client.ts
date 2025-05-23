@@ -1,14 +1,15 @@
+// @ts-ignore
 import axios, {
   AxiosError,
   AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
+  InternalAxiosRequestConfig,
 } from "axios";
+// @ts-ignore
 import toast from "react-hot-toast";
 
 // Создание экземпляра Axios с базовым URL
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: "http://backend:8000/api/",
+  baseURL: "http://localhost:8000/api/",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -17,7 +18,7 @@ const axiosInstance: AxiosInstance = axios.create({
 
 // Интерсептор запросов - добавляет JWT из localStorage при каждом запросе
 axiosInstance.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem("accessToken");
 
     if (token && config.headers) {
@@ -54,7 +55,7 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
 
@@ -94,7 +95,7 @@ axiosInstance.interceptors.response.use(
 
         // Запрос на обновление токена
         const response = await axios.post(
-          "http://backend:8000/api/auth/refresh/",
+          "http://localhost:8000/api/auth/refresh/",
           {
             refresh: refreshToken,
           }
