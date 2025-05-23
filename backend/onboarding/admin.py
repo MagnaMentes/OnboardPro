@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import OnboardingProgram, OnboardingStep, UserOnboardingAssignment, UserStepProgress
+from .models import OnboardingProgram, OnboardingStep, UserOnboardingAssignment, UserStepProgress, VirtualMeetingSlot
 from .feedback_models import FeedbackMood, StepFeedback
 from .lms_models import LMSModule, LMSTest, LMSQuestion, LMSOption, LMSUserAnswer, LMSUserTestResult
 from .solomia_models import AIChatMessage
@@ -55,6 +55,15 @@ class StepFeedbackAdmin(admin.ModelAdmin):
     list_filter = ('step__program', 'created_at')
     search_fields = ('user__email', 'step__name', 'comment')
     raw_id_fields = ('user', 'step', 'assignment')
+
+
+@admin.register(VirtualMeetingSlot)
+class VirtualMeetingSlotAdmin(admin.ModelAdmin):
+    list_display = ('step', 'assigned_user', 'start_time', 'end_time')
+    list_filter = ('step__program', 'step', 'start_time')
+    search_fields = ('assigned_user__email', 'step__name')
+    raw_id_fields = ('step', 'assigned_user')
+    date_hierarchy = 'start_time'
 
 
 # LMS Admin Models

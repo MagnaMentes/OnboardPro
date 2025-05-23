@@ -55,6 +55,8 @@ class OnboardingStep(models.Model):
         verbose_name=_('program')
     )
     is_required = models.BooleanField(_('is required'), default=True)
+    is_virtual_meeting = models.BooleanField(
+        _('is virtual meeting'), default=False)
     deadline_days = models.PositiveIntegerField(
         _('deadline days'),
         null=True,
@@ -165,6 +167,36 @@ class UserStepProgress(models.Model):
         self.completed_at = now
         self.actual_completed_at = now
         self.save()
+
+
+class VirtualMeetingSlot(models.Model):
+    """
+    Модель для виртуальных встреч в процессе онбординга
+    """
+    step = models.ForeignKey(
+        OnboardingStep,
+        on_delete=models.CASCADE,
+        related_name='virtual_meeting_slots',
+        verbose_name=_('step')
+    )
+    assigned_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='virtual_meetings',
+        verbose_name=_('assigned user')
+    )
+    start_time = models.DateTimeField(_('start time'))
+    end_time = models.DateTimeField(_('end time'))
+    meeting_link = models.URLField(_('meeting link'), blank=True)
+
+    class Meta:
+        verbose_name = _('virtual meeting slot')
+        verbose_name_plural = _('virtual meeting slots')
+        ordering = ['start_time']
+        # Проверка на пересечение временных слотов будет реализована на уровне сериализатора
+
+    def __str__(self):
+        return f"{self.step.name} - {self.assigned_user.email} ({self.start_time.strftime('%Y-%m-%d %H:%M')})"
 
 
 class AIHint(models.Model):

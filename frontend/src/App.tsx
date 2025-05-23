@@ -11,6 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import RewardsPage from "./pages/RewardsPage"; // Добавляем импорт страницы наград
 import Analytics from "./pages/admin/Analytics";
 import OnboardingProgressDemo from "./pages/OnboardingProgressDemo";
+import MyMeetingsPage from "./pages/booking/MyMeetingsPage";
+import ManageMeetingsPage from "./pages/booking/ManageMeetingsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
 import { useAuthStore } from "./store/authStore";
@@ -59,6 +61,7 @@ function App() {
               path="/onboarding/progress"
               element={<OnboardingProgressDemo />}
             />
+            <Route path="/booking/meetings" element={<MyMeetingsPage />} />
           </Route>
 
           {/* Маршруты только для админов */}
@@ -69,6 +72,10 @@ function App() {
           {/* Маршруты для HR и админов */}
           <Route element={<ProtectedRoute requiredRole={["admin", "hr"]} />}>
             <Route path="/admin/analytics" element={<Analytics />} />
+            <Route
+              path="/admin/booking/manage"
+              element={<ManageMeetingsPage />}
+            />
           </Route>
         </Routes>
       </Router>

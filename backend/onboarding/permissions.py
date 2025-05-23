@@ -22,3 +22,28 @@ class IsAssignedUserOrHRorAdmin(permissions.BasePermission):
 
         # HR или Admin
         return request.user.role in [UserRole.ADMIN, UserRole.HR]
+
+
+class IsAssignedUser(permissions.BasePermission):
+    """
+    Разрешение для доступа к объектам, связанным с пользователем.
+    Доступ разрешен:
+    1. Пользователю, которому назначена встреча
+    2. HR-менеджерам
+    3. Администраторам
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Проверяем, что пользователь аутентифицирован
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # HR или Admin имеют доступ ко всем объектам
+        if request.user.role in [UserRole.ADMIN, UserRole.HR]:
+            return True
+
+        # Для VirtualMeetingSlot проверяем assigned_user
+        if hasattr(obj, 'assigned_user'):
+            return obj.assigned_user == request.user
+
+        return False

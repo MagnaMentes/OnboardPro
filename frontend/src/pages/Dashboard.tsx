@@ -118,21 +118,49 @@ function Dashboard() {
             </Link>
           </Box>
 
+          {/* Ссылка на встречи для всех пользователей */}
+          <Box mr={4}>
+            <Link
+              as={RouterLink}
+              to="/booking/meetings"
+              color="white"
+              display="flex"
+              alignItems="center"
+            >
+              <Box mr={2}>📅</Box>
+              Мои встречи
+            </Link>
+          </Box>
+
           {/* Навигация для HR и админов */}
           {authUser &&
             (authUser.role === "admin" || authUser.role === "hr") && (
-              <Box mr={4}>
-                <Link
-                  as={RouterLink}
-                  to="/admin/analytics"
-                  color="white"
-                  display="flex"
-                  alignItems="center"
-                >
-                  <Box as={FiBarChart2} mr={2} />
-                  BI-аналитика
-                </Link>
-              </Box>
+              <>
+                <Box mr={4}>
+                  <Link
+                    as={RouterLink}
+                    to="/admin/analytics"
+                    color="white"
+                    display="flex"
+                    alignItems="center"
+                  >
+                    <Box as={FiBarChart2} mr={2} />
+                    BI-аналитика
+                  </Link>
+                </Box>
+                <Box mr={4}>
+                  <Link
+                    as={RouterLink}
+                    to="/admin/booking/manage"
+                    color="white"
+                    display="flex"
+                    alignItems="center"
+                  >
+                    <Box mr={2}>📊</Box>
+                    Управление встречами
+                  </Link>
+                </Box>
+              </>
             )}
 
           <Button onClick={handleLogout} colorScheme="whiteAlpha">

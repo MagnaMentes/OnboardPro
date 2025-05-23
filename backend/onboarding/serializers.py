@@ -13,7 +13,7 @@ class OnboardingStepSerializer(serializers.ModelSerializer):
         model = OnboardingStep
         fields = [
             'id', 'name', 'description', 'step_type', 'order',
-            'program', 'is_required', 'deadline_days'
+            'program', 'is_required', 'is_virtual_meeting', 'deadline_days'
         ]
         read_only_fields = ['order', 'program']
 
