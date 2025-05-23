@@ -22,6 +22,9 @@ import {
   FiMessageSquare,
 } from "react-icons/fi";
 import SolomiaChatWidget from "./SolomiaChatWidget";
+import StepAssistant from "./ai-assistant/StepAssistant";
+import ClientHintPopover from "./client-assistant/ClientHintPopover";
+import { useClientAssistant } from "../hooks/useClientAssistant";
 
 interface StepCardProps {
   stepId: number;
@@ -35,7 +38,7 @@ interface StepCardProps {
 }
 
 /**
- * Компонент карточки шага онбординга с интегрированным AI-чатом
+ * Компонент карточки шага онбординга с интегрированным AI-чатом и AI-ассистентом
  */
 const StepCard: React.FC<StepCardProps> = ({
   stepId,
@@ -50,6 +53,11 @@ const StepCard: React.FC<StepCardProps> = ({
   const { isOpen, onToggle } = useDisclosure();
   const [isStepActive, setIsStepActive] = useState<boolean>(
     status === "in_progress"
+  );
+
+  // Используем хук для клиентского ассистента
+  const { insight, dismissInsight, isLoading } = useClientAssistant(
+    status === "in_progress" ? stepId : undefined
   );
 
   // Определяем стили в зависимости от статуса
@@ -89,7 +97,11 @@ const StepCard: React.FC<StepCardProps> = ({
       mb={4}
       borderColor={`${statusConfig.color}.100`}
       bg="white"
+      position="relative"
     >
+      {/* Интеграция компонента AI-ассистента */}
+      {status === "in_progress" && <StepAssistant stepId={stepId} />}
+
       <CardHeader
         bg={`${statusConfig.color}.50`}
         borderBottom="1px"
@@ -105,6 +117,15 @@ const StepCard: React.FC<StepCardProps> = ({
               <Badge colorScheme="red" ml={2}>
                 Обязательно
               </Badge>
+            )}
+
+            {/* Компонент клиентского ассистента */}
+            {insight && status === "in_progress" && !isLoading && (
+              <ClientHintPopover
+                hint={insight}
+                onDismiss={dismissInsight}
+                position="top"
+              />
             )}
           </HStack>
           <HStack>

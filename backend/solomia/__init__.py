@@ -1,0 +1,1 @@
+# Пакет Solomia AI Chat

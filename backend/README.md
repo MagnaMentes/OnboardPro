@@ -240,6 +240,57 @@ curl -X POST -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/ai
 
 Подробная документация по AI Copilot доступна в [backend_ai_copilot.md](../KnowledgeStorage/backend_ai_copilot.md)
 
+## AI Insights
+
+Система аналитики и выявления рисков в процессе онбординга на основе AI.
+
+### Основные функции
+
+- Анализ прогресса онбординга сотрудника
+- Выявление рисков на основе настроения и обратной связи
+- Предоставление рекомендаций HR-менеджерам
+
+### API endpoints AI Insights
+
+- `GET /api/insights/` - получение списка инсайтов
+- `GET /api/insights/{id}/` - получение детальной информации об инсайте
+- `GET /api/insights/user/{id}/` - получение инсайтов по пользователю
+- `POST /api/insights/analyze/{assignment_id}/` - запуск анализа для конкретного назначения
+
+Подробная документация по системе AI Insights доступна в [backend_ai_insights.md](../KnowledgeStorage/backend_ai_insights.md)
+
+## Клиентский AI-ассистент
+
+Система интеллектуальных подсказок для конечных пользователей (сотрудников), которая помогает им в процессе онбординга.
+
+### Основные функции
+
+- Генерация контекстных подсказок при переходе к новому шагу
+- Анализ дедлайнов и предупреждение пользователей
+- Рекомендации по материалам и видео в шагах
+- Возможность скрытия подсказок
+
+### API endpoints клиентского ассистента
+
+- `GET /api/assistant/insights/` - получение списка активных подсказок
+- `POST /api/assistant/insights/{id}/dismiss/` - скрытие подсказки
+- `GET /api/assistant/step/{step_id}/insight/` - генерация подсказки для шага
+
+Пример использования с cURL:
+
+```bash
+# Получение списка активных подсказок
+curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/assistant/insights/
+
+# Скрытие подсказки
+curl -X POST -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/assistant/insights/1/dismiss/
+
+# Генерация подсказки для шага
+curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/assistant/step/1/insight/
+```
+
+Подробная документация по клиентскому ассистенту доступна в [backend_client_assistant.md](../KnowledgeStorage/backend_client_assistant.md)
+
 ## Установка и запуск
 
 ### С использованием Docker (рекомендуется)

@@ -2,9 +2,9 @@
 const config = {
   apiUrl: import.meta.env.VITE_API_URL || "/api",
   gamificationEndpoints: {
-    userLevel: "/gamification/user-level/",
-    userRewards: "/gamification/user-rewards/",
-    leaderboard: "/gamification/leaderboard/",
+    userLevel: "/api/gamification/profile/",
+    userRewards: "/api/gamification/achievements/",
+    leaderboard: "/api/gamification/leaderboard/",
   },
   defaultRequestTimeout: 30000, // 30 секунд
 };

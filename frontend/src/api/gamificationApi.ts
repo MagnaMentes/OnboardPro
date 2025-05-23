@@ -27,7 +27,7 @@ export const gamificationApi = {
     try {
       const params = rewardType ? { type: rewardType } : {};
       const response = await apiClient.get<UserReward[]>(
-        "/gamification/rewards/",
+        "/api/gamification/achievements/",
         { params }
       );
       return response.data;
@@ -41,7 +41,9 @@ export const gamificationApi = {
    */
   getUserLevel: async (): Promise<UserLevel> => {
     try {
-      const response = await apiClient.get<UserLevel>("/gamification/level/");
+      const response = await apiClient.get<UserLevel>(
+        "/api/gamification/profile/"
+      );
       return response.data;
     } catch (error) {
       return handleApiError(error);

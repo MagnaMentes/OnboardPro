@@ -26,7 +26,7 @@ export const SolomiaChatApi = {
   getChatHistory: async (stepId: number): Promise<ChatMessage[]> => {
     try {
       const response = await api.get<ChatHistoryResponse>(
-        `/solomia/chat/${stepId}/`
+        `solomia/chat/${stepId}/`
       );
       return response.data.messages;
     } catch (error) {
@@ -47,7 +47,7 @@ export const SolomiaChatApi = {
   ): Promise<ChatMessage[]> => {
     try {
       const response = await api.post<ChatHistoryResponse>(
-        `/solomia/chat/${stepId}/`,
+        `solomia/chat/${stepId}/`,
         {
           message,
         }
