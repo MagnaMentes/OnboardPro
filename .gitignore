@@ -28,6 +28,9 @@ ENV/
 # Ignore reports directory - содержит внутреннюю документацию
 /reports/
 
+# Ignore KnowledgeStorage directory - содержит внутреннюю документацию
+/KnowledgeStorage/
+
 # Ignore Docker volumes
 postgres_data/
 
