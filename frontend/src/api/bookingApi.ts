@@ -1,4 +1,4 @@
-import { User } from "./types";
+import { User } from "../types/user";
 
 // Интерфейс для виртуальной встречи
 export interface VirtualMeetingSlot {

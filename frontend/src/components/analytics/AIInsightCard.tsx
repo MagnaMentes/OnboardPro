@@ -17,6 +17,10 @@ interface AIInsightCardProps {
 const AIInsightCard: FC<AIInsightCardProps> = ({ insight }) => {
   // Определяем цвет бейджа в зависимости от уровня риска
   const getRiskBadgeColor = () => {
+    if (!insight.risk_level) {
+      return "gray";
+    }
+
     switch (insight.risk_level) {
       case "high":
         return "red";
@@ -51,7 +55,13 @@ const AIInsightCard: FC<AIInsightCardProps> = ({ insight }) => {
           <Heading size="md" fontWeight="semibold" isTruncated>
             {insight.user_full_name || insight.user_email}
           </Heading>
-          <Badge colorScheme={getRiskBadgeColor()} fontSize="sm" py={1} px={2} borderRadius="md">
+          <Badge
+            colorScheme={getRiskBadgeColor()}
+            fontSize="sm"
+            py={1}
+            px={2}
+            borderRadius="md"
+          >
             {insight.risk_level_display}
           </Badge>
         </HStack>
@@ -70,7 +80,11 @@ const AIInsightCard: FC<AIInsightCardProps> = ({ insight }) => {
         </Box>
 
         <Text fontSize="xs" color="gray.400" alignSelf="flex-end">
-          {new Date(insight.created_at).toLocaleDateString()} {new Date(insight.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {new Date(insight.created_at).toLocaleDateString()}{" "}
+          {new Date(insight.created_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </Text>
       </VStack>
     </Box>

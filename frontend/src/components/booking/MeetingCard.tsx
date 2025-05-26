@@ -44,7 +44,11 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting }) => {
   };
 
   // Определение типа шага
-  const getTypeDisplay = (type: string): string => {
+  const getTypeDisplay = (type?: string): string => {
+    if (!type) {
+      return "Не указан";
+    }
+
     switch (type) {
       case "task":
         return "Задача";
@@ -58,7 +62,11 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting }) => {
   };
 
   // Определение цвета бейджа для типа шага
-  const getTypeColor = (type: string): string => {
+  const getTypeColor = (type?: string): string => {
+    if (!type) {
+      return "gray";
+    }
+
     switch (type) {
       case "task":
         return "blue";

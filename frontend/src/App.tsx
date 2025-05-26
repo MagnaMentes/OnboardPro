@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import RewardsPage from "./pages/RewardsPage"; // Добавляем импорт страницы наград
 import Analytics from "./pages/admin/Analytics";
+import AdminDashboard from "./pages/admin/Dashboard";
 import OnboardingProgressDemo from "./pages/OnboardingProgressDemo";
 import MyMeetingsPage from "./pages/booking/MyMeetingsPage";
 import ManageMeetingsPage from "./pages/booking/ManageMeetingsPage";
@@ -71,6 +72,7 @@ function App() {
 
           {/* Маршруты для HR и админов */}
           <Route element={<ProtectedRoute requiredRole={["admin", "hr"]} />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/analytics" element={<Analytics />} />
             <Route
               path="/admin/booking/manage"

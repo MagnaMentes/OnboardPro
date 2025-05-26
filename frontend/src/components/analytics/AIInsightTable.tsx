@@ -29,10 +29,16 @@ interface AIInsightTableProps {
 
 const AIInsightTable: FC<AIInsightTableProps> = ({ data, isLoading }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [selectedInsight, setSelectedInsight] = useState<AIInsight | null>(null);
+  const [selectedInsight, setSelectedInsight] = useState<AIInsight | null>(
+    null
+  );
 
   // Определяем цвет бейджа в зависимости от уровня риска
-  const getRiskBadgeColor = (riskLevel: string) => {
+  const getRiskBadgeColor = (riskLevel?: string) => {
+    if (!riskLevel) {
+      return "gray";
+    }
+
     switch (riskLevel) {
       case "high":
         return "red";
@@ -94,9 +100,7 @@ const AIInsightTable: FC<AIInsightTableProps> = ({ data, isLoading }) => {
                     {insight.risk_level_display}
                   </Badge>
                 </Td>
-                <Td>
-                  {new Date(insight.created_at).toLocaleDateString()}
-                </Td>
+                <Td>{new Date(insight.created_at).toLocaleDateString()}</Td>
                 <Td>
                   <Button
                     size="sm"
@@ -123,7 +127,10 @@ const AIInsightTable: FC<AIInsightTableProps> = ({ data, isLoading }) => {
               <Box>
                 <Box mb={4}>
                   <Text fontWeight="bold">Сотрудник:</Text>
-                  <Text>{selectedInsight.user_full_name || selectedInsight.user_email}</Text>
+                  <Text>
+                    {selectedInsight.user_full_name ||
+                      selectedInsight.user_email}
+                  </Text>
                 </Box>
                 <Box mb={4}>
                   <Text fontWeight="bold">Программа онбординга:</Text>
@@ -131,7 +138,9 @@ const AIInsightTable: FC<AIInsightTableProps> = ({ data, isLoading }) => {
                 </Box>
                 <Box mb={4}>
                   <Text fontWeight="bold">Уровень риска:</Text>
-                  <Badge colorScheme={getRiskBadgeColor(selectedInsight.risk_level)}>
+                  <Badge
+                    colorScheme={getRiskBadgeColor(selectedInsight.risk_level)}
+                  >
                     {selectedInsight.risk_level_display}
                   </Badge>
                 </Box>
@@ -143,10 +152,13 @@ const AIInsightTable: FC<AIInsightTableProps> = ({ data, isLoading }) => {
                   <Text fontWeight="bold">Дата анализа:</Text>
                   <Text>
                     {new Date(selectedInsight.created_at).toLocaleDateString()}{" "}
-                    {new Date(selectedInsight.created_at).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {new Date(selectedInsight.created_at).toLocaleTimeString(
+                      [],
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}
                   </Text>
                 </Box>
               </Box>

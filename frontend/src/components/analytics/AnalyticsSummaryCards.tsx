@@ -123,7 +123,8 @@ const AnalyticsSummaryCards: FC<DashboardCardsProps> = ({
 };
 
 // Вспомогательные функции для интерпретации настроения
-function moodToText(value: number): string {
+function moodToText(value?: number): string {
+  if (value === undefined) return "Нет данных";
   if (value >= 4.5) return "Отлично";
   if (value >= 3.5) return "Хорошо";
   if (value >= 2.5) return "Нейтрально";
@@ -131,7 +132,8 @@ function moodToText(value: number): string {
   return "Ужасно";
 }
 
-function getMoodColor(value: number): string {
+function getMoodColor(value?: number): string {
+  if (value === undefined) return "gray.500";
   if (value >= 4.5) return "green.500";
   if (value >= 3.5) return "green.400";
   if (value >= 2.5) return "yellow.400";

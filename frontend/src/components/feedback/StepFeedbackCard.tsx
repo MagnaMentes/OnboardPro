@@ -16,7 +16,9 @@ interface StepFeedbackCardProps {
 }
 
 // Функция для получения цвета бейджа в зависимости от тега
-const getTagColor = (tag: string): string => {
+const getTagColor = (tag?: string): string => {
+  if (!tag) return "gray";
+
   switch (tag) {
     case "positive":
       return "green";
@@ -33,7 +35,11 @@ const getTagColor = (tag: string): string => {
 };
 
 // Функция для получения иконки в зависимости от sentiment_score
-const getSentimentIcon = (score: number) => {
+const getSentimentIcon = (score?: number) => {
+  if (score === undefined) {
+    return { icon: FaMeh, color: "gray.400", label: "Не указано" };
+  }
+
   if (score >= 0.6) {
     return { icon: FaSmileBeam, color: "green.500", label: "Очень позитивный" };
   } else if (score >= 0.2) {

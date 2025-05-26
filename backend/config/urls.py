@@ -30,6 +30,9 @@ urlpatterns = [
     path('api/', include('solomia.urls')),
     path('api/ai/', include('ai_insights.urls')),
 
+    # Admin Dashboard API
+    path('api/admin/', include('config.admin_urls')),
+
     # Swagger/OpenAPI
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'),

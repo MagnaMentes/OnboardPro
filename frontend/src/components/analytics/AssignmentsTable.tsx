@@ -123,7 +123,9 @@ const AssignmentsTable: FC<AssignmentsTableProps> = ({ data, isLoading }) => {
   };
 
   // Функция для определения цвета бейджа статуса
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
+    if (!status) return "gray";
+
     const statusLower = status.toLowerCase();
     if (statusLower.includes("activ") || statusLower === "активен")
       return "blue";

@@ -82,7 +82,6 @@ docker-compose exec backend python backend/manage.py createsuperuser
   - Установлен пакет pytz для корректной работы с часовыми поясами
   - Обновлен Docker-образ backend с новыми зависимостями
   - Проведено тестирование timezone-зависимой функциональности
-  
 - **Sprint 0.19**: Реализована система email-уведомлений и экспорт встреч в календарь:
 
   - Добавлен сервис EmailNotificationService для email-уведомлений о встречах

@@ -62,6 +62,10 @@ const StepCard: React.FC<StepCardProps> = ({
 
   // Определяем стили в зависимости от статуса
   const getStatusConfig = () => {
+    if (!status) {
+      return { color: "gray", icon: FiAlertCircle, text: "Не начато" };
+    }
+
     switch (status) {
       case "done":
         return { color: "green", icon: FiCheck, text: "Выполнено" };
@@ -75,6 +79,10 @@ const StepCard: React.FC<StepCardProps> = ({
 
   // Определяем тип шага
   const getTypeDisplay = () => {
+    if (!type) {
+      return "Не указан";
+    }
+
     switch (type) {
       case "task":
         return "Задача";

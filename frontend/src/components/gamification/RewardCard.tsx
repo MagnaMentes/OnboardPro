@@ -8,6 +8,10 @@ interface RewardCardProps {
 
 // Функция для получения читаемого типа награды
 const getReadableRewardType = (type: UserReward["reward_type"]) => {
+  if (!type) {
+    return "Не указано";
+  }
+
   switch (type) {
     case "achievement":
       return "Достижение";
