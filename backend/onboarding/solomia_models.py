@@ -33,7 +33,7 @@ class AIChatMessage(models.Model):
     step_progress = models.ForeignKey(
         UserStepProgress,
         on_delete=models.CASCADE,
-        related_name='chat_messages',
+        related_name='onboarding_chat_messages',
         verbose_name=_('step progress'),
         null=True,
         blank=True

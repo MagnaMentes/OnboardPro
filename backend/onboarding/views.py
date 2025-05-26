@@ -1,5 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.db import transaction, models
 from django.contrib.auth import get_user_model
@@ -15,6 +17,10 @@ from .serializers import (
 # Импортируем из модуля services
 from .services.smart_scheduler import SmartSchedulerService
 from gamification.services import GamificationService
+from .filters import (
+    OnboardingProgramFilter, OnboardingStepFilter,
+    UserOnboardingAssignmentFilter, UserStepProgressFilter
+)
 
 User = get_user_model()
 
@@ -26,6 +32,11 @@ class OnboardingProgramListView(generics.ListCreateAPIView):
     queryset = OnboardingProgram.objects.all()
     serializer_class = OnboardingProgramSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = OnboardingProgramFilter
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'created_at']
+    ordering = ['-created_at']
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -93,6 +104,11 @@ class UserAssignmentsView(generics.ListAPIView):
     """
     serializer_class = UserOnboardingAssignmentSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = UserOnboardingAssignmentFilter
+    search_fields = ['program__name']
+    ordering_fields = ['assigned_at', 'program__name', 'status']
+    ordering = ['-assigned_at']
 
     def get_queryset(self):
         return UserOnboardingAssignment.objects.filter(user=self.request.user)
@@ -183,6 +199,11 @@ class OnboardingStepListCreateView(generics.ListCreateAPIView):
     """
     serializer_class = OnboardingStepSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = OnboardingStepFilter
+    search_fields = ['name', 'description']
+    ordering_fields = ['order', 'name']
+    ordering = ['order']
 
     def get_queryset(self):
         program_id = self.kwargs.get('program_id')

@@ -9,6 +9,7 @@ from .feedback_views import (
     FeedbackMoodCreateView, StepFeedbackCreateView,
     AssignmentFeedbackView
 )
+from .progress_views import UserStepProgressListView
 
 urlpatterns = [
     # Программы онбординга
@@ -30,6 +31,8 @@ urlpatterns = [
          CompleteStepView.as_view(), name='onboarding-step-complete'),
     path('onboarding/assignments/<int:pk>/progress/',
          AssignmentProgressView.as_view(), name='onboarding-assignment-progress'),
+    path('onboarding/steps/progress/', UserStepProgressListView.as_view(),
+         name='onboarding-step-progress'),
 
     # Система обратной связи
     path('feedback/mood/', FeedbackMoodCreateView.as_view(),

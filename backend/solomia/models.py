@@ -28,7 +28,7 @@ class AIChatMessage(models.Model):
     step_progress = models.ForeignKey(
         UserStepProgress,
         on_delete=models.CASCADE,
-        related_name='chat_messages',
+        related_name='solomia_chat_messages',
         null=True,
         blank=True,
         verbose_name='Шаг онбординга'
