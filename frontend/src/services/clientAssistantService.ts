@@ -1,58 +1,30 @@
-import api from "../api/client";
-import { ClientHint } from "../components/client-assistant/ClientHintPopover";
+/**
+ * @deprecated Используйте импорт из '../api/clientAssistant' вместо этого сервиса
+ * Этот файл оставлен для обратной совместимости, чтобы избежать поломки существующих компонентов
+ */
 
-interface ApiResponse<T> {
-  data: T;
-}
+import { clientAssistantApi, ClientAIInsight } from "../api/clientAssistant";
 
 /**
  * Сервис для взаимодействия с API клиентского ассистента
+ * @deprecated Используйте clientAssistantApi из '../api/clientAssistant' вместо этого сервиса
  */
 export const clientAssistantService = {
   /**
    * Получает все активные подсказки для текущего пользователя
    */
-  fetchClientInsights: async (): Promise<ClientHint[]> => {
-    try {
-      const response: ApiResponse<ClientHint[]> = await api.get(
-        "/assistant/insights/"
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching client insights:", error);
-      throw error;
-    }
-  },
+  fetchClientInsights: clientAssistantApi.getInsights,
 
   /**
    * Отмечает подсказку как скрытую
    */
-  dismissClientInsight: async (insightId: number): Promise<void> => {
-    try {
-      await api.post(`/assistant/insights/${insightId}/dismiss/`);
-    } catch (error) {
-      console.error(`Error dismissing insight ${insightId}:`, error);
-      throw error;
-    }
-  },
+  dismissClientInsight: clientAssistantApi.dismissInsight,
 
   /**
    * Генерирует подсказку для конкретного шага
    */
-  generateInsightForStep: async (
-    stepId: number
-  ): Promise<ClientHint | null> => {
-    try {
-      const response: ApiResponse<ClientHint> = await api.get(
-        `/assistant/step/${stepId}/insight/`
-      );
-      return response.data;
-    } catch (error) {
-      console.error(`Error generating insight for step ${stepId}:`, error);
-      // Возвращаем null вместо ошибки, чтобы UI мог корректно обработать отсутствие подсказки
-      return null;
-    }
-  },
+  generateInsightForStep: clientAssistantApi.getInsightForStep,
 };
 
+export { ClientAIInsight };
 export default clientAssistantService;

@@ -16,7 +16,7 @@ from .services.solomia_service import SolomiaService
     description="Получить или сгенерировать AI-подсказку для шага онбординга",
     parameters=[
         OpenApiParameter(
-            name="id", description="ID шага пользователя", required=True, type=int)
+            name="id", description="ID шага программы онбординга", required=True, type=int)
     ],
     responses={
         200: {"description": "Возвращает существующую подсказку (GET)"},
@@ -32,24 +32,68 @@ def ai_hint(request: Request, id: int) -> Response:
     POST: Сгенерировать новую AI-подсказку
     """
     try:
-        # Проверяем, что шаг существует и принадлежит текущему пользователю
-        step = UserStepProgress.objects.get(id=id, user=request.user)
+        # Находим шаг программы онбординга
+        from .models import OnboardingStep
+        step_obj = OnboardingStep.objects.get(id=id)
+
+        # Получаем или создаем прогресс шага для текущего пользователя
+        step_progress, created = UserStepProgress.objects.get_or_create(
+            user=request.user,
+            step=step_obj,
+            defaults={'status': UserStepProgress.ProgressStatus.NOT_STARTED}
+        )
 
         if request.method == 'GET':
             # Получаем последнюю подсказку
             hint = AIHint.objects.filter(
-                assignment_step=step).order_by('-created_at').first()
+                assignment_step=step_progress).order_by('-created_at').first()
 
             if hint:
-                return Response({"hint": hint.generated_hint}, status=status.HTTP_200_OK)
+                # Возвращаем данные в формате, совместимом с фронтендом
+                response_data = {
+                    "hint_text": hint.generated_hint,
+                    "id": hint.id,
+                    "user": request.user.id,
+                    "assignment": getattr(step_progress.assignment, 'id', None),
+                    "step": step_obj.id,
+                    "step_name": step_obj.name,
+                    "program_name": step_obj.program.name,
+                    "generated_at": hint.created_at.isoformat(),
+                    "dismissed": False
+                }
+                return Response(response_data, status=status.HTTP_200_OK)
             else:
                 return Response({"detail": "Подсказка не найдена"}, status=status.HTTP_404_NOT_FOUND)
 
         elif request.method == 'POST':
             # Генерируем новую подсказку
-            generated_hint = SolomiaService.generate_hint_for_step(id)
+            generated_hint = SolomiaService.generate_hint_for_step(
+                step_progress.id)
 
-            return Response({"hint": generated_hint}, status=status.HTTP_201_CREATED)
+            # Создаем новую запись в базе данных
+            hint = AIHint.objects.create(
+                assignment_step=step_progress,
+                generated_hint=generated_hint
+            )
+
+            # Возвращаем данные в формате, совместимом с фронтендом
+            response_data = {
+                "hint_text": generated_hint,
+                "id": hint.id,
+                "user": request.user.id,
+                "assignment": getattr(step_progress.assignment, 'id', None),
+                "step": step_obj.id,
+                "step_name": step_obj.name,
+                "program_name": step_obj.program.name,
+                "generated_at": hint.created_at.isoformat(),
+                "dismissed": False
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+    except OnboardingStep.DoesNotExist:
+        return Response({"detail": "Шаг не найден"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"detail": f"Ошибка: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     except UserStepProgress.DoesNotExist:
         return Response({"detail": "Шаг не найден"}, status=status.HTTP_404_NOT_FOUND)

@@ -9,5 +9,5 @@ app_name = 'ai'
 
 urlpatterns = [
     # AI-подсказки
-    path('step/<int:id>/hint/', ai_views.ai_hint, name='ai_hint'),
+    path('assistant/step/<int:id>/insight/', ai_views.ai_hint, name='ai_hint'),
 ]

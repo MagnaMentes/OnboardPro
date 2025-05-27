@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import clientAssistantService from "../services/clientAssistantService";
-import { ClientHint } from "../components/client-assistant/ClientHintPopover";
+import { clientAssistantApi, ClientAIInsight } from "../api/clientAssistant";
 
 /**
  * Хук для работы с клиентским ассистентом
@@ -8,7 +7,7 @@ import { ClientHint } from "../components/client-assistant/ClientHintPopover";
  * @returns Объект с подсказкой, состоянием загрузки и методами для управления
  */
 export const useClientAssistant = (stepId?: number) => {
-  const [insight, setInsight] = useState<ClientHint | null>(null);
+  const [insight, setInsight] = useState<ClientAIInsight | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,10 +20,12 @@ export const useClientAssistant = (stepId?: number) => {
       setIsLoading(true);
       setError(null);
       try {
-        const result = await clientAssistantService.generateInsightForStep(
-          stepId
-        );
-        setInsight(result);
+        const result = await clientAssistantApi.getInsightForStep(stepId);
+        if (result) {
+          setInsight(result);
+        } else {
+          setError("Подсказка недоступна");
+        }
       } catch (err) {
         setError("Не удалось загрузить подсказку");
         console.error("Error loading client insight:", err);
@@ -39,7 +40,7 @@ export const useClientAssistant = (stepId?: number) => {
   // Метод для скрытия подсказки
   const dismissInsight = async (insightId: number) => {
     try {
-      await clientAssistantService.dismissClientInsight(insightId);
+      await clientAssistantApi.dismissInsight(insightId);
       setInsight(null);
     } catch (err) {
       setError("Не удалось скрыть подсказку");
@@ -52,7 +53,7 @@ export const useClientAssistant = (stepId?: number) => {
     setIsLoading(true);
     setError(null);
     try {
-      const insights = await clientAssistantService.fetchClientInsights();
+      const insights = await clientAssistantApi.getInsights();
       // Если нужна только первая подсказка
       setInsight(insights && insights.length > 0 ? insights[0] : null);
       return insights;

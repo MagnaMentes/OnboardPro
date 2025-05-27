@@ -16,18 +16,10 @@ import {
   Tooltip,
 } from "@chakra-ui/react";
 import { QuestionIcon } from "@chakra-ui/icons";
-
-export interface ClientHint {
-  id: number;
-  hint_text: string;
-  step_name: string;
-  program_name: string;
-  generated_at: string;
-  dismissed: boolean;
-}
+import { ClientAIInsight } from "../../api/clientAssistant";
 
 interface ClientHintPopoverProps {
-  hint: ClientHint;
+  hint: ClientAIInsight;
   onDismiss: (id: number) => void;
   position?: "top" | "right" | "bottom" | "left";
   isOpen?: boolean;

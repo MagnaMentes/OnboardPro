@@ -17,18 +17,36 @@ export interface ClientAIInsight {
 export const clientAssistantApi = {
   // Получение всех активных подсказок для текущего пользователя
   getInsights: async (): Promise<ClientAIInsight[]> => {
-    const response = await api.get("/ai/assistant/insights/");
-    return response.data;
+    try {
+      const response = await api.get("ai/assistant/insights/");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching client insights:", error);
+      throw error;
+    }
   },
 
   // Получение или генерация подсказки для конкретного шага
-  getInsightForStep: async (stepId: number): Promise<ClientAIInsight> => {
-    const response = await api.get(`/ai/assistant/step/${stepId}/insight/`);
-    return response.data;
+  getInsightForStep: async (
+    stepId: number
+  ): Promise<ClientAIInsight | null> => {
+    try {
+      const response = await api.get(`ai/assistant/step/${stepId}/insight/`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error generating insight for step ${stepId}:`, error);
+      // Возвращаем null вместо ошибки, чтобы UI мог корректно обработать отсутствие подсказки
+      return null;
+    }
   },
 
   // Скрытие подсказки
   dismissInsight: async (insightId: number): Promise<void> => {
-    await api.post(`/ai/assistant/insights/${insightId}/dismiss/`);
+    try {
+      await api.post(`ai/assistant/insights/${insightId}/dismiss/`);
+    } catch (error) {
+      console.error(`Error dismissing insight ${insightId}:`, error);
+      throw error;
+    }
   },
 };

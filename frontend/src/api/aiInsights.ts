@@ -8,7 +8,7 @@ export interface AIInsight {
   user_full_name: string;
   assignment: number;
   program_name: string;
-  risk_level: 'low' | 'medium' | 'high';
+  risk_level: "low" | "medium" | "high";
   risk_level_display: string;
   reason: string;
   created_at: string;
@@ -18,13 +18,13 @@ export interface AIInsight {
 const aiInsightsApi = {
   // Получение всех инсайтов
   getAllInsights: async (): Promise<AIInsight[]> => {
-    const response = await api.get("/ai/insights/");
+    const response = await api.get("ai/insights/");
     return response.data;
   },
 
   // Получение инсайтов для конкретного пользователя
   getUserInsights: async (userId: number): Promise<AIInsight[]> => {
-    const response = await api.get(`/ai/insights/user/${userId}/`);
+    const response = await api.get(`ai/insights/user/${userId}/`);
     return response.data;
   },
 };

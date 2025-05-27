@@ -17,15 +17,16 @@ import {
   HStack,
 } from "@chakra-ui/react";
 import { FaLightbulb } from "react-icons/fa";
-import { clientAssistantApi } from "../../api/clientAssistant";
+import { clientAssistantApi, ClientAIInsight } from "../../api/clientAssistant";
 
 interface ClientHintPopoverProps {
   stepId: number;
-  hint?: string;
+  hint?: string | ClientAIInsight;
   onDismiss: () => void;
   isOpen?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
+  position?: "top" | "right" | "bottom" | "left";
 }
 
 const ClientHintPopover: React.FC<ClientHintPopoverProps> = ({
@@ -35,6 +36,7 @@ const ClientHintPopover: React.FC<ClientHintPopoverProps> = ({
   isOpen: propIsOpen,
   onOpen: propOnOpen,
   onClose: propOnClose,
+  position = "right", // По умолчанию справа
 }) => {
   // Используем пропсы isOpen/onOpen/onClose, если они переданы,
   // иначе используем собственное состояние
@@ -70,7 +72,7 @@ const ClientHintPopover: React.FC<ClientHintPopoverProps> = ({
       isOpen={isOpen}
       onOpen={onOpen}
       onClose={onClose}
-      placement="right"
+      placement={position}
       closeOnBlur={false}
     >
       <PopoverTrigger>
@@ -99,7 +101,7 @@ const ClientHintPopover: React.FC<ClientHintPopoverProps> = ({
           Совет от ассистента
         </PopoverHeader>
         <PopoverBody py={3}>
-          <Text>{hint}</Text>
+          <Text>{typeof hint === "string" ? hint : hint?.hint_text || ""}</Text>
         </PopoverBody>
         <PopoverFooter>
           <HStack justifyContent="flex-end">

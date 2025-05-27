@@ -63,8 +63,9 @@ const StepAssistant: React.FC<StepAssistantProps> = ({ stepId }) => {
     <Box position="absolute" top={2} right={2} zIndex={2}>
       <ClientHintPopover
         stepId={stepId}
-        hint={insight.hint_text}
+        hint={insight}
         onDismiss={handleDismiss}
+        position="right"
       />
     </Box>
   );
