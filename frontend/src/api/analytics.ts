@@ -42,19 +42,19 @@ export interface FeedbackSummary {
 const analyticsApi = {
   // Получение общей сводки
   getSummary: async (): Promise<AnalyticsSummary> => {
-    const response = await api.get("/analytics/summary/");
+    const response = await api.get("analytics/summary/");
     return response.data;
   },
 
   // Получение таблицы назначений
   getAssignments: async (): Promise<AssignmentAnalytics[]> => {
-    const response = await api.get("/analytics/assignments/");
+    const response = await api.get("analytics/assignments/");
     return response.data;
   },
 
   // Получение данных о настроении для графика
   getFeedbackSummary: async (): Promise<FeedbackSummary> => {
-    const response = await api.get("/analytics/feedback-summary/");
+    const response = await api.get("analytics/feedback-summary/");
     return response.data;
   },
 };

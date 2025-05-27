@@ -18,6 +18,7 @@ import EmployeesTable from "../../components/admin/EmployeesTable";
 import AssignmentsOverview from "../../components/admin/AssignmentsOverview";
 import LatestFeedbacks from "../../components/admin/LatestFeedbacks";
 import RiskInsightsPanel from "../../components/admin/RiskInsightsPanel";
+import ReportsExport from "../../components/admin/ReportsExport";
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuthStore();
@@ -92,6 +93,11 @@ const AdminDashboard: React.FC = () => {
             <LatestFeedbacks />
             <RiskInsightsPanel />
           </SimpleGrid>
+
+          {/* Секция 4: Экспорт отчетов */}
+          <Box w="100%">
+            <ReportsExport />
+          </Box>
         </VStack>
       </Container>
     </Box>
