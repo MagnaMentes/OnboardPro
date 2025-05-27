@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ title }}</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        color: #333;
+      }
+      h1 {
+        color: #2c5282;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 24px;
+      }
+      h2 {
+        color: #2b6cb0;
+        margin-top: 30px;
+        font-size: 20px;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 5px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 30px;
+      }
+      th {
+        background-color: #edf2f7;
+        padding: 8px;
+        text-align: left;
+        border: 1px solid #cbd5e0;
+      }
+      td {
+        padding: 8px;
+        border: 1px solid #cbd5e0;
+      }
+      .progress-good {
+        color: #22543d;
+        font-weight: bold;
+      }
+      .progress-medium {
+        color: #744210;
+        font-weight: bold;
+      }
+      .progress-bad {
+        color: #742a2a;
+        font-weight: bold;
+      }
+      .footer {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #718096;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>{{ title }}</h1>
+    <p>Дата создания отчета: {% now "d.m.Y H:i" %}</p>
+
+    {% for program_data in programs_data %}
+    <h2>{{ program_data.program.name }}</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ФИО</th>
+          <th>Должность</th>
+          <th>Статус</th>
+          <th>Прогресс</th>
+          <th>Дата начала</th>
+          <th>Дата завершения</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for assignment in program_data.assignments %}
+        <tr>
+          <td>{{ assignment.user.full_name }}</td>
+          <td>{{ assignment.user.position }}</td>
+          <td>
+            {% if assignment.status == 'active' %} Активно {% elif
+            assignment.status == 'completed' %} Завершено {% else %} {{
+            assignment.status }} {% endif %}
+          </td>
+          <td>
+            {% if assignment.progress_percentage >= 80 %}
+            <span class="progress-good"
+              >{{ assignment.progress_percentage }}%</span
+            >
+            {% elif assignment.progress_percentage >= 40 %}
+            <span class="progress-medium"
+              >{{ assignment.progress_percentage }}%</span
+            >
+            {% else %}
+            <span class="progress-bad"
+              >{{ assignment.progress_percentage }}%</span
+            >
+            {% endif %}
+          </td>
+          <td>{{ assignment.assigned_at|date:"d.m.Y" }}</td>
+          <td>{{ assignment.completed_at|date:"d.m.Y"|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+
+    <div class="footer">
+      <p>OnboardPro &copy; {% now "Y" %} - Система онбординга сотрудников</p>
+    </div>
+  </body>
+</html>

@@ -14,3 +14,4 @@ python-dotenv>=1.0.0
 tiktoken>=0.5.2
 ics>=0.7.2
 pytz>=2024.1
+weasyprint>=65.1
