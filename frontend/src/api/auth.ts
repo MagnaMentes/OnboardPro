@@ -1,5 +1,6 @@
 // API сервис для работы с аутентификацией
 import axiosInstance from "./client";
+import axios from "axios";
 
 interface LoginResponse {
   access: string;
@@ -45,7 +46,7 @@ const authApi = {
   // Логин пользователя
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await axiosInstance.post<LoginResponse>(
-      "/auth/login/",
+      "auth/login/",
       data
     );
     return response.data;
@@ -54,7 +55,7 @@ const authApi = {
   // Обновление токена доступа
   refreshToken: async (refreshToken: string): Promise<TokenRefreshResponse> => {
     const response = await axiosInstance.post<TokenRefreshResponse>(
-      "/auth/refresh/",
+      "auth/refresh/",
       { refresh: refreshToken }
     );
     return response.data;
@@ -62,8 +63,34 @@ const authApi = {
 
   // Получение данных текущего пользователя
   getCurrentUser: async (): Promise<UserResponse> => {
-    const response = await axiosInstance.get<UserResponse>("/users/me/");
-    return response.data;
+    try {
+      const token = localStorage.getItem("accessToken");
+      console.log("Current token:", token ? "present" : "missing");
+
+      // Для отладки выведем больше информации о запросе
+      console.log("Making request to: users/me/");
+      console.log(
+        "Authorization header:",
+        token ? `Bearer ${token.substring(0, 10)}...` : "not set"
+      );
+
+      // Устанавливаем заголовок Authorization вручную для этого запроса
+      const response = await axiosInstance.get<UserResponse>("users/me/", {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+
+      console.log("User data received successfully");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      // Добавляем больше информации об ошибке
+      if (axios.isAxiosError(error)) {
+        console.error("Response status:", error.response?.status);
+        console.error("Response data:", error.response?.data);
+        console.error("Request config:", error.config);
+      }
+      throw error;
+    }
   },
 };
 

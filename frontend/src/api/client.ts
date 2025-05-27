@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 
 // Создание экземпляра Axios с базовым URL
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api/",
+  baseURL: "/api/",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -21,13 +21,27 @@ axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem("accessToken");
 
+    // Добавляем логирование для отладки
+    console.log(`Request to: ${config.url}`);
+
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log(`Setting auth header: Bearer ${token.substring(0, 10)}...`);
+    } else {
+      console.log(
+        "No token found in localStorage or headers object is undefined"
+      );
+    }
+
+    // Добавляем полный URL в логи
+    if (config.baseURL && config.url) {
+      console.log(`Full URL: ${config.baseURL}${config.url}`);
     }
 
     return config;
   },
   (error: AxiosError) => {
+    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -61,17 +75,27 @@ axiosInstance.interceptors.response.use(
 
     // Проверяем, что ошибка 401 и запрос еще не повторялся
     if (error.response?.status === 401 && !originalRequest._retry) {
+      console.log("401 Unauthorized error detected", originalRequest.url);
+      console.log("Response data:", error.response.data);
+      console.log(
+        "Current token:",
+        localStorage.getItem("accessToken") ? "present" : "missing"
+      );
+
       // Если уже обновляем токен, добавляем запрос в очередь
       if (isRefreshing) {
+        console.log("Token refresh is already in progress, queueing request");
         try {
           const token = await new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
           });
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${token}`;
+            console.log("Updated authorization header with new token");
           }
           return axiosInstance(originalRequest);
         } catch (err) {
+          console.error("Error while waiting for token refresh:", err);
           return Promise.reject(err);
         }
       }
@@ -81,9 +105,11 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        console.log("Starting token refresh attempt");
         const refreshToken = localStorage.getItem("refreshToken");
 
         if (!refreshToken) {
+          console.log("No refresh token found in localStorage");
           // Если нет refresh токена, очищаем аутентификацию
           processQueue(error, null);
           localStorage.removeItem("accessToken");
@@ -93,15 +119,16 @@ axiosInstance.interceptors.response.use(
           return Promise.reject(error);
         }
 
-        // Запрос на обновление токена
-        const response = await axios.post(
-          "http://localhost:8000/api/auth/refresh/",
-          {
-            refresh: refreshToken,
-          }
-        );
+        console.log("Refresh token found, attempting to refresh access token");
+
+        // Запрос на обновление токена - используем напрямую axios без интерцепторов
+        // чтобы избежать зацикливания
+        const response = await axios.post("/api/auth/refresh/", {
+          refresh: refreshToken,
+        });
 
         const { access } = response.data;
+        console.log("New access token received successfully");
 
         // Обновляем токен
         localStorage.setItem("accessToken", access);

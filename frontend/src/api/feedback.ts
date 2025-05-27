@@ -37,7 +37,7 @@ const feedbackApi = {
   getAssignmentFeedback: async (
     assignmentId: number
   ): Promise<AssignmentFeedback> => {
-    const response = await api.get(`/api/feedback/assignment/${assignmentId}/`);
+    const response = await api.get(`feedback/assignment/${assignmentId}/`);
     return response.data;
   },
 };

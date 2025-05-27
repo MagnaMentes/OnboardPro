@@ -39,7 +39,9 @@ const StepAIHintCard: React.FC<StepAIHintCardProps> = ({
       try {
         setLoading(true);
         const response = await AICopilotService.getHint(stepId);
-        setHint(response.hint);
+        if (response) {
+          setHint(response.hint_text);
+        }
         setIsInitialFetched(true);
       } catch (err: any) {
         // Если подсказки нет (код 404), это нормальное состояние - просто не показываем её
@@ -71,15 +73,19 @@ const StepAIHintCard: React.FC<StepAIHintCardProps> = ({
       setError(null);
 
       const response = await AICopilotService.generateHint(stepId);
-      setHint(response.hint);
+      if (response) {
+        setHint(response.hint_text);
 
-      toast({
-        title: "Подсказка получена",
-        description: "AI-ассистент Solomia сгенерировал подсказку",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
+        toast({
+          title: "Подсказка получена",
+          description: "AI-ассистент Solomia сгенерировал подсказку",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        throw new Error("Не удалось получить подсказку");
+      }
     } catch (err: any) {
       setError("Ошибка при генерации подсказки");
       toast({
