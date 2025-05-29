@@ -20,8 +20,12 @@ const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || "10000");
 // Формируем базовый URL на основе переменных окружения
 // Убедимся, что между базовым URL и префиксом API есть слэш
 const baseURL = API_URL
-  ? `${API_URL}${API_PREFIX.startsWith("/") ? API_PREFIX : `/${API_PREFIX}`}`
+  ? `${API_URL.endsWith("/") ? API_URL.slice(0, -1) : API_URL}${
+      API_PREFIX.startsWith("/") ? API_PREFIX : `/${API_PREFIX}`
+    }`
   : API_PREFIX;
+
+console.log("Базовый URL API:", baseURL);
 
 // Создание экземпляра Axios с базовым URL
 const axiosInstance: AxiosInstance = axios.create({
@@ -37,8 +41,10 @@ axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem(ACCESS_TOKEN_KEY);
 
-    // Добавляем логирование для отладки
-    console.log(`Request to: ${config.url}`);
+    // Гарантируем ведущий слеш в URL для корректного объединения с baseURL
+    if (config.url && !config.url.startsWith("/")) {
+      config.url = `/${config.url}`;
+    }
 
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -49,17 +55,12 @@ axiosInstance.interceptors.request.use(
       );
     }
 
-    // Добавляем полный URL в логи
-    if (config.baseURL && config.url) {
-      console.log(`Full URL: ${config.baseURL}${config.url}`);
-    }
+    // Логируем итоговый запрос
+    console.log(`Request to: ${config.baseURL}${config.url}`);
 
     return config;
   },
-  (error: AxiosError) => {
-    console.error("Request interceptor error:", error);
-    return Promise.reject(error);
-  }
+  (error: AxiosError) => Promise.reject(error)
 );
 
 // Интерсептор ответов - обрабатывает ошибки и обновляет токен при необходимости

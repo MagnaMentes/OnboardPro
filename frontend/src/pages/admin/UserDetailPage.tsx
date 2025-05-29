@@ -14,8 +14,10 @@ import { AppLayout } from "../../components/layout/AppLayout";
 
 const UserDetailPage = () => {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
+
   const handleBack = () => {
-    useNavigate()("/admin/employees");
+    navigate("/admin/employees");
   };
 
   return (

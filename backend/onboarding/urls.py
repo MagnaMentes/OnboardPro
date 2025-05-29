@@ -45,6 +45,9 @@ urlpatterns = [
     # LMS URLs
     path('', include('onboarding.lms_urls')),
 
+    # LMS v2 URLs
+    path('', include('onboarding.lms_v2_urls')),
+
     # Analytics URLs
     path('analytics/', include('onboarding.analytics_urls')),
 

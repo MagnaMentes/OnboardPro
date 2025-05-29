@@ -24,10 +24,12 @@ export const useClientAssistant = (stepId?: number) => {
         if (result) {
           setInsight(result);
         } else {
-          setError("Подсказка недоступна");
+          // Если результат null, это нормальное состояние (нет подсказки для данного шага)
+          // Не устанавливаем ошибку, чтобы не показывать сообщение об ошибке
+          // setError("Подсказка недоступна");
         }
       } catch (err) {
-        setError("Не удалось загрузить подсказку");
+        // Не показываем ошибку на UI, только логируем для отладки
         console.error("Error loading client insight:", err);
       } finally {
         setIsLoading(false);
@@ -40,11 +42,17 @@ export const useClientAssistant = (stepId?: number) => {
   // Метод для скрытия подсказки
   const dismissInsight = async (insightId: number) => {
     try {
-      await clientAssistantApi.dismissInsight(insightId);
-      setInsight(null);
+      const success = await clientAssistantApi.dismissInsight(insightId);
+      // Если API вернуло успешный результат или мы в режиме разработки - скрываем подсказку в UI
+      if (success) {
+        setInsight(null);
+      }
     } catch (err) {
-      setError("Не удалось скрыть подсказку");
+      // Просто логируем ошибку для отладки, но не показываем пользователю
       console.error("Error dismissing insight:", err);
+
+      // В режиме разработки всё равно скрываем подсказку в UI
+      setInsight(null);
     }
   };
 

@@ -21,6 +21,10 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 urlpatterns = [
     path('admin/', admin.site.urls),
 
+    # AI Assistant endpoints (placed before general API includes)
+    path('api/ai/', include('ai_insights.urls')),
+    path('apiai/', include('ai_insights.urls')),
+
     # API URLs
     path('api/', include('core.urls')),
     path('api/', include('users.urls')),
@@ -29,7 +33,6 @@ urlpatterns = [
     path('api/', include('notifications.urls')),
     path('api/', include('gamification.urls')),
     path('api/', include('solomia.urls')),
-    path('api/ai/', include('ai_insights.urls')),
 
     # Admin Dashboard API
     path('api/admin/', include('config.admin_urls')),

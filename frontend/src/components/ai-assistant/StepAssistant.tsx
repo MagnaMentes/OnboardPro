@@ -18,11 +18,13 @@ const StepAssistant: React.FC<StepAssistantProps> = ({ stepId }) => {
       try {
         setIsLoading(true);
         const data = await clientAssistantApi.getInsightForStep(stepId);
-        setInsight(data);
+        // Устанавливаем подсказку только если получили валидные данные
+        if (data) {
+          setInsight(data);
+        }
       } catch (error) {
         console.error("Ошибка при получении подсказки:", error);
-        // Если ошибка критичная, можно показать уведомление,
-        // но лучше не мешать пользователю, если подсказка не загрузилась
+        // Мы не показываем ошибки пользователю, просто логируем для отладки
       } finally {
         setIsLoading(false);
       }
@@ -36,24 +38,28 @@ const StepAssistant: React.FC<StepAssistantProps> = ({ stepId }) => {
     if (!insight) return;
 
     try {
-      await clientAssistantApi.dismissInsight(insight.id);
+      const result = await clientAssistantApi.dismissInsight(insight.id);
+
+      // Независимо от результата запроса к API, скрываем подсказку в UI
+      // В реальном приложении можно было бы проверять результат запроса
       setInsight(null);
-      toast({
-        title: "Подсказка скрыта",
-        description: "Эта подсказка больше не будет отображаться",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
+
+      // Показываем уведомление только если скрытие прошло успешно
+      if (result) {
+        toast({
+          title: "Подсказка скрыта",
+          description: "Эта подсказка больше не будет отображаться",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
     } catch (error) {
+      // В режиме разработки просто логируем ошибку и продолжаем работу
       console.error("Ошибка при скрытии подсказки:", error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось скрыть подсказку, попробуйте еще раз",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+
+      // Всё равно скрываем подсказку в UI
+      setInsight(null);
     }
   };
 

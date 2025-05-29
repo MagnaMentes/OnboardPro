@@ -37,13 +37,22 @@ const StepAIHintCard: React.FC<StepAIHintCardProps> = ({
   React.useEffect(() => {
     const fetchExistingHint = async () => {
       try {
+        console.log(
+          `[StepAIHintCard] Запрашиваем подсказку для шага ${stepId}`
+        );
         setLoading(true);
         const response = await AICopilotService.getHint(stepId);
         if (response) {
+          console.log(`[StepAIHintCard] Подсказка получена:`, response);
           setHint(response.hint_text);
+        } else {
+          console.log(
+            `[StepAIHintCard] Подсказка не найдена для шага ${stepId}`
+          );
         }
         setIsInitialFetched(true);
       } catch (err: any) {
+        console.error(`[StepAIHintCard] Ошибка при запросе подсказки:`, err);
         // Если подсказки нет (код 404), это нормальное состояние - просто не показываем её
         if (err.response && err.response.status !== 404) {
           setError("Ошибка при загрузке подсказки");
@@ -69,11 +78,18 @@ const StepAIHintCard: React.FC<StepAIHintCardProps> = ({
   // Обработчик для генерации новой подсказки
   const handleGenerateHint = async () => {
     try {
+      console.log(
+        `[StepAIHintCard] Генерируем новую подсказку для шага ${stepId}`
+      );
       setLoading(true);
       setError(null);
 
       const response = await AICopilotService.generateHint(stepId);
       if (response) {
+        console.log(
+          `[StepAIHintCard] Подсказка успешно сгенерирована:`,
+          response
+        );
         setHint(response.hint_text);
 
         toast({

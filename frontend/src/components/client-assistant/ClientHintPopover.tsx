@@ -123,7 +123,9 @@ const ClientHintPopover: React.FC<ClientHintPopoverProps> = ({
               <Box>
                 <IconButton
                   aria-label="Скрыть подсказку"
-                  icon={<CloseButton />}
+                  // Используем обычную иконку вместо CloseButton, т.к. CloseButton - тоже button,
+                  // что вызывает ошибку вложенности (button внутри button)
+                  icon={<Box fontSize="xs">✕</Box>}
                   size="xs"
                   variant="ghost"
                   colorScheme="blue"

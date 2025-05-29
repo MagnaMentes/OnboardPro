@@ -11,4 +11,6 @@ urlpatterns = [
     path('', include(router.urls)),
     # URL маршруты для клиентского ассистента
     path('', include('ai_insights.client_urls')),
+    # URL маршруты для AI-инсайтов по обучению
+    path('', include('ai_insights.training_urls')),
 ]

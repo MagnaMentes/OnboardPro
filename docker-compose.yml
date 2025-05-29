@@ -39,6 +39,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - VITE_API_URL=http://localhost:8000
+      - VITE_API_PREFIX=/api
       - WATCHPACK_POLLING=true
       - FAST_REFRESH=true
       - VITE_HMR_PROTOCOL=ws

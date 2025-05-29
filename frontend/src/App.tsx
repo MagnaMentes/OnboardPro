@@ -16,6 +16,7 @@ import OnboardingProgressDemo from "./pages/OnboardingProgressDemo";
 import MyMeetingsPage from "./pages/booking/MyMeetingsPage";
 import ManageMeetingsPage from "./pages/booking/ManageMeetingsPage";
 import SettingsPage from "./pages/Settings";
+import NotificationCenterPage from "./pages/NotificationCenterPage";
 // Импорт страниц администрирования
 import AdminDashboard from "./pages/admin/Dashboard";
 import Analytics from "./pages/admin/Analytics";
@@ -121,6 +122,9 @@ function App() {
             />
             {/* страница настроек */}
             <Route path="/settings" element={<SettingsPage />} />
+
+            {/* страница уведомлений */}
+            <Route path="/notifications" element={<NotificationCenterPage />} />
 
             {/* маршруты администрирования */}
             <Route path="/admin/dashboard" element={<AdminDashboard />} />

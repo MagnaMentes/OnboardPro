@@ -12,12 +12,14 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelOptions(
             name='userreward',
-            options={'verbose_name': 'user reward', 'verbose_name_plural': 'user rewards'},
+            options={'verbose_name': 'user reward',
+                     'verbose_name_plural': 'user rewards'},
         ),
         migrations.AlterField(
             model_name='userreward',
             name='achievement_id',
-            field=models.CharField(max_length=50, verbose_name='achievement ID'),
+            field=models.CharField(
+                max_length=50, verbose_name='achievement ID'),
         ),
         migrations.AlterField(
             model_name='userreward',
@@ -27,12 +29,14 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='userreward',
             name='icon',
-            field=models.CharField(blank=True, max_length=100, null=True, verbose_name='icon'),
+            field=models.CharField(
+                blank=True, max_length=100, null=True, verbose_name='icon'),
         ),
         migrations.AlterField(
             model_name='userreward',
             name='reward_type',
-            field=models.CharField(choices=[('achievement', 'Achievement'), ('level', 'Level'), ('special', 'Special')], max_length=20, verbose_name='reward type'),
+            field=models.CharField(choices=[('achievement', 'Achievement'), ('level', 'Level'), (
+                'special', 'Special')], max_length=20, verbose_name='reward type'),
         ),
         migrations.AlterField(
             model_name='userreward',
