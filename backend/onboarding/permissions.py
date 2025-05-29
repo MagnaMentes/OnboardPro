@@ -4,11 +4,15 @@ from users.models import UserRole
 
 class IsAssignedUserOrHRorAdmin(permissions.BasePermission):
     """
-    Разрешение для доступа к назначенной программе.
+    Разрешение для доступа к назначенной программе или её элементам.
     Доступ разрешен:
     1. Пользователю, которому назначена программа
     2. HR-менеджерам
     3. Администраторам
+
+    Класс поддерживает проверку разрешений для разных типов объектов:
+    - Объекты с прямой связью с пользователем (атрибут user)
+    - OnboardingStep - проверяем через назначение программы пользователям
     """
 
     def has_object_permission(self, request, view, obj):
@@ -16,12 +20,25 @@ class IsAssignedUserOrHRorAdmin(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
 
-        # Пользователь, которому назначена программа
-        if obj.user == request.user:
+        # HR или Admin имеют доступ ко всем объектам
+        if request.user.role in [UserRole.ADMIN, UserRole.HR]:
             return True
 
-        # HR или Admin
-        return request.user.role in [UserRole.ADMIN, UserRole.HR]
+        # Если объект имеет прямую связь с пользователем
+        if hasattr(obj, 'user'):
+            return obj.user == request.user
+
+        # Для OnboardingStep проверяем через UserOnboardingAssignment
+        from .models import OnboardingStep, UserOnboardingAssignment
+        if isinstance(obj, OnboardingStep):
+            # Проверяем, назначена ли программа данного шага пользователю
+            return UserOnboardingAssignment.objects.filter(
+                user=request.user,
+                program=obj.program,
+                status='active'
+            ).exists()
+
+        return False
 
 
 class IsAssignedUser(permissions.BasePermission):

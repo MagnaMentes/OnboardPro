@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/', include('notifications.urls')),
     path('api/', include('gamification.urls')),
     path('api/', include('solomia.urls')),
+    path('api/feedback/', include('feedback.urls')),
 
     # Admin Dashboard API
     path('api/admin/', include('config.admin_urls')),

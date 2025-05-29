@@ -6,10 +6,10 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        # Предполагаемая последняя миграция
-        ('onboarding', '0017_auto_20250401_1234'),
-        # Предполагаемая последняя миграция
-        ('users', '0013_userprofile_personal_assistant_enabled'),
+        # Фактическая последняя миграция
+        ('onboarding', '0015_alter_aichatmessage_step_progress'),
+        # Фактическая последняя миграция
+        ('users', '0004_add_department_field'),
     ]
 
     operations = [
@@ -196,7 +196,7 @@ class Migration(migrations.Migration):
                 ('answered_at', models.DateTimeField(
                     default=django.utils.timezone.now, verbose_name='answered at')),
                 ('attempt', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
-                 related_name='open_answers', to='onboarding.usertestalpt', verbose_name='attempt')),
+                 related_name='open_answers', to='onboarding.usertestattempt', verbose_name='attempt')),
                 ('question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
                  related_name='user_open_answers', to='onboarding.enhancedlmsquestion', verbose_name='question')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,

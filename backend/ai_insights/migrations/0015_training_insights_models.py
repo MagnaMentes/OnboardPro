@@ -6,13 +6,13 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        # Предполагаемая последняя миграция
-        ('departments', '0012_auto_20250401_1234'),
+        # Предполагаемая последняя миграция для departments
+        ('departments', '0001_initial'),
         ('onboarding', '0018_lms_v2_models'),
-        # Предполагаемая последняя миграция
-        ('users', '0013_userprofile_personal_assistant_enabled'),
-        # Предполагаемая последняя миграция
-        ('ai_insights', '0014_auto_20250401_1234'),
+        # Фактическая последняя миграция для users
+        ('users', '0004_add_department_field'),
+        # Фактическая последняя миграция для ai_insights
+        ('ai_insights', '0003_airecommendation'),
     ]
 
     operations = [

@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'gamification',
     'ai_insights',
     'solomia',
+    'feedback',
 ]
 
 MIDDLEWARE = [

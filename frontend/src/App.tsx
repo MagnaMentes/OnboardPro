@@ -23,6 +23,9 @@ import Analytics from "./pages/admin/Analytics";
 import UsersListPage from "./pages/admin/UsersListPage";
 import UserDetailPage from "./pages/admin/UserDetailPage";
 import FeedbackPage from "./pages/admin/FeedbackPage";
+import FeedbackTemplatesPage from "./pages/admin/FeedbackTemplatesPage";
+import FeedbackResultsPage from "./pages/admin/FeedbackResultsPage";
+import FeedbackUserDetailPage from "./pages/admin/FeedbackUserDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import {
   useAuthStore,
@@ -134,7 +137,20 @@ function App() {
               path="/admin/employees/:userId"
               element={<UserDetailPage />}
             />
+            {/* маршруты обратной связи */}
             <Route path="/admin/feedback" element={<FeedbackPage />} />
+            <Route
+              path="/admin/feedback/templates"
+              element={<FeedbackTemplatesPage />}
+            />
+            <Route
+              path="/admin/feedback/results"
+              element={<FeedbackResultsPage />}
+            />
+            <Route
+              path="/admin/feedback/user/:userId"
+              element={<FeedbackUserDetailPage />}
+            />
           </Route>
         </Routes>
       </Router>

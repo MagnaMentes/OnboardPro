@@ -5,7 +5,8 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 from .models import OnboardingStep, UserStepProgress
-from .permissions import IsAssignedUserOrHRorAdmin, IsAdminOrHR
+from .permissions import IsAssignedUserOrHRorAdmin
+from users.permissions import IsAdminOrHR
 from .lms_models import LMSTest
 from .lms_models_v2 import (
     LearningModule, Lesson, Attachment, EnhancedLMSQuestion,
@@ -131,13 +132,19 @@ class LessonDetailView(generics.RetrieveAPIView):
         lesson = self.get_object()
         user = request.user
 
+        # Проверяем существование записи прогресса
+        progress_exists = LessonProgress.objects.filter(
+            user=user,
+            lesson=lesson
+        ).exists()
+
         # Обновляем или создаем запись прогресса при просмотре урока
         progress, created = LessonProgress.objects.update_or_create(
             user=user,
             lesson=lesson,
             defaults={
                 'last_accessed': timezone.now(),
-                'status': 'in_progress' if created else models.F('status')
+                'status': 'in_progress' if not progress_exists else models.F('status')
             }
         )
 
