@@ -1,16 +1,15 @@
 import React, { useEffect } from "react";
 import {
   Box,
-  Container,
   Heading,
   Text,
   SimpleGrid,
   VStack,
-  useColorModeValue,
   Alert,
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
@@ -19,11 +18,13 @@ import AssignmentsOverview from "../../components/admin/AssignmentsOverview";
 import LatestFeedbacks from "../../components/admin/LatestFeedbacks";
 import RiskInsightsPanel from "../../components/admin/RiskInsightsPanel";
 import ReportsExport from "../../components/admin/ReportsExport";
+import { AppLayout } from "../../components/layout/AppLayout";
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const bgColor = useColorModeValue("gray.50", "gray.900");
+  const cardBg = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
 
   // Проверяем права доступа пользователя
   useEffect(() => {
@@ -41,7 +42,7 @@ const AdminDashboard: React.FC = () => {
   // Если у пользователя нет нужных прав
   if (!["admin", "hr"].includes(user.role.toLowerCase())) {
     return (
-      <Container maxW="container.xl" p={5}>
+      <AppLayout>
         <Alert
           status="error"
           variant="solid"
@@ -62,45 +63,87 @@ const AdminDashboard: React.FC = () => {
             только для администраторов и HR-специалистов.
           </AlertDescription>
         </Alert>
-      </Container>
+      </AppLayout>
     );
   }
 
   return (
-    <Box bg={bgColor} minH="100vh" py={5}>
-      <Container maxW="container.xl">
-        <VStack align="start" spacing={8} mb={10}>
-          <Box w="100%">
-            <Heading mb={2}>Административная панель</Heading>
-            <Text color="gray.600">
-              Обзор сотрудников, заданий, обратной связи и инсайтов для HR и
-              администраторов
-            </Text>
-          </Box>
+    <AppLayout>
+      <VStack align="start" spacing={8} mb={10}>
+        <Box w="100%">
+          <Heading size="xl" mb={2} color="brand.700">
+            Административная панель
+          </Heading>
+          <Text color="gray.600" fontSize="lg">
+            Обзор сотрудников, заданий, обратной связи и инсайтов для HR и
+            администраторов
+          </Text>
+        </Box>
 
-          {/* Секция 1: Таблица сотрудников */}
-          <Box w="100%">
-            <EmployeesTable />
-          </Box>
+        {/* Секция 1: Таблица сотрудников */}
+        <Box
+          w="100%"
+          bg={cardBg}
+          borderRadius="lg"
+          borderWidth="1px"
+          borderColor={borderColor}
+          shadow="sm"
+          p={5}
+        >
+          <EmployeesTable />
+        </Box>
 
-          {/* Секция 2: Обзор назначений */}
-          <Box w="100%">
-            <AssignmentsOverview />
-          </Box>
+        {/* Секция 2: Обзор назначений */}
+        <Box
+          w="100%"
+          bg={cardBg}
+          borderRadius="lg"
+          borderWidth="1px"
+          borderColor={borderColor}
+          shadow="sm"
+          p={5}
+        >
+          <AssignmentsOverview />
+        </Box>
 
-          {/* Секция 3: Отзывы и Инсайты (в 2 колонки) */}
-          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8} w="100%">
+        {/* Секция 3: Отзывы и Инсайты (в 2 колонки) */}
+        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} w="100%">
+          <Box
+            bg={cardBg}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={borderColor}
+            shadow="sm"
+            p={5}
+          >
             <LatestFeedbacks />
-            <RiskInsightsPanel />
-          </SimpleGrid>
-
-          {/* Секция 4: Экспорт отчетов */}
-          <Box w="100%">
-            <ReportsExport />
           </Box>
-        </VStack>
-      </Container>
-    </Box>
+          <Box
+            bg={cardBg}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={borderColor}
+            shadow="sm"
+            p={5}
+          >
+            <RiskInsightsPanel />
+          </Box>
+        </SimpleGrid>
+
+        {/* Секция 4: Экспорт отчетов */}
+        <Box
+          w="100%"
+          bg={cardBg}
+          borderRadius="lg"
+          borderWidth="1px"
+          borderColor={borderColor}
+          shadow="sm"
+          p={5}
+        >
+          <ReportsExport />
+        </Box>
+      </VStack>
+    </AppLayout>
   );
 };
 

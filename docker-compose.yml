@@ -9,6 +9,8 @@ services:
       - ./wait-for-db.sh:/app/wait-for-db.sh
       - ./init_django.sh:/app/init_django.sh
       - ./.env.dev:/app/.env.dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     env_file:
@@ -23,12 +25,33 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+    volumes:
+      - ./frontend:/app/frontend:cached
+      - ./start-vite.sh:/app/start-vite.sh
+      - ./frontend/check-dependencies.sh:/app/frontend/check-dependencies.sh
+      - /app/frontend/node_modules
     ports:
-      - "3000:80"
+      - "5173:5173"
+      - "24678:24678" # WebSocket HMR порт
     depends_on:
       - backend
+    command: sh -c "chmod +x /app/start-vite.sh && chmod +x /app/frontend/check-dependencies.sh && /app/start-vite.sh"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_API_URL=http://localhost:8000
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+      - VITE_HMR_PROTOCOL=ws
+      - VITE_HMR_HOSTNAME=host.docker.internal
+      - VITE_HMR_PORT=5173
+      # Переменные для автоматической проверки зависимостей
+      - CHECK_DEPENDENCIES=true
+      - AUTO_FIX_VULNERABILITIES=false
+      - AUTO_UPDATE_DEPENDENCIES=false
     networks:
       - onboardpro_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   db:
     image: postgres:14

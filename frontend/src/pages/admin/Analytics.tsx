@@ -8,6 +8,7 @@ import {
   VStack,
   Text,
   SimpleGrid,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import analyticsApi, {
   AnalyticsSummary,
@@ -20,6 +21,7 @@ import AssignmentsTable from "../../components/analytics/AssignmentsTable";
 import MoodChart from "../../components/analytics/MoodChart";
 import AIInsightCard from "../../components/analytics/AIInsightCard";
 import AIInsightTable from "../../components/analytics/AIInsightTable";
+import { AppLayout } from "../../components/layout/AppLayout";
 
 const Analytics: FC = () => {
   // Состояния для хранения данных
@@ -137,17 +139,30 @@ const Analytics: FC = () => {
     fetchAiInsights();
   }, [toast]);
 
+  const cardBg = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+
   return (
-    <Box py={8}>
-      <Container maxW="container.xl">
-        <Heading as="h1" size="xl" mb={8}>
+    <AppLayout>
+      <Box mb={8}>
+        <Heading size="xl" mb={3} color="brand.700">
           Аналитика онбординга
         </Heading>
+        <Text color="gray.600" fontSize="lg" mb={6}>
+          Детальная аналитика процесса адаптации новых сотрудников
+        </Text>
 
         <VStack spacing={8} align="stretch">
           {/* Карточки с ключевыми метриками */}
-          <Box>
-            <Heading as="h2" size="md" mb={4}>
+          <Box
+            bg={cardBg}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={borderColor}
+            shadow="sm"
+            p={5}
+          >
+            <Heading as="h2" size="md" mb={4} color="brand.600">
               Ключевые метрики
             </Heading>
             <AnalyticsSummaryCards
@@ -156,28 +171,49 @@ const Analytics: FC = () => {
             />
           </Box>
 
-          <Divider />
-
           {/* График настроения */}
-          <Box>
+          <Box
+            bg={cardBg}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={borderColor}
+            shadow="sm"
+            p={5}
+          >
+            <Heading as="h2" size="md" mb={4} color="brand.600">
+              Динамика настроения
+            </Heading>
             <MoodChart data={feedbackData} isLoading={loadingFeedback} />
           </Box>
 
-          <Divider />
-
           {/* Таблица с назначениями */}
-          <Box>
+          <Box
+            bg={cardBg}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={borderColor}
+            shadow="sm"
+            p={5}
+          >
+            <Heading as="h2" size="md" mb={4} color="brand.600">
+              Статистика назначений
+            </Heading>
             <AssignmentsTable
               data={assignmentsData}
               isLoading={loadingAssignments}
             />
           </Box>
 
-          <Divider />
-
           {/* Раздел AI-инсайты */}
-          <Box>
-            <Heading as="h2" size="md" mb={4}>
+          <Box
+            bg={cardBg}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={borderColor}
+            shadow="sm"
+            p={5}
+          >
+            <Heading as="h2" size="md" mb={4} color="brand.600">
               AI-инсайты
             </Heading>
 
@@ -204,8 +240,8 @@ const Analytics: FC = () => {
             <AIInsightTable data={aiInsights} isLoading={loadingAiInsights} />
           </Box>
         </VStack>
-      </Container>
-    </Box>
+      </Box>
+    </AppLayout>
   );
 };
 

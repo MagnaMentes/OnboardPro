@@ -9,7 +9,7 @@ class ReportsApi {
 
   // Получение PDF отчета по назначениям программ
   async getAssignmentsPdfReport(): Promise<Blob> {
-    const url = `/api/reports/assignments/pdf/`;
+    const url = `/reports/assignments/pdf/`;
     const response = await apiClient.get(url, {
       responseType: "blob",
     });
@@ -18,7 +18,7 @@ class ReportsApi {
 
   // Получение CSV отчета по назначениям программ
   async getAssignmentsCsvReport(): Promise<Blob> {
-    const url = `/api/reports/assignments/csv/`;
+    const url = `/reports/assignments/csv/`;
     const response = await apiClient.get(url, {
       responseType: "blob",
     });

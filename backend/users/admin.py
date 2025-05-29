@@ -3,13 +3,15 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 
 from .models import User
+from .department_models import Department
 
 
 class CustomUserAdmin(UserAdmin):
     """Кастомная админка для модели пользователя"""
     fieldsets = (
         (None, {'fields': ('username', 'email', 'password')}),
-        (_('Personal info'), {'fields': ('full_name', 'position')}),
+        (_('Personal info'), {
+         'fields': ('full_name', 'position', 'department')}),
         (_('Role'), {'fields': ('role',)}),
         (_('Permissions'), {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),

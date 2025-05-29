@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from departments.models import Department
 
 
 class UserRole(models.TextChoices):
@@ -56,6 +57,14 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     full_name = models.CharField(_('full name'), max_length=255, blank=True)
     position = models.CharField(_('position'), max_length=100, blank=True)
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='employees',
+        verbose_name=_('department')
+    )
     role = models.CharField(
         _('role'),
         max_length=20,
@@ -65,6 +74,8 @@ class User(AbstractUser):
     created_at = models.DateTimeField(_('created at'), default=timezone.now)
     notifications_enabled = models.BooleanField(
         _('notifications enabled'), default=True)
+    notification_settings = models.JSONField(
+        _('notification settings'), default=dict, blank=True, null=True)
 
     USERNAME_FIELD = 'email'
     # username всё еще требуется для совместимости с Django admin

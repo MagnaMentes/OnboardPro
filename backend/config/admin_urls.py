@@ -4,6 +4,9 @@ urlpatterns = [
     # URL маршруты для административной панели пользователей
     path('users/', include('users.admin_urls')),
 
+    # URL маршруты для административной панели департаментов
+    path('departments/', include('departments.admin_urls')),
+
     # URL маршруты для административной панели онбординга
     path('onboarding/', include('onboarding.admin_urls')),
 

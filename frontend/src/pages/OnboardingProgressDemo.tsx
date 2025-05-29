@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Container,
   Heading,
   Text,
   Divider,
@@ -11,11 +10,26 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  SimpleGrid,
+  Flex,
+  Progress,
+  HStack,
+  Icon,
+  Badge,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import StepCard from "../components/StepCard";
 import GamificationBlock from "../components/gamification/GamificationBlock";
 import { gamificationApi, UserLevel, UserReward } from "../api/gamificationApi";
 import toast from "react-hot-toast";
+import { AppLayout } from "../components/layout/AppLayout";
+import { Button, Card } from "../components/common";
+import {
+  FiCalendar,
+  FiCheckCircle,
+  FiClock,
+  FiAlertTriangle,
+} from "react-icons/fi";
 
 // Моковые данные для демонстрации функционала
 const mockStepsProgress = [
@@ -72,6 +86,14 @@ const OnboardingProgressDemo: React.FC = () => {
   const [recentRewards, setRecentRewards] = useState<UserReward[]>([]);
   const [isGamificationLoading, setIsGamificationLoading] = useState(false);
 
+  const cardBg = useColorModeValue("white", "gray.700");
+  const progressBg = useColorModeValue("gray.100", "gray.600");
+
+  // Рассчитываем прогресс выполнения
+  const completedSteps = steps.filter((step) => step.status === "done").length;
+  const totalSteps = steps.length;
+  const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
+
   // Загрузка данных геймификации
   useEffect(() => {
     const loadGamificationData = async () => {
@@ -104,24 +126,142 @@ const OnboardingProgressDemo: React.FC = () => {
   }, []);
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={6} align="stretch">
+    <AppLayout>
+      <VStack spacing={8} align="stretch">
         <Box>
-          <Heading as="h1" size="xl">
+          <Heading size="xl" mb={2} color="brand.700">
             Прогресс онбординга
           </Heading>
-          <Text mt={2} color="gray.600">
+          <Text color="gray.600" fontSize="lg">
             Программа: Онбординг для новых разработчиков
           </Text>
         </Box>
 
-        <GamificationBlock
-          isLoading={isGamificationLoading}
-          userLevel={userLevel}
-          recentRewards={recentRewards}
-        />
+        {/* Блок статистики */}
+        <Card variant="outline">
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} p={6}>
+            <Box>
+              <Text fontSize="md" fontWeight="medium" color="gray.600" mb={2}>
+                Общий прогресс
+              </Text>
+              <HStack spacing={4} mb={3}>
+                <Heading size="xl">{progressPercentage}%</Heading>
+                <Badge
+                  colorScheme={
+                    progressPercentage < 30
+                      ? "red"
+                      : progressPercentage < 70
+                      ? "orange"
+                      : "green"
+                  }
+                  fontSize="md"
+                  px={3}
+                  py={1}
+                  borderRadius="full"
+                >
+                  {progressPercentage < 30
+                    ? "Начало"
+                    : progressPercentage < 70
+                    ? "В процессе"
+                    : "Почти завершено"}
+                </Badge>
+              </HStack>
+              <Progress
+                value={progressPercentage}
+                size="lg"
+                borderRadius="md"
+                colorScheme="brand"
+                bg={progressBg}
+                mb={3}
+              />
+              <Text fontSize="sm" color="gray.500">
+                Выполнено {completedSteps} из {totalSteps} шагов
+              </Text>
+            </Box>
 
-        <Divider />
+            <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
+              <Card variant="outline" p={4} bg={cardBg}>
+                <HStack spacing={3}>
+                  <Icon as={FiCheckCircle} color="green.500" boxSize={5} />
+                  <VStack spacing={0} align="start">
+                    <Text fontSize="sm" color="gray.500">
+                      Завершено
+                    </Text>
+                    <Text fontSize="xl" fontWeight="bold">
+                      {steps.filter((step) => step.status === "done").length}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Card>
+
+              <Card variant="outline" p={4} bg={cardBg}>
+                <HStack spacing={3}>
+                  <Icon as={FiClock} color="orange.500" boxSize={5} />
+                  <VStack spacing={0} align="start">
+                    <Text fontSize="sm" color="gray.500">
+                      В процессе
+                    </Text>
+                    <Text fontSize="xl" fontWeight="bold">
+                      {
+                        steps.filter((step) => step.status === "in_progress")
+                          .length
+                      }
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Card>
+
+              <Card variant="outline" p={4} bg={cardBg}>
+                <HStack spacing={3}>
+                  <Icon as={FiCalendar} color="blue.500" boxSize={5} />
+                  <VStack spacing={0} align="start">
+                    <Text fontSize="sm" color="gray.500">
+                      Предстоит
+                    </Text>
+                    <Text fontSize="xl" fontWeight="bold">
+                      {
+                        steps.filter((step) => step.status === "not_started")
+                          .length
+                      }
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Card>
+
+              <Card variant="outline" p={4} bg={cardBg}>
+                <HStack spacing={3}>
+                  <Icon as={FiAlertTriangle} color="red.500" boxSize={5} />
+                  <VStack spacing={0} align="start">
+                    <Text fontSize="sm" color="gray.500">
+                      Обязательные
+                    </Text>
+                    <Text fontSize="xl" fontWeight="bold">
+                      {steps.filter((step) => step.is_required).length}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Card>
+            </SimpleGrid>
+          </SimpleGrid>
+        </Card>
+
+        {/* Блок геймификации */}
+        <Card variant="elevated" p={{ base: 4, md: 6 }}>
+          <Heading as="h2" size="lg" mb={6} color="gray.700">
+            Ваши достижения и уровень
+          </Heading>
+          <GamificationBlock
+            isLoading={isGamificationLoading}
+            userLevel={userLevel}
+            recentRewards={recentRewards}
+          />
+        </Card>
+
+        <Divider my={4} />
+
+        <Heading as="h2" size="lg" mb={4} color="gray.700">
+          Шаги онбординга
+        </Heading>
 
         {isLoading ? (
           <VStack spacing={4}>
@@ -167,7 +307,7 @@ const OnboardingProgressDemo: React.FC = () => {
           </Alert>
         )}
       </VStack>
-    </Container>
+    </AppLayout>
   );
 };
 

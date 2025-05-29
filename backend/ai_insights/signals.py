@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from onboarding.feedback_models import FeedbackMood, StepFeedback
 from onboarding.models import UserStepProgress
-from .services import AIInsightService
+from .services import AIInsightService, AIRecommendationService
 
 
 @receiver(post_save, sender=FeedbackMood)
@@ -12,6 +12,8 @@ def analyze_after_mood_update(sender, instance, created, **kwargs):
     """
     if created or kwargs.get("update_fields"):
         AIInsightService.analyze_onboarding_progress(instance.assignment)
+        # Генерируем рекомендации после обновления настроения
+        AIRecommendationService.generate_recommendations(instance.user)
 
 
 @receiver(post_save, sender=StepFeedback)
@@ -21,6 +23,8 @@ def analyze_after_feedback_update(sender, instance, created, **kwargs):
     """
     if created or kwargs.get("update_fields"):
         AIInsightService.analyze_onboarding_progress(instance.assignment)
+        # Генерируем рекомендации после обновления отзыва
+        AIRecommendationService.generate_recommendations(instance.user)
 
 
 @receiver(post_save, sender=UserStepProgress)
@@ -37,3 +41,5 @@ def analyze_after_step_progress_update(sender, instance, created, **kwargs):
         )
         if assignments.exists():
             AIInsightService.analyze_onboarding_progress(assignments.first())
+            # Генерируем рекомендации после обновления прогресса
+            AIRecommendationService.generate_recommendations(instance.user)

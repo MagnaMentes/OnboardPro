@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import { Flex, Spinner, Text, VStack } from "@chakra-ui/react";
 
 interface ProtectedRouteProps {
   requiredRole?: string[];

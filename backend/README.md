@@ -15,12 +15,13 @@
 ## Основные компоненты
 
 - Кастомная модель пользователя с ролевой системой
+- Модель департаментов и организационной структуры
+- HR-аналитика и инсайты о пользователях
 - JWT-аутентификация
 - Система email-уведомлений для виртуальных встреч
 - Экспорт встреч в формате iCalendar (.ics)
 - API документация (drf-spectacular)
-- Миграции для настройки базы данных
-- Административная панель для HR и администраторов
+- Модуль управления пользователями для HR и администраторов
 
 ## Пользователи и авторизация
 
@@ -188,12 +189,18 @@ curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/analytics/
 - Автоматические уведомления о новых назначениях
 - Напоминания о приближающихся дедлайнах
 - Уведомления о пропущенных шагах и провале тестов
+- Настройка типов уведомлений для каждого пользователя
 
 ### API endpoints уведомлений
 
-- `GET /api/notifications/` - список всех уведомлений пользователя
+- `GET /api/notifications/` - список всех уведомлений пользователя с фильтрацией
+  - Поддерживает query-параметры: type, is_read, created_after, created_before
+- `GET /api/notifications/{id}/` - получение деталей одного уведомления
 - `POST /api/notifications/{id}/read/` - отметка уведомления как прочитанное
 - `POST /api/notifications/read-all/` - отметка всех уведомлений как прочитанные
+- `DELETE /api/notifications/{id}/` - удаление уведомления
+- `GET /api/notifications/settings/` - получение настроек уведомлений
+- `POST /api/notifications/settings/` - обновление настроек уведомлений
 
 Все эндпоинты уведомлений доступны только авторизованным пользователям и возвращают только уведомления, предназначенные для текущего пользователя.
 
@@ -203,11 +210,17 @@ curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/analytics/
 # Получение JWT-токена
 curl -X POST -H "Content-Type: application/json" -d '{"email": "user@example.com", "password": "password"}' http://localhost:8000/api/auth/login/
 
-# Получение списка уведомлений
-curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/notifications/
+# Получение списка уведомлений с фильтрацией
+curl -H "Authorization: Bearer <jwt_token>" "http://localhost:8000/api/notifications/?type=deadline&is_read=false"
 
 # Отметка уведомления как прочитанное
 curl -X POST -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/notifications/1/read/
+
+# Получение настроек уведомлений
+curl -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/notifications/settings/
+
+# Обновление настроек уведомлений
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer <jwt_token>" -d '{"info": true, "warning": true, "deadline": true, "system": false}' http://localhost:8000/api/notifications/settings/
 ```
 
 Подробная документация по системе уведомлений доступна в [backend_notifications.md](../KnowledgeStorage/backend_notifications.md)
@@ -244,24 +257,31 @@ curl -X POST -H "Authorization: Bearer <jwt_token>" http://localhost:8000/api/ai
 
 Подробная документация по AI Copilot доступна в [backend_ai_copilot.md](../KnowledgeStorage/backend_ai_copilot.md)
 
-## AI Insights
+## AI Insights и рекомендации
 
-Система аналитики и выявления рисков в процессе онбординга на основе AI.
+Система ИИ-аналитики для выявления рисков и предоставления рекомендаций HR/администраторам.
 
-### Основные функции
+### AI Insights
 
-- Анализ прогресса онбординга сотрудника
-- Выявление рисков на основе настроения и обратной связи
-- Предоставление рекомендаций HR-менеджерам
+- Анализ прогресса пользователей
+- Выявление рисков при онбординге
+- Автоматические уведомления для HR
 
-### API endpoints AI Insights
+Подробная документация доступна в [backend_ai_insights.md](../KnowledgeStorage/backend_ai_insights.md)
 
-- `GET /api/insights/` - получение списка инсайтов
-- `GET /api/insights/{id}/` - получение детальной информации об инсайте
-- `GET /api/insights/user/{id}/` - получение инсайтов по пользователю
-- `POST /api/insights/analyze/{assignment_id}/` - запуск анализа для конкретного назначения
+### AI Recommendations
 
-Подробная документация по системе AI Insights доступна в [backend_ai_insights.md](../KnowledgeStorage/backend_ai_insights.md)
+- Персонализированные рекомендации на основе поведения пользователя
+- Анализ настроения, отзывов, прогресса и AI-инсайтов
+- API для работы с рекомендациями
+- Автоматическая генерация рекомендаций при изменении связанных данных
+
+API endpoints для рекомендаций:
+
+- `GET /api/recommendations/` - список активных рекомендаций
+- `POST /api/recommendations/{id}/dismiss/` - скрытие рекомендации
+
+Подробная документация доступна в [backend_ai_recommendations.md](../KnowledgeStorage/backend_ai_recommendations.md)
 
 ## Клиентский AI-ассистент
 

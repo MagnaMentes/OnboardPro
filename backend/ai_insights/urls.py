@@ -1,10 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AIInsightViewSet
+from .views import AIInsightViewSet, AIRecommendationViewSet
 
 # Создаем роутер для API
 router = DefaultRouter()
 router.register(r'insights', AIInsightViewSet)
+router.register(r'recommendations', AIRecommendationViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

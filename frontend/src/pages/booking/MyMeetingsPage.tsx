@@ -1,29 +1,33 @@
 import React, { useEffect, useState } from "react";
 import {
   Box,
-  Container,
   Heading,
   Text,
   VStack,
   HStack,
   Select,
-  Button,
   Input,
   Flex,
   Spinner,
   Alert,
   AlertIcon,
-  useColorModeValue,
   SimpleGrid,
+  useColorModeValue,
+  Link,
+  Icon,
+  InputGroup,
+  InputRightElement,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
-import { FiArrowLeft, FiFilter, FiCalendar } from "react-icons/fi";
+import { FiArrowLeft, FiFilter, FiCalendar, FiSearch } from "react-icons/fi";
 import bookingApi, {
   VirtualMeetingSlot,
   MeetingsFilter,
 } from "../../api/bookingApi";
 import MeetingCard from "../../components/booking/MeetingCard";
 import { format, isAfter } from "date-fns";
+import { AppLayout } from "../../components/layout/AppLayout";
+import { Card, Button } from "../../components/common";
 
 const MyMeetingsPage: React.FC = () => {
   const [meetings, setMeetings] = useState<VirtualMeetingSlot[]>([]);
@@ -33,8 +37,11 @@ const MyMeetingsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<MeetingsFilter>({});
+  const [upcomingCount, setUpcomingCount] = useState(0);
+  const [pastCount, setPastCount] = useState(0);
 
-  const bgColor = useColorModeValue("gray.50", "gray.800");
+  const bgColor = useColorModeValue("white", "gray.700");
+  const cardBg = useColorModeValue("white", "gray.700");
 
   useEffect(() => {
     const fetchMeetings = async () => {
@@ -59,6 +66,15 @@ const MyMeetingsPage: React.FC = () => {
           );
         });
 
+        // Подсчитываем количество предстоящих и прошедших встреч
+        const now = new Date();
+        const upcoming = sortedData.filter((meeting) =>
+          isAfter(new Date(meeting.start_time), now)
+        ).length;
+        const past = sortedData.length - upcoming;
+
+        setUpcomingCount(upcoming);
+        setPastCount(past);
         setMeetings(sortedData);
         setFilteredMeetings(sortedData);
       } catch (err) {
@@ -113,97 +129,136 @@ const MyMeetingsPage: React.FC = () => {
   };
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack align="stretch" spacing={6}>
-        <HStack justifyContent="space-between">
-          <Button
-            as={RouterLink}
-            to="/dashboard"
-            leftIcon={<FiArrowLeft />}
-            variant="outline"
-          >
-            Назад
-          </Button>
-          <Heading as="h1" size="xl">
-            Мои виртуальные встречи
+    <AppLayout>
+      <VStack spacing={8} align="stretch">
+        <Box>
+          <Heading size="xl" mb={2} color="brand.700">
+            Мои встречи
           </Heading>
-          <Button
-            colorScheme="purple"
-            rightIcon={<FiCalendar />}
-            onClick={() => window.open("/api/booking/calendar/ical/", "_blank")}
-          >
-            Экспорт в календарь
-          </Button>
-        </HStack>
+          <Text color="gray.600" fontSize="lg">
+            Управляйте вашими запланированными встречами и мероприятиями
+          </Text>
+        </Box>
 
-        {/* Блок фильтров */}
-        <Box bg="white" p={5} borderRadius="lg" shadow="md">
-          <Heading as="h3" size="md" mb={4}>
-            Фильтры
-          </Heading>
-          <Flex
-            direction={{ base: "column", md: "row" }}
-            gap={4}
-            align={{ md: "center" }}
-          >
-            <Box flex={1}>
-              <Text mb={2}>Дата</Text>
-              <Input
-                type="date"
-                value={filters.date || ""}
-                onChange={handleDateFilterChange}
-              />
-            </Box>
-            <Box flex={1}>
-              <Text mb={2}>Тип шага</Text>
+        {/* Панель фильтров */}
+        <Card>
+          <HStack spacing={4} alignItems="flex-end" flexWrap="wrap">
+            <Box minW="150px">
+              <Text mb={1} fontWeight="medium">
+                Тип встречи:
+              </Text>
               <Select
                 value={filters.stepType || "all"}
                 onChange={handleTypeFilterChange}
+                bg={bgColor}
               >
                 <option value="all">Все типы</option>
-                <option value="task">Задача</option>
-                <option value="meeting">Встреча</option>
-                <option value="training">Обучение</option>
+                <option value="introduction">Вводная встреча</option>
+                <option value="team_meeting">Встреча с командой</option>
+                <option value="technical">Техническая встреча</option>
+                <option value="project_overview">Обзор проекта</option>
+                <option value="goals_setting">Цели и KPI</option>
               </Select>
             </Box>
-            <Button
-              leftIcon={<FiFilter />}
-              onClick={clearFilters}
-              alignSelf={{ md: "flex-end" }}
-              mb={{ base: 0, md: 0 }}
-              mt={{ base: 2, md: 6 }}
-            >
-              Сбросить
-            </Button>
-          </Flex>
-        </Box>
 
-        {/* Список встреч */}
+            <Box minW="180px">
+              <Text mb={1} fontWeight="medium">
+                Дата:
+              </Text>
+              <InputGroup>
+                <Input
+                  type="date"
+                  value={filters.date || ""}
+                  onChange={handleDateFilterChange}
+                  bg={bgColor}
+                />
+                <InputRightElement>
+                  <Icon as={FiCalendar} color="gray.500" />
+                </InputRightElement>
+              </InputGroup>
+            </Box>
+
+            <Button
+              variant="ghost"
+              colorScheme="blue"
+              onClick={clearFilters}
+              alignSelf="flex-end"
+              leftIcon={<FiFilter />}
+              size="sm"
+              fontWeight="normal"
+            >
+              Сбросить фильтры
+            </Button>
+          </HStack>
+        </Card>
+
+        {/* Состояние загрузки */}
         {isLoading ? (
-          <Flex justify="center" my={10}>
-            <Spinner size="xl" />
+          <Flex justify="center" my={8}>
+            <Spinner size="xl" color="brand.500" thickness="4px" />
           </Flex>
         ) : error ? (
-          <Alert status="error">
+          <Alert status="error" borderRadius="md">
             <AlertIcon />
             {error}
           </Alert>
-        ) : filteredMeetings.length > 0 ? (
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-            {filteredMeetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} />
-            ))}
-          </SimpleGrid>
+        ) : meetings.length === 0 ? (
+          <Card py={10}>
+            <VStack spacing={4}>
+              <Text fontSize="lg" fontWeight="medium" textAlign="center">
+                У вас пока нет запланированных встреч
+              </Text>
+              <Text color="gray.500" textAlign="center">
+                Встречи будут отображаться здесь, когда они будут запланированы
+              </Text>
+            </VStack>
+          </Card>
+        ) : filteredMeetings.length === 0 ? (
+          <Card py={10}>
+            <VStack spacing={4}>
+              <Text fontSize="lg" fontWeight="medium" textAlign="center">
+                Нет встреч, соответствующих выбранным фильтрам
+              </Text>
+              <Button
+                variant="outline"
+                colorScheme="brand"
+                onClick={clearFilters}
+              >
+                Сбросить фильтры
+              </Button>
+            </VStack>
+          </Card>
         ) : (
-          <Alert status="info">
-            <AlertIcon />
-            {filters.date || filters.stepType
-              ? "Нет встреч, соответствующих выбранным фильтрам"
-              : "У вас пока нет назначенных виртуальных встреч"}
-          </Alert>
+          <>
+            <HStack justify="space-between" mb={2}>
+              <Text color="gray.500" fontSize="sm">
+                Найдено встреч: {filteredMeetings.length}
+              </Text>
+              <HStack spacing={4}>
+                <Text fontSize="sm" fontWeight="medium">
+                  Предстоящие:{" "}
+                  <Text as="span" color="green.500">
+                    {upcomingCount}
+                  </Text>
+                </Text>
+                <Text fontSize="sm" fontWeight="medium">
+                  Прошедшие:{" "}
+                  <Text as="span" color="gray.500">
+                    {pastCount}
+                  </Text>
+                </Text>
+              </HStack>
+            </HStack>
+
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+              {filteredMeetings.map((meeting) => (
+                <MeetingCard key={meeting.id} meeting={meeting} />
+              ))}
+            </SimpleGrid>
+          </>
         )}
       </VStack>
-    </Container>
+    </AppLayout>
   );
 };
 

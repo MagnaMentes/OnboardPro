@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Box,
-  Container,
   Heading,
   VStack,
   HStack,
@@ -25,14 +24,24 @@ import {
   AlertDialogOverlay,
   useDisclosure,
   Flex,
+  useColorModeValue,
+  Icon,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
-import { FiArrowLeft, FiPlusCircle, FiTrash2 } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiPlusCircle,
+  FiTrash2,
+  FiCalendar,
+  FiClock,
+  FiVideo,
+} from "react-icons/fi";
 import bookingApi, { VirtualMeetingSlot } from "../../api/bookingApi";
 import MeetingCard from "../../components/booking/MeetingCard";
 import MeetingSchedulerForm from "../../components/booking/MeetingSchedulerForm";
 import { User, OnboardingStep } from "../../types/apiTypes";
 import { useRef } from "react";
+import { AppLayout } from "../../components/layout/AppLayout";
 
 // Моки для пользователей и шагов (в реальном приложении должны загружаться из API)
 const mockUsers: User[] = [
@@ -100,6 +109,8 @@ const ManageMeetingsPage: React.FC = () => {
   const toast = useToast();
   const cancelRef = useRef<HTMLButtonElement>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const cardBg = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
 
   // Загрузка всех встреч
   const fetchMeetings = async () => {
@@ -166,41 +177,145 @@ const ManageMeetingsPage: React.FC = () => {
   };
 
   return (
-    <Container maxW="container.xl" py={8}>
+    <AppLayout>
       <VStack align="stretch" spacing={6}>
-        <HStack justifyContent="space-between">
-          <Button
-            as={RouterLink}
-            to="/dashboard"
-            leftIcon={<FiArrowLeft />}
-            variant="outline"
-          >
-            Назад
-          </Button>
-          <Heading as="h1" size="xl">
+        <Box mb={4}>
+          <HStack justifyContent="space-between">
+            <Button
+              as={RouterLink}
+              to="/dashboard"
+              leftIcon={<FiArrowLeft />}
+              variant="outline"
+              colorScheme="brand"
+            >
+              Назад
+            </Button>
+            <Box></Box>
+          </HStack>
+        </Box>
+
+        <Box>
+          <Heading size="xl" mb={3} color="brand.700">
             Управление виртуальными встречами
           </Heading>
-          <Box></Box>
-        </HStack>
+          <Text color="gray.600" fontSize="lg" mb={5}>
+            Планирование и управление онлайн-встречами с сотрудниками
+          </Text>
+        </Box>
 
-        <Tabs isFitted variant="enclosed" colorScheme="purple">
+        {/* Статистические карточки */}
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
+          <Box
+            p={5}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={borderColor}
+            bg={cardBg}
+            shadow="sm"
+          >
+            <HStack>
+              <Box borderRadius="full" bg="brand.100" p={3} mr={3}>
+                <Icon as={FiCalendar} boxSize={6} color="brand.600" />
+              </Box>
+              <Box>
+                <Text fontWeight="bold" fontSize="2xl">
+                  {meetings.length}
+                </Text>
+                <Text color="gray.500">Всего встреч</Text>
+              </Box>
+            </HStack>
+          </Box>
+
+          <Box
+            p={5}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={borderColor}
+            bg={cardBg}
+            shadow="sm"
+          >
+            <HStack>
+              <Box borderRadius="full" bg="purple.100" p={3} mr={3}>
+                <Icon as={FiClock} boxSize={6} color="purple.600" />
+              </Box>
+              <Box>
+                <Text fontWeight="bold" fontSize="2xl">
+                  {
+                    meetings.filter((m) => new Date(m.start_time) > new Date())
+                      .length
+                  }
+                </Text>
+                <Text color="gray.500">Предстоящие</Text>
+              </Box>
+            </HStack>
+          </Box>
+
+          <Box
+            p={5}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={borderColor}
+            bg={cardBg}
+            shadow="sm"
+          >
+            <HStack>
+              <Box borderRadius="full" bg="blue.100" p={3} mr={3}>
+                <Icon as={FiVideo} boxSize={6} color="blue.600" />
+              </Box>
+              <Box>
+                <Text fontWeight="bold" fontSize="2xl">
+                  {meetings.filter((m) => m.meeting_link).length}
+                </Text>
+                <Text color="gray.500">С ссылками</Text>
+              </Box>
+            </HStack>
+          </Box>
+        </SimpleGrid>
+
+        <Tabs
+          isFitted
+          variant="enclosed"
+          colorScheme="brand"
+          bg={cardBg}
+          borderRadius="lg"
+          borderWidth="1px"
+          borderColor={borderColor}
+          shadow="sm"
+          p={4}
+        >
           <TabList mb="1em">
-            <Tab>Все встречи</Tab>
-            <Tab>Создать встречу</Tab>
+            <Tab
+              _selected={{
+                color: "brand.700",
+                fontWeight: "semibold",
+                borderColor: "brand.500",
+              }}
+            >
+              Все встречи
+            </Tab>
+            <Tab
+              _selected={{
+                color: "brand.700",
+                fontWeight: "semibold",
+                borderColor: "brand.500",
+              }}
+            >
+              Создать встречу
+            </Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
-              <Box bg="white" p={5} borderRadius="lg" shadow="md">
-                <Heading as="h2" size="lg" mb={4}>
+              <Box p={3}>
+                <Heading as="h2" size="md" mb={4} color="brand.600">
                   Список виртуальных встреч
                 </Heading>
 
                 {isLoading ? (
                   <Flex justify="center" my={10}>
-                    <Spinner size="xl" />
+                    <Spinner size="xl" color="brand.500" />
                   </Flex>
                 ) : error ? (
-                  <Alert status="error">
+                  <Alert status="error" borderRadius="md">
                     <AlertIcon />
                     {error}
                   </Alert>
@@ -224,7 +339,7 @@ const ManageMeetingsPage: React.FC = () => {
                     ))}
                   </SimpleGrid>
                 ) : (
-                  <Alert status="info">
+                  <Alert status="info" borderRadius="md">
                     <AlertIcon />
                     Нет запланированных виртуальных встреч
                   </Alert>
@@ -270,7 +385,7 @@ const ManageMeetingsPage: React.FC = () => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </Container>
+    </AppLayout>
   );
 };
 

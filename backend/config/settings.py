@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     # Внутренние приложения
     'core',
     'users',
+    'departments',
     'onboarding',
     'notifications',
     'gamification',
@@ -79,6 +80,19 @@ MIDDLEWARE = [
 # Настройки CORS
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:5173",  # Vite dev server
+    "http://127.0.0.1:5173",  # Альтернативный адрес Vite
+    "http://host.docker.internal:5173",  # Docker DNS
+]
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -170,6 +184,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    'FORMAT_SUFFIX_KWARG': 'format',
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
 
 # Настройки drf-spectacular (Swagger/OpenAPI)

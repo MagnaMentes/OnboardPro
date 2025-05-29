@@ -4,7 +4,7 @@ import { Assignment } from "../types/assignment";
 import { Feedback } from "../types/feedback";
 import { AIInsight } from "../types/aiInsight";
 
-const BASE_URL = "/api/admin";
+const BASE_URL = "/admin";
 
 // Интерфейсы для параметров запросов
 interface GetUsersParams {
@@ -36,7 +36,7 @@ class AdminApi {
 
   // Получение списка пользователей для административной панели
   async getUsers(params?: GetUsersParams): Promise<User[]> {
-    const url = `${BASE_URL}/users/users/`;
+    const url = `${BASE_URL}/users/`;
     const response = await apiClient.get(url, { params });
     return response.data;
   }

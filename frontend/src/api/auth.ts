@@ -1,20 +1,12 @@
 // API сервис для работы с аутентификацией
-import axiosInstance from "./client";
+import apiClient from "./apiClient"; // Используем единый apiClient для всех запросов
 import axios from "axios";
+import { ACCESS_TOKEN_KEY, User } from "../store/authStore";
 
 interface LoginResponse {
   access: string;
   refresh: string;
-  user?: {
-    id: string;
-    email: string;
-    username: string;
-    full_name: string;
-    position: string;
-    role: string;
-    is_active: boolean;
-    created_at: string;
-  };
+  user?: User; // Используем унифицированный интерфейс User
 }
 
 interface LoginRequest {
@@ -30,31 +22,20 @@ interface TokenRefreshResponse {
   access: string;
 }
 
-interface UserResponse {
-  id: string;
-  email: string;
-  username: string;
-  full_name: string;
-  position: string;
-  role: string;
-  is_active: boolean;
-  created_at: string;
-}
+// Используем унифицированный интерфейс User из authStore
+type UserResponse = User;
 
 // Сервис для работы с API аутентификации
 const authApi = {
   // Логин пользователя
   login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await axiosInstance.post<LoginResponse>(
-      "auth/login/",
-      data
-    );
+    const response = await apiClient.post<LoginResponse>("auth/login/", data);
     return response.data;
   },
 
   // Обновление токена доступа
   refreshToken: async (refreshToken: string): Promise<TokenRefreshResponse> => {
-    const response = await axiosInstance.post<TokenRefreshResponse>(
+    const response = await apiClient.post<TokenRefreshResponse>(
       "auth/refresh/",
       { refresh: refreshToken }
     );
@@ -64,18 +45,18 @@ const authApi = {
   // Получение данных текущего пользователя
   getCurrentUser: async (): Promise<UserResponse> => {
     try {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem(ACCESS_TOKEN_KEY);
       console.log("Current token:", token ? "present" : "missing");
 
       // Для отладки выведем больше информации о запросе
-      console.log("Making request to: users/me/");
+      console.log("Making request to: /users/me/");
       console.log(
         "Authorization header:",
         token ? `Bearer ${token.substring(0, 10)}...` : "not set"
       );
 
       // Устанавливаем заголовок Authorization вручную для этого запроса
-      const response = await axiosInstance.get<UserResponse>("users/me/", {
+      const response = await apiClient.get<UserResponse>("/users/me/", {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 

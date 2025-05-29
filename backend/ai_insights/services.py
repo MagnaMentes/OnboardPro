@@ -1,223 +1,236 @@
+from ai_insights.models import AIInsight, AIRecommendation, RiskLevel
 from django.utils import timezone
-from django.db.models import Avg, Count, Q
-from .models import AIInsight, RiskLevel
+from users.models import User
 from onboarding.models import UserStepProgress
 from onboarding.feedback_models import FeedbackMood, StepFeedback
 
 
 class AIInsightService:
-    """
-    Сервисный класс для анализа прогресса онбординга и выявления рисков
-    """
-
     @staticmethod
     def analyze_onboarding_progress(assignment):
         """
-        Анализирует прогресс онбординга и создает AI-инсайт
-
-        Args:
-            assignment: Объект UserOnboardingAssignment
-
-        Returns:
-            AIInsight: Созданный объект инсайта
+        Анализирует прогресс онбординга и создает инсайты на основе данных
         """
-        risk_level = RiskLevel.LOW
-        reasons = []
-
-        # Анализ настроения (moods)
-        mood_analysis = AIInsightService._analyze_mood(assignment)
-        if mood_analysis["risk_level"] != RiskLevel.LOW:
-            risk_level = max(risk_level, mood_analysis["risk_level"])
-            reasons.append(mood_analysis["reason"])
+        user = assignment.user
+        program = assignment.program
 
         # Анализ прогресса по шагам
-        progress_analysis = AIInsightService._analyze_steps_progress(
-            assignment)
-        if progress_analysis["risk_level"] != RiskLevel.LOW:
-            risk_level = max(risk_level, progress_analysis["risk_level"])
-            reasons.append(progress_analysis["reason"])
+        total_required_steps = program.steps.filter(is_required=True).count()
+        if total_required_steps > 0:
+            completed_steps = UserStepProgress.objects.filter(
+                user=user,
+                step__program=program,
+                step__is_required=True,
+                status='done'
+            ).count()
 
-        # Анализ фидбека по шагам
-        feedback_analysis = AIInsightService._analyze_step_feedback(assignment)
-        if feedback_analysis["risk_level"] != RiskLevel.LOW:
-            risk_level = max(risk_level, feedback_analysis["risk_level"])
-            reasons.append(feedback_analysis["reason"])
+            progress_percent = (completed_steps / total_required_steps) * 100
+            current_date = timezone.now()
 
-        # Если нет причин для риска, добавляем стандартное сообщение
-        if not reasons:
-            reasons.append("Онбординг проходит успешно без выявленных рисков.")
+            # Проверка на низкий прогресс после длительного времени
+            if progress_percent < 25 and (current_date - assignment.assigned_at).days >= 21:
+                # Создаем инсайт высокого риска
+                AIInsight.objects.create(
+                    user=user,
+                    assignment=assignment,
+                    risk_level=RiskLevel.HIGH,
+                    reason=f"Критически низкий прогресс ({progress_percent:.1f}%) после 3 недель в программе."
+                )
+            elif progress_percent < 50 and (current_date - assignment.assigned_at).days >= 14:
+                # Создаем инсайт среднего риска
+                AIInsight.objects.create(
+                    user=user,
+                    assignment=assignment,
+                    risk_level=RiskLevel.MEDIUM,
+                    reason=f"Низкий прогресс ({progress_percent:.1f}%) после 2 недель в программе."
+                )
 
-        # Создаем или обновляем AI-инсайт
-        insight, created = AIInsight.objects.update_or_create(
-            user=assignment.user,
+        # Анализ отзывов
+        negative_feedbacks = StepFeedback.objects.filter(
+            user=user,
             assignment=assignment,
-            defaults={
-                'risk_level': risk_level,
-                'reason': "\n".join(reasons),
-                'created_at': timezone.now()
-            }
-        )
-
-        return insight
-
-    @staticmethod
-    def _analyze_mood(assignment):
-        """
-        Анализирует настроение пользователя
-        """
-        # Получаем настроение за последние 7 дней
-        recent_moods = FeedbackMood.objects.filter(
-            assignment=assignment,
-            created_at__gte=timezone.now() - timezone.timedelta(days=7)
-        ).order_by('-created_at')
-
-        # Если нет настроений, риск низкий
-        if not recent_moods.exists():
-            return {
-                "risk_level": RiskLevel.LOW,
-                "reason": "Нет данных о настроении."
-            }
-
-        # Подсчитываем количество негативных настроений
-        negative_count = recent_moods.filter(
-            value__in=['terrible', 'bad']
+            auto_tag__in=['negative', 'unclear_instruction', 'delay_warning']
         ).count()
 
-        # Если более 50% настроений негативные, высокий риск
-        if negative_count / recent_moods.count() >= 0.5:
-            return {
-                "risk_level": RiskLevel.HIGH,
-                "reason": "Преобладают негативные настроения в последние 7 дней."
-            }
+        if negative_feedbacks >= 3:
+            # Создаем инсайт высокого риска
+            AIInsight.objects.create(
+                user=user,
+                assignment=assignment,
+                risk_level=RiskLevel.HIGH,
+                reason=f"Обнаружено {negative_feedbacks} негативных отзывов по шагам программы."
+            )
+        elif negative_feedbacks > 0:
+            # Создаем инсайт среднего риска
+            AIInsight.objects.create(
+                user=user,
+                assignment=assignment,
+                risk_level=RiskLevel.MEDIUM,
+                reason=f"Обнаружено {negative_feedbacks} негативных отзывов по шагам программы."
+            )
 
-        # Если последнее настроение негативное, средний риск
-        if recent_moods.first().value in ['terrible', 'bad']:
-            return {
-                "risk_level": RiskLevel.MEDIUM,
-                "reason": "Последнее зафиксированное настроение негативное."
-            }
+        # Анализ настроения
+        latest_bad_moods = FeedbackMood.objects.filter(
+            user=user,
+            assignment=assignment,
+            value__in=['bad', 'terrible']
+        ).count()
 
-        return {
-            "risk_level": RiskLevel.LOW,
-            "reason": "Настроение пользователя в норме."
-        }
+        if latest_bad_moods >= 2:
+            # Создаем инсайт высокого риска
+            AIInsight.objects.create(
+                user=user,
+                assignment=assignment,
+                risk_level=RiskLevel.HIGH,
+                reason=f"Пользователь оставил {latest_bad_moods} негативных оценок настроения."
+            )
+
+        return True
+
+
+class AIRecommendationService:
+    @staticmethod
+    def generate_recommendations(user: User):
+        """
+        Генерирует персонализированные AI-рекомендации для пользователя на основе поведения.
+        Использует данные из FeedbackMood, StepFeedback, UserStepProgress и AIInsight.
+        """
+        recommendations = []
+        active_assignments = user.onboarding_assignments.filter(
+            status='active')
+
+        if not active_assignments.exists():
+            return False
+
+        for active_assignment in active_assignments:
+            # Проверка настроения пользователя (FeedbackMood)
+            latest_mood = FeedbackMood.objects.filter(
+                user=user,
+                assignment=active_assignment
+            ).order_by('-created_at').first()
+
+            if latest_mood and latest_mood.value in ['bad', 'terrible']:
+                recommendations.append(
+                    AIRecommendation(
+                        user=user,
+                        assignment=active_assignment,
+                        recommendation_text=f"Обнаружен низкий тонус пользователя {user.email} ({latest_mood.get_value_display()}). Рекомендуем оказать поддержку и обсудить возможные трудности.",
+                        generated_at=timezone.now()
+                    )
+                )
+
+            # Проверка отзывов по шагам (StepFeedback)
+            negative_feedbacks = StepFeedback.objects.filter(
+                user=user,
+                assignment=active_assignment,
+                auto_tag__in=['negative',
+                              'unclear_instruction', 'delay_warning']
+            )
+
+            for feedback in negative_feedbacks:
+                recommendations.append(
+                    AIRecommendation(
+                        user=user,
+                        assignment=active_assignment,
+                        step=feedback.step,
+                        recommendation_text=f"Пользователь {user.email} оставил отрицательный отзыв с тегом '{feedback.get_auto_tag_display()}' по шагу \"{feedback.step.name}\". Рекомендуем проверить инструкцию к шагу или связаться с пользователем.",
+                        generated_at=timezone.now()
+                    )
+                )
+
+            # Проверка прогресса по шагам (UserStepProgress)
+            current_date = timezone.now()
+            overdue_steps = UserStepProgress.objects.filter(
+                user=user,
+                step__program=active_assignment.program,
+                status__in=['not_started', 'in_progress'],
+                planned_date_end__lt=current_date
+            )
+
+            if overdue_steps.exists():
+                recommendations.append(
+                    AIRecommendation(
+                        user=user,
+                        assignment=active_assignment,
+                        recommendation_text=f"Обнаружены просроченные шаги ({overdue_steps.count()}) в программе \"{active_assignment.program.name}\". Рекомендуется связаться с пользователем {user.email} для выяснения причин.",
+                        generated_at=timezone.now()
+                    )
+                )
+
+            # Проверка низкого прогресса
+            total_steps = active_assignment.program.steps.filter(
+                is_required=True).count()
+            if total_steps > 0:
+                completed_steps = UserStepProgress.objects.filter(
+                    user=user,
+                    step__program=active_assignment.program,
+                    step__is_required=True,
+                    status='done'
+                ).count()
+
+                progress_percent = (completed_steps / total_steps) * 100
+                if progress_percent < 30 and (current_date - active_assignment.assigned_at).days >= 14:
+                    recommendations.append(
+                        AIRecommendation(
+                            user=user,
+                            assignment=active_assignment,
+                            recommendation_text=f"Низкий прогресс пользователя {user.email} в программе \"{active_assignment.program.name}\" ({progress_percent:.1f}%). Программа назначена более 14 дней назад. Рекомендуем проверить, требуется ли помощь.",
+                            generated_at=timezone.now()
+                        )
+                    )
+
+            # Проверка AI-инсайтов (AIInsight)
+            risky_insights = AIInsight.objects.filter(
+                user=user,
+                assignment=active_assignment,
+                risk_level__in=[RiskLevel.HIGH, RiskLevel.MEDIUM]
+            )
+
+            for insight in risky_insights:
+                recommendations.append(
+                    AIRecommendation(
+                        user=user,
+                        assignment=active_assignment,
+                        recommendation_text=f"AI выявил {insight.get_risk_level_display()} риск для пользователя {user.email} в программе \"{active_assignment.program.name}\": {insight.reason}. Рекомендуем обратить внимание.",
+                        generated_at=timezone.now()
+                    )
+                )
+
+        # Создаем только уникальные рекомендации (простая проверка по тексту для данного пользователя и назначения)
+        if active_assignment:
+            existing_texts = set(AIRecommendation.objects.filter(
+                user=user, assignment=active_assignment, dismissed=False).values_list('recommendation_text', flat=True))
+            new_recommendations = []
+            for rec in recommendations:
+                if rec.recommendation_text not in existing_texts:
+                    new_recommendations.append(rec)
+                    existing_texts.add(rec.recommendation_text)
+
+            if new_recommendations:
+                AIRecommendation.objects.bulk_create(new_recommendations)
 
     @staticmethod
-    def _analyze_steps_progress(assignment):
+    def dismiss_recommendation(recommendation_id: int):
         """
-        Анализирует прогресс пользователя по шагам
+        Скрывает рекомендацию по ее ID.
         """
-        # Получаем все шаги программы
-        user_steps_progress = UserStepProgress.objects.filter(
-            user=assignment.user,
-            step__program=assignment.program
-        )
-
-        # Если нет шагов, риск низкий
-        total_steps = user_steps_progress.count()
-        if not total_steps:
-            return {
-                "risk_level": RiskLevel.LOW,
-                "reason": "Нет данных о шагах онбординга."
-            }
-
-        # Подсчитываем количество просроченных шагов
-        now = timezone.now()
-        overdue_steps = user_steps_progress.filter(
-            status__in=['not_started', 'in_progress'],
-            planned_date_end__lt=now
-        )
-        overdue_count = overdue_steps.count()
-
-        # Если есть просроченные шаги, оцениваем риск
-        if overdue_count > 0:
-            overdue_ratio = overdue_count / total_steps
-
-            if overdue_ratio >= 0.3 or overdue_count >= 3:
-                return {
-                    "risk_level": RiskLevel.HIGH,
-                    "reason": f"Просрочено {overdue_count} шагов онбординга ({int(overdue_ratio * 100)}%)."
-                }
-            else:
-                return {
-                    "risk_level": RiskLevel.MEDIUM,
-                    "reason": f"Просрочено {overdue_count} шагов онбординга."
-                }
-
-        # Проверяем процент выполненных шагов
-        completed_steps = user_steps_progress.filter(status='done').count()
-        completion_ratio = completed_steps / total_steps
-
-        if completion_ratio < 0.2 and total_steps > 3:
-            return {
-                "risk_level": RiskLevel.MEDIUM,
-                "reason": f"Низкий процент выполнения шагов: {int(completion_ratio * 100)}%."
-            }
-
-        return {
-            "risk_level": RiskLevel.LOW,
-            "reason": "Прогресс по шагам в пределах нормы."
-        }
+        try:
+            recommendation = AIRecommendation.objects.get(id=recommendation_id)
+            recommendation.dismissed = True
+            recommendation.save(update_fields=['dismissed'])
+            return True
+        except AIRecommendation.DoesNotExist:
+            return False
 
     @staticmethod
-    def _analyze_step_feedback(assignment):
+    def get_active_recommendations(user=None):
         """
-        Анализирует обратную связь по шагам
+        Возвращает список активных (не скрытых) рекомендаций.
+        Если пользователь указан, возвращает только рекомендации для этого пользователя.
         """
-        # Получаем отзывы по шагам
-        step_feedbacks = StepFeedback.objects.filter(
-            assignment=assignment
-        )
+        queryset = AIRecommendation.objects.filter(dismissed=False)
 
-        # Если нет отзывов, риск низкий
-        if not step_feedbacks.exists():
-            return {
-                "risk_level": RiskLevel.LOW,
-                "reason": "Нет данных об отзывах на шаги."
-            }
+        if user:
+            queryset = queryset.filter(user=user)
 
-        # Подсчитываем негативные отзывы
-        negative_feedbacks = step_feedbacks.filter(
-            Q(auto_tag='negative') |
-            Q(auto_tag='unclear_instruction') |
-            Q(auto_tag='delay_warning') |
-            Q(sentiment_score__lt=-0.3)
-        )
-
-        negative_count = negative_feedbacks.count()
-
-        # Если негативных отзывов больше 30% или >= 3, высокий риск
-        if negative_count > 0:
-            negative_ratio = negative_count / step_feedbacks.count()
-
-            if negative_ratio >= 0.3 or negative_count >= 3:
-                return {
-                    "risk_level": RiskLevel.HIGH,
-                    "reason": f"Обнаружено {negative_count} негативных отзывов о шагах."
-                }
-            else:
-                return {
-                    "risk_level": RiskLevel.MEDIUM,
-                    "reason": f"Обнаружено {negative_count} негативных отзывов о шагах."
-                }
-
-        return {
-            "risk_level": RiskLevel.LOW,
-            "reason": "Обратная связь по шагам в пределах нормы."
-        }
-
-    @staticmethod
-    def get_insights_for_user(user_id):
-        """
-        Получает последние инсайты для пользователя
-        """
-        return AIInsight.objects.filter(
-            user_id=user_id
-        ).order_by('-created_at')
-
-    @staticmethod
-    def get_all_insights():
-        """
-        Получает все инсайты для всех пользователей
-        """
-        return AIInsight.objects.all().order_by('-created_at')
+        return queryset.order_by('-generated_at')

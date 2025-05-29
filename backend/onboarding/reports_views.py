@@ -44,7 +44,7 @@ class ReportAssignmentPDFView(APIView):
                 }
 
             # Получаем прогресс (% выполнения)
-            total_steps = assignment.program.onboardingstep_set.count()
+            total_steps = assignment.program.steps.count()
             completed_steps = UserStepProgress.objects.filter(
                 user=assignment.user,
                 step__program=assignment.program,
@@ -62,7 +62,7 @@ class ReportAssignmentPDFView(APIView):
                 'assigned_at': assignment.assigned_at,
                 'status': assignment.status,
                 'progress_percentage': progress_percentage,
-                'completed_at': assignment.completed_at
+                # 'completed_at': assignment.completed_at  # Закомментировано, так как этого поля нет в UserOnboardingAssignment
             })
 
         # Генерация HTML для PDF
@@ -108,7 +108,7 @@ class ReportAssignmentCSVView(APIView):
         # Добавляем данные
         for assignment in assignments:
             # Получаем прогресс (% выполнения)
-            total_steps = assignment.program.onboardingstep_set.count()
+            total_steps = assignment.program.steps.count()
             completed_steps = UserStepProgress.objects.filter(
                 user=assignment.user,
                 step__program=assignment.program,

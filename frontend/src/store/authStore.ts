@@ -1,14 +1,24 @@
 import { create } from "zustand";
 
-interface User {
+// Константы для ключей localStorage
+export const ACCESS_TOKEN_KEY = "accessToken";
+export const REFRESH_TOKEN_KEY = "refreshToken";
+export const USER_DATA_KEY = "user";
+
+/**
+ * Унифицированный интерфейс пользователя
+ * Содержит все необходимые поля из API бэкенда
+ */
+export interface User {
   id: string;
   email: string;
   username: string;
-  full_name: string;
-  position: string;
-  role: string;
-  is_active: boolean;
-  created_at: string;
+  full_name: string; // Полное имя пользователя
+  position: string; // Должность
+  role: string; // Роль в системе: admin, hr, manager, employee
+  is_active: boolean; // Статус активности аккаунта
+  created_at: string; // Дата создания аккаунта
+  avatar?: string; // URL аватара, необязательное поле
 }
 
 interface AuthState {
@@ -30,12 +40,24 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setUser: (user) => set({ user }),
 
-  setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
+  setTokens: (accessToken, refreshToken) => {
+    // Записываем токены в localStorage для сохранения между перезагрузками страницы
+    if (accessToken && refreshToken) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
+
+    set({
+      accessToken,
+      refreshToken,
+      isAuthenticated: !!accessToken && !!refreshToken,
+    });
+  },
 
   login: (accessToken, refreshToken, user) => {
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
 
     set({
       accessToken,
@@ -46,9 +68,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(USER_DATA_KEY);
 
     set({
       accessToken: null,

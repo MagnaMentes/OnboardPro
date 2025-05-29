@@ -24,6 +24,7 @@ urlpatterns = [
     # API URLs
     path('api/', include('core.urls')),
     path('api/', include('users.urls')),
+    path('api/', include('departments.urls')),
     path('api/', include('onboarding.urls')),
     path('api/', include('notifications.urls')),
     path('api/', include('gamification.urls')),

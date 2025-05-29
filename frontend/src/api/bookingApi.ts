@@ -1,4 +1,5 @@
 import { User } from "../types/user";
+import apiClient from "./apiClient";
 
 // Интерфейс для виртуальной встречи
 export interface VirtualMeetingSlot {
@@ -24,28 +25,47 @@ const bookingApi = {
   // Получение списка виртуальных встреч для текущего пользователя
   getUserMeetings: async (): Promise<VirtualMeetingSlot[]> => {
     try {
-      const response = await fetch("/api/booking/slots/");
-      if (!response.ok) {
-        throw new Error("Ошибка получения встреч");
+      const response = await apiClient.get("/booking/slots/");
+      // Если данные есть, возвращаем их
+      if (
+        response.data &&
+        Array.isArray(response.data) &&
+        response.data.length > 0
+      ) {
+        return response.data;
       }
-      return await response.json();
+
+      // Если данных нет и мы в режиме разработки, возвращаем мок-данные
+      if (import.meta.env.DEV) {
+        console.log("Используем мок-данные для встреч в режиме разработки");
+        const { mockMeetings } = await import("../mocks/bookingMocks");
+        return mockMeetings;
+      }
+
+      // Если нет данных и не в режиме разработки, возвращаем пустой массив
+      return [];
     } catch (error) {
       console.error("Ошибка при запросе встреч:", error);
-      throw error;
+
+      // В режиме разработки возвращаем мок-данные при ошибке
+      if (import.meta.env.DEV) {
+        console.log("Произошла ошибка запроса, используем мок-данные");
+        const { mockMeetings } = await import("../mocks/bookingMocks");
+        return mockMeetings;
+      }
+
+      throw new Error("Ошибка получения встреч");
     }
   },
 
   // Получение деталей конкретной встречи
   getMeetingDetails: async (id: number): Promise<VirtualMeetingSlot> => {
     try {
-      const response = await fetch(`/api/booking/slots/${id}/`);
-      if (!response.ok) {
-        throw new Error("Ошибка получения деталей встречи");
-      }
-      return await response.json();
+      const response = await apiClient.get(`/booking/slots/${id}/`);
+      return response.data;
     } catch (error) {
       console.error("Ошибка при запросе деталей встречи:", error);
-      throw error;
+      throw new Error("Ошибка получения деталей встречи");
     }
   },
 
@@ -57,39 +77,21 @@ const bookingApi = {
     >
   ): Promise<VirtualMeetingSlot> => {
     try {
-      const response = await fetch("/api/booking/slots/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(meetingData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Ошибка создания встречи");
-      }
-
-      return await response.json();
+      const response = await apiClient.post("/booking/slots/", meetingData);
+      return response.data;
     } catch (error) {
       console.error("Ошибка при создании встречи:", error);
-      throw error;
+      throw new Error("Ошибка создания встречи");
     }
   },
 
   // Удаление встречи (только для HR/Admin)
   deleteMeeting: async (id: number): Promise<void> => {
     try {
-      const response = await fetch(`/api/booking/slots/${id}/`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Ошибка удаления встречи");
-      }
+      await apiClient.delete(`/booking/slots/${id}/`);
     } catch (error) {
       console.error("Ошибка при удалении встречи:", error);
-      throw error;
+      throw new Error("Ошибка удаления встречи");
     }
   },
 };

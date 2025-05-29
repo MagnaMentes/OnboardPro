@@ -1,10 +1,10 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.generics import get_object_or_404
-from .models import AIInsight
-from .serializers import AIInsightSerializer
-from .services import AIInsightService
+from .models import AIInsight, AIRecommendation
+from .serializers import AIInsightSerializer, AIRecommendationSerializer
+from .services import AIInsightService, AIRecommendationService
 
 
 class IsHROrAdmin(permissions.BasePermission):
@@ -54,3 +54,41 @@ class AIInsightViewSet(viewsets.ReadOnlyModelViewSet):
         insight = AIInsightService.analyze_onboarding_progress(assignment)
         serializer = self.get_serializer(insight)
         return Response(serializer.data)
+
+
+class AIRecommendationViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API для управления AI-рекомендациями.
+    Доступ только для HR и Admin.
+    """
+    queryset = AIRecommendation.objects.all()
+    serializer_class = AIRecommendationSerializer
+    permission_classes = [IsHROrAdmin]
+
+    def get_queryset(self):
+        """
+        Получение активных рекомендаций с возможностью фильтрации по пользователю
+        """
+        queryset = AIRecommendationService.get_active_recommendations()
+
+        # Фильтрация по пользователю, если указан параметр user_id
+        user_id = self.request.query_params.get('user_id')
+        if user_id:
+            queryset = queryset.filter(user_id=user_id)
+
+        return queryset
+
+    @action(detail=True, methods=['post'])
+    def dismiss(self, request, pk=None):
+        """
+        POST /api/recommendations/{id}/dismiss/
+        Скрывает рекомендацию.
+        """
+        success = AIRecommendationService.dismiss_recommendation(
+            recommendation_id=pk)
+        if success:
+            return Response({"status": "Рекомендация успешно скрыта"})
+        return Response(
+            {"status": "Ошибка", "message": "Рекомендация не найдена"},
+            status=status.HTTP_404_NOT_FOUND
+        )

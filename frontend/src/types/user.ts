@@ -2,11 +2,12 @@
 export interface User {
   id: number;
   email: string;
+  full_name?: string;
   first_name: string;
   last_name: string;
   role: string;
   department?: string;
-  status?: string;
+  is_active?: boolean;
   position?: string;
   hire_date?: string;
   last_active?: string;

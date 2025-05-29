@@ -6,11 +6,27 @@ import axios, {
 } from "axios";
 // @ts-ignore
 import toast from "react-hot-toast";
+import {
+  ACCESS_TOKEN_KEY,
+  REFRESH_TOKEN_KEY,
+  USER_DATA_KEY,
+} from "../store/authStore";
+
+// Получаем переменные окружения
+const API_URL = import.meta.env.VITE_API_URL || "";
+const API_PREFIX = import.meta.env.VITE_API_PREFIX || "/api";
+const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || "10000");
+
+// Формируем базовый URL на основе переменных окружения
+// Убедимся, что между базовым URL и префиксом API есть слэш
+const baseURL = API_URL
+  ? `${API_URL}${API_PREFIX.startsWith("/") ? API_PREFIX : `/${API_PREFIX}`}`
+  : API_PREFIX;
 
 // Создание экземпляра Axios с базовым URL
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: "/api/",
-  timeout: 10000,
+  baseURL, // Используем значение из переменных окружения
+  timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
   },
@@ -19,7 +35,7 @@ const axiosInstance: AxiosInstance = axios.create({
 // Интерсептор запросов - добавляет JWT из localStorage при каждом запросе
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
 
     // Добавляем логирование для отладки
     console.log(`Request to: ${config.url}`);
@@ -79,7 +95,7 @@ axiosInstance.interceptors.response.use(
       console.log("Response data:", error.response.data);
       console.log(
         "Current token:",
-        localStorage.getItem("accessToken") ? "present" : "missing"
+        localStorage.getItem(ACCESS_TOKEN_KEY) ? "present" : "missing"
       );
 
       // Если уже обновляем токен, добавляем запрос в очередь
@@ -106,15 +122,15 @@ axiosInstance.interceptors.response.use(
 
       try {
         console.log("Starting token refresh attempt");
-        const refreshToken = localStorage.getItem("refreshToken");
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
 
         if (!refreshToken) {
           console.log("No refresh token found in localStorage");
           // Если нет refresh токена, очищаем аутентификацию
           processQueue(error, null);
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          localStorage.removeItem("user");
+          localStorage.removeItem(ACCESS_TOKEN_KEY);
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
+          localStorage.removeItem(USER_DATA_KEY);
           window.location.href = "/login";
           return Promise.reject(error);
         }
@@ -123,15 +139,19 @@ axiosInstance.interceptors.response.use(
 
         // Запрос на обновление токена - используем напрямую axios без интерцепторов
         // чтобы избежать зацикливания
-        const response = await axios.post("/api/auth/refresh/", {
-          refresh: refreshToken,
-        });
+        // Используем базовый URL без /api/ префикса, так как он уже включен в baseURL
+        const response = await axios.post(
+          `${baseURL.replace(API_PREFIX, "")}/auth/refresh/`,
+          {
+            refresh: refreshToken,
+          }
+        );
 
         const { access } = response.data;
         console.log("New access token received successfully");
 
         // Обновляем токен
-        localStorage.setItem("accessToken", access);
+        localStorage.setItem(ACCESS_TOKEN_KEY, access);
 
         // Обновляем заголовок
         if (originalRequest.headers) {
@@ -147,9 +167,9 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         // Если не удалось обновить токен, очищаем аутентификацию
         processQueue(refreshError, null);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        localStorage.removeItem(USER_DATA_KEY);
 
         isRefreshing = false;
 

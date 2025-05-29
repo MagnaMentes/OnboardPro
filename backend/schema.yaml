@@ -4,6 +4,527 @@ info:
   version: 1.0.0
   description: API платформы для онбординга сотрудников
 paths:
+  /api/admin/ai/insights/:
+    get:
+      operationId: admin_ai_insights_list
+      description: API для получения списка AI-инсайтов с фильтрацией по уровню риска.
+      summary: Получение списка AI-инсайтов
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Ограничение количества записей
+      - in: query
+        name: risk_level
+        schema:
+          type: string
+          enum:
+          - high
+          - medium
+        description: Фильтр по уровню риска
+      tags:
+      - Admin Dashboard
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Список AI-инсайтов
+        '401':
+          description: Ошибка аутентификации
+        '403':
+          description: Недостаточно прав доступа
+  /api/admin/onboarding/assignments/:
+    get:
+      operationId: admin_onboarding_assignments_list
+      description: API для получения списка всех назначений с вложенной информацией
+        о прогрессе.
+      summary: Получение списка всех назначений
+      parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - completed
+        description: Фильтр по статусу назначения
+      tags:
+      - Admin Dashboard
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Список назначений с прогрессом
+        '401':
+          description: Ошибка аутентификации
+        '403':
+          description: Недостаточно прав доступа
+  /api/admin/onboarding/feedbacks/:
+    get:
+      operationId: admin_onboarding_feedbacks_list
+      description: API для получения списка последних отзывов с фильтрацией по тональности.
+      summary: Получение списка отзывов
+      parameters:
+      - in: query
+        name: auto_tag
+        schema:
+          type: string
+          enum:
+          - delay_warning
+          - negative
+          - neutral
+          - positive
+          - unclear_instruction
+        description: Фильтр по автотегу
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Ограничение количества записей
+      - in: query
+        name: sentiment
+        schema:
+          type: string
+          enum:
+          - negative
+          - neutral
+          - positive
+        description: Фильтр по тональности отзыва
+      tags:
+      - Admin Dashboard
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Список отзывов
+        '401':
+          description: Ошибка аутентификации
+        '403':
+          description: Недостаточно прав доступа
+  /api/admin/users/users/:
+    get:
+      operationId: admin_users_users_list
+      description: API для получения списка всех пользователей с возможностью фильтрации
+        по роли, статусу и поиска по имени/email.
+      summary: Получение списка всех пользователей
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+        description: Фильтр по статусу активности
+      - in: query
+        name: role
+        schema:
+          type: string
+          enum:
+          - admin
+          - employee
+          - hr
+          - manager
+        description: Фильтр по роли пользователя
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Поиск по имени или email
+      tags:
+      - Admin Dashboard
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Список пользователей
+        '401':
+          description: Ошибка аутентификации
+        '403':
+          description: Недостаточно прав доступа
+  /api/ai/assistant/insights/:
+    get:
+      operationId: ai_assistant_insights_list
+      description: Представление для получения списка активных подсказок для текущего
+        пользователя
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientAIInsight'
+          description: ''
+  /api/ai/assistant/insights/{id}/dismiss/:
+    post:
+      operationId: ai_assistant_insights_dismiss_create
+      description: Отмечает подсказку как скрытую
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Подсказка успешно скрыта
+        '404':
+          description: Подсказка не найдена
+  /api/ai/assistant/step/{id}/insight/:
+    get:
+      operationId: ai_assistant_step_insight_retrieve
+      description: Получить или сгенерировать AI-подсказку для шага онбординга
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: id
+        schema:
+          type: integer
+        description: ID шага программы онбординга
+        required: true
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Возвращает существующую подсказку (GET)
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Возвращает сгенерированную подсказку (POST)
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Подсказка не найдена или шаг не существует
+          description: ''
+    post:
+      operationId: ai_assistant_step_insight_create
+      description: Получить или сгенерировать AI-подсказку для шага онбординга
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: id
+        schema:
+          type: integer
+        description: ID шага программы онбординга
+        required: true
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Возвращает существующую подсказку (GET)
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                description: Возвращает сгенерированную подсказку (POST)
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Подсказка не найдена или шаг не существует
+          description: ''
+  /api/ai/assistant/step/{step_id}/insight/:
+    get:
+      operationId: ai_assistant_step_insight_retrieve_2
+      description: Генерирует подсказку для шага онбординга
+      parameters:
+      - in: path
+        name: step_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientAIInsight'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientAIInsight'
+          description: ''
+        '404':
+          description: Шаг не найден или нет активного назначения
+  /api/ai/insights/:
+    get:
+      operationId: ai_insights_list
+      description: API для управления AI-инсайтами
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AIInsight'
+          description: ''
+  /api/ai/insights/{id}/:
+    get:
+      operationId: ai_insights_retrieve
+      description: API для управления AI-инсайтами
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this AI insight.
+        required: true
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIInsight'
+          description: ''
+  /api/ai/insights/analyze/{assignment_id}/:
+    post:
+      operationId: ai_insights_analyze_create
+      description: Ручной запуск анализа для конкретного назначения
+      parameters:
+      - in: path
+        name: assignment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ai
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIInsightRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AIInsightRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AIInsightRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIInsight'
+          description: ''
+  /api/ai/insights/user/{user_id}/:
+    get:
+      operationId: ai_insights_user_retrieve
+      description: Получение инсайтов для конкретного пользователя
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIInsight'
+          description: ''
+  /api/ai/recommendations/:
+    get:
+      operationId: ai_recommendations_list
+      description: |-
+        API для управления AI-рекомендациями.
+        Доступ только для HR и Admin.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AIRecommendation'
+          description: ''
+  /api/ai/recommendations/{id}/:
+    get:
+      operationId: ai_recommendations_retrieve
+      description: |-
+        API для управления AI-рекомендациями.
+        Доступ только для HR и Admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this AI recommendation.
+        required: true
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIRecommendation'
+          description: ''
+  /api/ai/recommendations/{id}/dismiss/:
+    post:
+      operationId: ai_recommendations_dismiss_create
+      description: |-
+        POST /api/recommendations/{id}/dismiss/
+        Скрывает рекомендацию.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this AI recommendation.
+        required: true
+      tags:
+      - ai
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRecommendationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AIRecommendationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AIRecommendationRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIRecommendation'
+          description: ''
   /api/analytics/assignments/:
     get:
       operationId: analytics_assignments_retrieve
@@ -50,6 +571,84 @@ paths:
       responses:
         '200':
           description: Общая сводка по онбордингу
+  /api/api/gamification/achievements/:
+    get:
+      operationId: api_gamification_achievements_list
+      description: Представление для получения списка достижений пользователя
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserReward'
+          description: ''
+  /api/api/gamification/events/:
+    post:
+      operationId: api_gamification_events_create
+      description: Представление для отправки событий геймификации
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GamificationEventRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GamificationEventRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GamificationEventRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GamificationEvent'
+          description: ''
+  /api/api/gamification/profile/:
+    get:
+      operationId: api_gamification_profile_retrieve
+      description: Представление для получения профиля геймификации текущего пользователя
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLevel'
+          description: ''
   /api/auth/login/:
     post:
       operationId: auth_login_create
@@ -60,21 +659,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomTokenObtainPair'
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CustomTokenObtainPair'
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CustomTokenObtainPair'
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
         required: true
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomTokenObtainPair'
-          description: ''
+          description: No response body
   /api/auth/refresh/:
     post:
       operationId: auth_refresh_create
@@ -87,13 +682,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: '#/components/schemas/TokenRefreshRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: '#/components/schemas/TokenRefreshRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
+              $ref: '#/components/schemas/TokenRefreshRequest'
         required: true
       responses:
         '200':
@@ -102,6 +697,120 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
           description: ''
+  /api/booking/calendar/ical/:
+    get:
+      operationId: booking_calendar_ical_retrieve
+      description: Экспортирует все встречи текущего пользователя в формате .ics (iCalendar)
+      tags:
+      - booking
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/booking/slots/:
+    get:
+      operationId: booking_slots_list
+      description: Представление для просмотра и создания виртуальных встреч
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - booking
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VirtualMeetingSlot'
+          description: ''
+    post:
+      operationId: booking_slots_create
+      description: Представление для просмотра и создания виртуальных встреч
+      tags:
+      - booking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VirtualMeetingSlotRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VirtualMeetingSlotRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VirtualMeetingSlotRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VirtualMeetingSlot'
+          description: ''
+  /api/booking/slots/{id}/:
+    get:
+      operationId: booking_slots_retrieve
+      description: Представление для просмотра деталей и удаления виртуальной встречи
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - booking
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VirtualMeetingSlot'
+          description: ''
+    delete:
+      operationId: booking_slots_destroy
+      description: Представление для просмотра деталей и удаления виртуальной встречи
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - booking
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/feedback/assignment/{id}/:
     get:
       operationId: feedback_assignment_retrieve
@@ -139,13 +848,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FeedbackMood'
+              $ref: '#/components/schemas/FeedbackMoodRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/FeedbackMood'
+              $ref: '#/components/schemas/FeedbackMoodRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/FeedbackMood'
+              $ref: '#/components/schemas/FeedbackMoodRequest'
         required: true
       security:
       - jwtAuth: []
@@ -170,13 +879,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StepFeedback'
+              $ref: '#/components/schemas/StepFeedbackRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/StepFeedback'
+              $ref: '#/components/schemas/StepFeedbackRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/StepFeedback'
+              $ref: '#/components/schemas/StepFeedbackRequest'
         required: true
       security:
       - jwtAuth: []
@@ -208,6 +917,18 @@ paths:
       operationId: lms_module_list
       description: Представление для получения списка обучающих модулей для шага онбординга
       parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       - in: path
         name: step_id
         schema:
@@ -290,13 +1011,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TestSubmit'
+              $ref: '#/components/schemas/TestSubmitRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TestSubmit'
+              $ref: '#/components/schemas/TestSubmitRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TestSubmit'
+              $ref: '#/components/schemas/TestSubmitRequest'
         required: true
       security:
       - jwtAuth: []
@@ -316,10 +1037,26 @@ paths:
         ViewSet для работы с уведомлениями пользователя.
 
         Поддерживаемые операции:
-        - GET /api/notifications/ - получение списка своих уведомлений
+        - GET /api/notifications/ - получение списка своих уведомлений с фильтрацией
         - GET /api/notifications/{id}/ - получение деталей одного уведомления
         - POST /api/notifications/{id}/read/ - отметка уведомления как прочитанное
         - POST /api/notifications/read-all/ - отметка всех уведомлений как прочитанные
+        - DELETE /api/notifications/{id}/ - удаление уведомления
+        - GET /api/notifications/settings/ - получение настроек уведомлений
+        - POST /api/notifications/settings/ - обновление настроек уведомлений
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
       - notifications
       security:
@@ -335,6 +1072,43 @@ paths:
                 items:
                   $ref: '#/components/schemas/Notification'
           description: ''
+    post:
+      operationId: notifications_create
+      description: |-
+        ViewSet для работы с уведомлениями пользователя.
+
+        Поддерживаемые операции:
+        - GET /api/notifications/ - получение списка своих уведомлений с фильтрацией
+        - GET /api/notifications/{id}/ - получение деталей одного уведомления
+        - POST /api/notifications/{id}/read/ - отметка уведомления как прочитанное
+        - POST /api/notifications/read-all/ - отметка всех уведомлений как прочитанные
+        - DELETE /api/notifications/{id}/ - удаление уведомления
+        - GET /api/notifications/settings/ - получение настроек уведомлений
+        - POST /api/notifications/settings/ - обновление настроек уведомлений
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
   /api/notifications/{id}/:
     get:
       operationId: notifications_retrieve
@@ -342,10 +1116,13 @@ paths:
         ViewSet для работы с уведомлениями пользователя.
 
         Поддерживаемые операции:
-        - GET /api/notifications/ - получение списка своих уведомлений
+        - GET /api/notifications/ - получение списка своих уведомлений с фильтрацией
         - GET /api/notifications/{id}/ - получение деталей одного уведомления
         - POST /api/notifications/{id}/read/ - отметка уведомления как прочитанное
         - POST /api/notifications/read-all/ - отметка всех уведомлений как прочитанные
+        - DELETE /api/notifications/{id}/ - удаление уведомления
+        - GET /api/notifications/settings/ - получение настроек уведомлений
+        - POST /api/notifications/settings/ - обновление настроек уведомлений
       parameters:
       - in: path
         name: id
@@ -365,10 +1142,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/Notification'
           description: ''
+    delete:
+      operationId: notifications_destroy
+      description: |-
+        ViewSet для работы с уведомлениями пользователя.
+
+        Поддерживаемые операции:
+        - GET /api/notifications/ - получение списка своих уведомлений с фильтрацией
+        - GET /api/notifications/{id}/ - получение деталей одного уведомления
+        - POST /api/notifications/{id}/read/ - отметка уведомления как прочитанное
+        - POST /api/notifications/read-all/ - отметка всех уведомлений как прочитанные
+        - DELETE /api/notifications/{id}/ - удаление уведомления
+        - GET /api/notifications/settings/ - получение настроек уведомлений
+        - POST /api/notifications/settings/ - обновление настроек уведомлений
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/notifications/{id}/read/:
     post:
       operationId: notifications_read_create
-      description: Отмечает уведомление как прочитанное
+      description: Отметка уведомления как прочитанное
       parameters:
       - in: path
         name: id
@@ -381,52 +1186,72 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: '#/components/schemas/NotificationRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: '#/components/schemas/NotificationRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: '#/components/schemas/NotificationRequest'
       security:
       - jwtAuth: []
       - cookieAuth: []
       - basicAuth: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Notification'
-          description: ''
+          description: Уведомление отмечено как прочитанное
+        '404':
+          description: Уведомление не найдено
   /api/notifications/read_all/:
     post:
       operationId: notifications_read_all_create
-      description: Отмечает все уведомления пользователя как прочитанные
+      description: Отметка всех уведомлений как прочитанные
       tags:
       - notifications
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: '#/components/schemas/NotificationRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: '#/components/schemas/NotificationRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: '#/components/schemas/NotificationRequest'
       security:
       - jwtAuth: []
       - cookieAuth: []
       - basicAuth: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Notification'
-          description: ''
+          description: Все уведомления отмечены как прочитанные
+  /api/notifications/settings/:
+    post:
+      operationId: notifications_settings_create
+      description: Обновление настроек уведомлений пользователя
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationSettingsRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Настройки обновлены
+        '400':
+          description: Ошибка валидации
   /api/onboarding/assignments/{id}/progress/:
     get:
       operationId: onboarding_assignments_progress_retrieve
@@ -454,6 +1279,19 @@ paths:
     get:
       operationId: onboarding_assignments_my_list
       description: Представление для получения списка назначений текущего пользователя
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
       - onboarding
       security:
@@ -473,6 +1311,37 @@ paths:
     get:
       operationId: onboarding_programs_list
       description: Представление для получения списка и создания онбординг-программ
+      parameters:
+      - in: query
+        name: author_id
+        schema:
+          type: integer
+      - in: query
+        name: created_at_after
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: created_at_before
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: name
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
       - onboarding
       security:
@@ -497,13 +1366,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OnboardingProgram'
+              $ref: '#/components/schemas/OnboardingProgramRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OnboardingProgram'
+              $ref: '#/components/schemas/OnboardingProgramRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OnboardingProgram'
+              $ref: '#/components/schemas/OnboardingProgramRequest'
         required: true
       security:
       - jwtAuth: []
@@ -554,13 +1423,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OnboardingProgram'
+              $ref: '#/components/schemas/OnboardingProgramRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OnboardingProgram'
+              $ref: '#/components/schemas/OnboardingProgramRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OnboardingProgram'
+              $ref: '#/components/schemas/OnboardingProgramRequest'
         required: true
       security:
       - jwtAuth: []
@@ -588,13 +1457,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedOnboardingProgram'
+              $ref: '#/components/schemas/PatchedOnboardingProgramRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedOnboardingProgram'
+              $ref: '#/components/schemas/PatchedOnboardingProgramRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedOnboardingProgram'
+              $ref: '#/components/schemas/PatchedOnboardingProgramRequest'
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -642,13 +1511,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignProgram'
+              $ref: '#/components/schemas/AssignProgramRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/AssignProgram'
+              $ref: '#/components/schemas/AssignProgramRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AssignProgram'
+              $ref: '#/components/schemas/AssignProgramRequest'
         required: true
       security:
       - jwtAuth: []
@@ -667,11 +1536,51 @@ paths:
       description: Представление для получения списка и создания шагов онбординга
         для программы
       parameters:
+      - in: query
+        name: is_required
+        schema:
+          type: boolean
+      - in: query
+        name: is_virtual_meeting
+        schema:
+          type: boolean
+      - in: query
+        name: name
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
       - in: path
         name: program_id
         schema:
           type: integer
         required: true
+      - in: query
+        name: program_id
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: step_type
+        schema:
+          type: string
+          enum:
+          - meeting
+          - task
+          - training
+        description: |-
+          * `task` - Task
+          * `meeting` - Meeting
+          * `training` - Training
       tags:
       - onboarding
       security:
@@ -703,13 +1612,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OnboardingStep'
+              $ref: '#/components/schemas/OnboardingStepRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/OnboardingStep'
+              $ref: '#/components/schemas/OnboardingStepRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/OnboardingStep'
+              $ref: '#/components/schemas/OnboardingStepRequest'
         required: true
       security:
       - jwtAuth: []
@@ -738,13 +1647,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompleteStep'
+              $ref: '#/components/schemas/CompleteStepRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CompleteStep'
+              $ref: '#/components/schemas/CompleteStepRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CompleteStep'
+              $ref: '#/components/schemas/CompleteStepRequest'
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -755,6 +1664,165 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompleteStep'
+          description: ''
+  /api/onboarding/steps/progress/:
+    get:
+      operationId: onboarding_steps_progress_list
+      description: Представление для получения списка прогресса по шагам онбординга
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserStepProgress'
+          description: ''
+  /api/reports/assignments/csv/:
+    get:
+      operationId: reports_assignments_csv_retrieve
+      description: Представление для генерации отчета о назначенных программах в формате
+        CSV
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/assignments/pdf/:
+    get:
+      operationId: reports_assignments_pdf_retrieve
+      description: Представление для генерации отчета о назначенных программах в формате
+        PDF
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/solomia/chat/{step_id}/:
+    get:
+      operationId: solomia_chat_retrieve
+      description: Получить историю чата или отправить новое сообщение в чат с AI-ассистентом
+        для шага онбординга
+      parameters:
+      - in: path
+        name: step_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: step_id
+        schema:
+          type: integer
+        description: ID шага пользователя
+        required: true
+      tags:
+      - solomia
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Возвращает историю сообщений чата (GET) или подтверждение
+                  сохранения сообщения (POST)
+              examples:
+                ИсторияЧата:
+                  value:
+                    messages:
+                    - id: 1
+                      role: human
+                      message: Привет, как мне выполнить этот шаг?
+                      created_at: '2025-05-20T14:30:00Z'
+                    - id: 2
+                      role: assistant
+                      message: Привет! Для выполнения этого шага рекомендую...
+                      created_at: '2025-05-20T14:30:05Z'
+                  summary: История чата
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Шаг не существует или не принадлежит пользователю
+          description: ''
+    post:
+      operationId: solomia_chat_create
+      description: Получить историю чата или отправить новое сообщение в чат с AI-ассистентом
+        для шага онбординга
+      parameters:
+      - in: path
+        name: step_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: step_id
+        schema:
+          type: integer
+        description: ID шага пользователя
+        required: true
+      tags:
+      - solomia
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Возвращает историю сообщений чата (GET) или подтверждение
+                  сохранения сообщения (POST)
+              examples:
+                ИсторияЧата:
+                  value:
+                    messages:
+                    - id: 1
+                      role: human
+                      message: Привет, как мне выполнить этот шаг?
+                      created_at: '2025-05-20T14:30:00Z'
+                    - id: 2
+                      role: assistant
+                      message: Привет! Для выполнения этого шага рекомендую...
+                      created_at: '2025-05-20T14:30:05Z'
+                  summary: История чата
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Шаг не существует или не принадлежит пользователю
           description: ''
   /api/users/me/:
     get:
@@ -775,7 +1843,128 @@ paths:
           description: ''
 components:
   schemas:
+    AIInsight:
+      type: object
+      description: Сериализатор для AI-инсайтов
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        user_email:
+          type: string
+          format: email
+          readOnly: true
+        user_full_name:
+          type: string
+          readOnly: true
+        assignment:
+          type: integer
+        program_name:
+          type: string
+          readOnly: true
+        risk_level:
+          $ref: '#/components/schemas/RiskLevelEnum'
+        risk_level_display:
+          type: string
+          readOnly: true
+        reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assignment
+      - created_at
+      - id
+      - program_name
+      - reason
+      - risk_level
+      - risk_level_display
+      - user
+      - user_email
+      - user_full_name
+    AIInsightRequest:
+      type: object
+      description: Сериализатор для AI-инсайтов
+      properties:
+        user:
+          type: integer
+        assignment:
+          type: integer
+        risk_level:
+          $ref: '#/components/schemas/RiskLevelEnum'
+        reason:
+          type: string
+          minLength: 1
+      required:
+      - assignment
+      - reason
+      - risk_level
+      - user
+    AIRecommendation:
+      type: object
+      description: Сериализатор для модели AI-рекомендаций
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          readOnly: true
+        assignment:
+          type: integer
+          readOnly: true
+        assignment_name:
+          type: string
+          readOnly: true
+        step:
+          type: integer
+          readOnly: true
+          nullable: true
+        step_name:
+          type: string
+          readOnly: true
+        recommendation_text:
+          type: string
+          readOnly: true
+        generated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        dismissed:
+          type: boolean
+      required:
+      - assignment
+      - assignment_name
+      - generated_at
+      - id
+      - recommendation_text
+      - step
+      - step_name
+      - user
+      - user_email
+    AIRecommendationRequest:
+      type: object
+      description: Сериализатор для модели AI-рекомендаций
+      properties:
+        dismissed:
+          type: boolean
     AssignProgram:
+      type: object
+      description: Сериализатор для назначения программы пользователю
+      properties:
+        user_id:
+          type: integer
+      required:
+      - user_id
+    AssignProgramRequest:
       type: object
       description: Сериализатор для назначения программы пользователю
       properties:
@@ -807,7 +1996,67 @@ components:
       - program_name
       - step_feedbacks
       - user_email
+    AutoTagEnum:
+      enum:
+      - positive
+      - neutral
+      - negative
+      - unclear_instruction
+      - delay_warning
+      type: string
+      description: |-
+        * `positive` - Positive
+        * `neutral` - Neutral
+        * `negative` - Negative
+        * `unclear_instruction` - Unclear Instruction
+        * `delay_warning` - Delay Warning
+    ClientAIInsight:
+      type: object
+      description: Сериализатор для AI-подсказок для клиентов
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+        assignment:
+          type: integer
+          readOnly: true
+        step:
+          type: integer
+          readOnly: true
+        step_name:
+          type: string
+          readOnly: true
+        program_name:
+          type: string
+          readOnly: true
+        hint_text:
+          type: string
+          readOnly: true
+        generated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        dismissed:
+          type: boolean
+      required:
+      - assignment
+      - generated_at
+      - hint_text
+      - id
+      - program_name
+      - step
+      - step_name
+      - user
     CompleteStep:
+      type: object
+      description: Сериализатор для отметки шага как выполненного
+      properties:
+        user_id:
+          type: integer
+    CompleteStepRequest:
       type: object
       description: Сериализатор для отметки шага как выполненного
       properties:
@@ -823,21 +2072,36 @@ components:
         * `video` - Video
         * `text` - Text
         * `file` - File
-    CustomTokenObtainPair:
+    CustomTokenObtainPairRequest:
       type: object
       description: |-
         Кастомный сериализатор для получения JWT-токенов
         Добавляет дополнительную информацию о пользователе в токен
+        и возвращает данные пользователя в ответе
       properties:
         email:
           type: string
           writeOnly: true
+          minLength: 1
         password:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - email
       - password
+    EventTypeEnum:
+      enum:
+      - step_completed
+      - feedback_submitted
+      - test_completed
+      - achievement_unlocked
+      type: string
+      description: |-
+        * `step_completed` - step_completed
+        * `feedback_submitted` - feedback_submitted
+        * `test_completed` - test_completed
+        * `achievement_unlocked` - achievement_unlocked
     FeedbackMood:
       type: object
       description: Сериализатор для модели настроения по назначению
@@ -876,6 +2140,40 @@ components:
       - user_email
       - value
       - value_display
+    FeedbackMoodRequest:
+      type: object
+      description: Сериализатор для модели настроения по назначению
+      properties:
+        user:
+          type: integer
+        assignment:
+          type: integer
+        value:
+          $ref: '#/components/schemas/ValueEnum'
+        comment:
+          type: string
+      required:
+      - assignment
+      - user
+      - value
+    GamificationEvent:
+      type: object
+      description: Сериализатор для событий геймификации
+      properties:
+        event_type:
+          $ref: '#/components/schemas/EventTypeEnum'
+        metadata: {}
+      required:
+      - event_type
+    GamificationEventRequest:
+      type: object
+      description: Сериализатор для событий геймификации
+      properties:
+        event_type:
+          $ref: '#/components/schemas/EventTypeEnum'
+        metadata: {}
+      required:
+      - event_type
     LMSModule:
       type: object
       description: Сериализатор для модели обучающего модуля LMS
@@ -932,9 +2230,6 @@ components:
           type: string
           title: Option text
           maxLength: 255
-        is_correct:
-          type: boolean
-          writeOnly: true
         order:
           type: integer
           maximum: 2147483647
@@ -1079,6 +2374,28 @@ components:
       - message
       - notification_type
       - title
+    NotificationRequest:
+      type: object
+      description: Сериализатор для модели уведомлений
+      properties:
+        is_read:
+          type: boolean
+    NotificationSettingsRequest:
+      type: object
+      description: Сериализатор для настроек уведомлений пользователя
+      properties:
+        info:
+          type: boolean
+          default: true
+        warning:
+          type: boolean
+          default: true
+        deadline:
+          type: boolean
+          default: true
+        system:
+          type: boolean
+          default: true
     NotificationTypeEnum:
       enum:
       - info
@@ -1091,6 +2408,9 @@ components:
         * `warning` - Warning
         * `deadline` - Deadline
         * `system` - System
+    NullEnum:
+      enum:
+      - null
     OnboardingProgram:
       type: object
       description: Сериализатор для модели онбординг-программы
@@ -1126,6 +2446,18 @@ components:
       - id
       - name
       - steps
+    OnboardingProgramRequest:
+      type: object
+      description: Сериализатор для модели онбординг-программы
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+      required:
+      - name
     OnboardingStep:
       type: object
       description: Сериализатор для модели шага онбординга
@@ -1148,6 +2480,8 @@ components:
           readOnly: true
         is_required:
           type: boolean
+        is_virtual_meeting:
+          type: boolean
         deadline_days:
           type: integer
           maximum: 2147483647
@@ -1159,34 +2493,40 @@ components:
       - name
       - order
       - program
-    PatchedOnboardingProgram:
+    OnboardingStepRequest:
       type: object
-      description: Сериализатор для модели онбординг-программы
+      description: Сериализатор для модели шага онбординга
       properties:
-        id:
-          type: integer
-          readOnly: true
         name:
           type: string
+          minLength: 1
           maxLength: 255
         description:
           type: string
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        author:
+        step_type:
+          $ref: '#/components/schemas/StepTypeEnum'
+        is_required:
+          type: boolean
+        is_virtual_meeting:
+          type: boolean
+        deadline_days:
           type: integer
-          readOnly: true
-        author_email:
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Number of days to complete after assignment
+      required:
+      - name
+    PatchedOnboardingProgramRequest:
+      type: object
+      description: Сериализатор для модели онбординг-программы
+      properties:
+        name:
           type: string
-          format: email
-          readOnly: true
-        steps:
-          type: array
-          items:
-            $ref: '#/components/schemas/OnboardingStep'
-          readOnly: true
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
     ProgramProgress:
       type: object
       description: Сериализатор для отображения прогресса по программе
@@ -1203,7 +2543,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/Status340Enum'
         total_steps:
           type: string
           readOnly: true
@@ -1224,6 +2564,26 @@ components:
       - progress_percentage
       - steps_progress
       - total_steps
+    RewardTypeEnum:
+      enum:
+      - achievement
+      - level
+      - special
+      type: string
+      description: |-
+        * `achievement` - Achievement
+        * `level` - Level
+        * `special` - Special
+    RiskLevelEnum:
+      enum:
+      - low
+      - medium
+      - high
+      type: string
+      description: |-
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
     RoleEnum:
       enum:
       - admin
@@ -1236,7 +2596,7 @@ components:
         * `hr` - HR Manager
         * `manager` - Department Manager
         * `employee` - Employee
-    StatusEnum:
+    Status340Enum:
       enum:
       - active
       - completed
@@ -1266,19 +2626,54 @@ components:
           type: integer
         comment:
           type: string
+        auto_tag:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AutoTagEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        auto_tag_display:
+          type: string
+          readOnly: true
+        sentiment_score:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
       - assignment
+      - auto_tag
+      - auto_tag_display
       - comment
       - created_at
       - id
+      - sentiment_score
       - step
       - step_name
       - user
       - user_email
+    StepFeedbackRequest:
+      type: object
+      description: Сериализатор для модели отзыва по конкретному шагу
+      properties:
+        user:
+          type: integer
+        step:
+          type: integer
+        assignment:
+          type: integer
+        comment:
+          type: string
+          minLength: 1
+      required:
+      - assignment
+      - comment
+      - step
+      - user
     StepTypeEnum:
       enum:
       - task
@@ -1301,17 +2696,34 @@ components:
               type: integer
       required:
       - answers
+    TestSubmitRequest:
+      type: object
+      description: Сериализатор для отправки ответов на тест
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: integer
+      required:
+      - answers
     TokenRefresh:
       type: object
       properties:
         access:
           type: string
           readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
         refresh:
           type: string
           writeOnly: true
+          minLength: 1
       required:
-      - access
       - refresh
     User:
       type: object
@@ -1353,6 +2765,23 @@ components:
       - email
       - id
       - username
+    UserLevel:
+      type: object
+      description: Сериализатор для модели UserLevel
+      properties:
+        level:
+          type: integer
+          readOnly: true
+        points:
+          type: integer
+          readOnly: true
+        points_to_next_level:
+          type: string
+          readOnly: true
+      required:
+      - level
+      - points
+      - points_to_next_level
     UserOnboardingAssignment:
       type: object
       description: Сериализатор для модели назначения онбординг-программы пользователю
@@ -1376,7 +2805,7 @@ components:
           format: date-time
           readOnly: true
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/Status340Enum'
       required:
       - assigned_at
       - id
@@ -1384,6 +2813,100 @@ components:
       - program_name
       - user
       - user_email
+    UserReward:
+      type: object
+      description: Сериализатор для модели UserReward
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        icon:
+          type: string
+          readOnly: true
+          nullable: true
+        reward_type:
+          allOf:
+          - $ref: '#/components/schemas/RewardTypeEnum'
+          readOnly: true
+        awarded_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - awarded_at
+      - description
+      - icon
+      - id
+      - reward_type
+      - title
+    UserStepProgress:
+      type: object
+      description: Сериализатор для модели прогресса пользователя по шагам
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        step:
+          type: integer
+        step_name:
+          type: string
+          readOnly: true
+        step_type:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/UserStepProgressStatusEnum'
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        planned_date_start:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Planned start date
+        planned_date_end:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Planned end date
+        actual_completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Actual completion date
+      required:
+      - actual_completed_at
+      - completed_at
+      - id
+      - planned_date_end
+      - planned_date_start
+      - step
+      - step_name
+      - step_type
+      - user
+    UserStepProgressStatusEnum:
+      enum:
+      - not_started
+      - in_progress
+      - done
+      type: string
+      description: |-
+        * `not_started` - Not Started
+        * `in_progress` - In Progress
+        * `done` - Done
     ValueEnum:
       enum:
       - great
@@ -1398,6 +2921,69 @@ components:
         * `neutral` - Neutral
         * `bad` - Bad
         * `terrible` - Terrible
+    VirtualMeetingSlot:
+      type: object
+      description: Сериализатор для модели виртуальных встреч
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        step:
+          type: integer
+        step_name:
+          type: string
+          readOnly: true
+        step_type:
+          type: string
+          readOnly: true
+        assigned_user:
+          type: integer
+        assigned_user_email:
+          type: string
+          format: email
+          readOnly: true
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        meeting_link:
+          type: string
+          format: uri
+          maxLength: 200
+      required:
+      - assigned_user
+      - assigned_user_email
+      - end_time
+      - id
+      - start_time
+      - step
+      - step_name
+      - step_type
+    VirtualMeetingSlotRequest:
+      type: object
+      description: Сериализатор для модели виртуальных встреч
+      properties:
+        step:
+          type: integer
+        assigned_user:
+          type: integer
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        meeting_link:
+          type: string
+          format: uri
+          maxLength: 200
+      required:
+      - assigned_user
+      - end_time
+      - start_time
+      - step
   securitySchemes:
     basicAuth:
       type: http
