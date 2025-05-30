@@ -71,18 +71,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           ml={{ base: 0, lg: designTokens.layout.sidebar.width }}
           bg="gray.50"
           overflowY="auto"
+          p={{
+            base: designTokens.spacing.md,
+            md: designTokens.spacing.lg,
+            lg: designTokens.spacing.lg,
+          }}
         >
-          <Box
-            p={{
-              base: designTokens.spacing.md,
-              md: designTokens.spacing.lg,
-              lg: designTokens.spacing.lg,
-            }}
-            maxW={designTokens.grid.containerMaxWidth}
-            mx="auto"
-          >
-            {children}
-          </Box>
+          {children}
         </Box>
       </Flex>
       <AppFooter />

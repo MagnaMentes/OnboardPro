@@ -62,15 +62,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMenuToggle }) => {
         h="100%"
         align="center"
         justify="space-between"
-        px={{
-          base: designTokens.spacing.md,
-          md: designTokens.spacing.lg,
-          lg: designTokens.spacing.lg,
-        }}
-        maxW={designTokens.grid.containerMaxWidth}
-        mx="auto"
+        ml={{ base: 0 }}
+        pr={{ base: designTokens.spacing.md, lg: designTokens.spacing.md }}
       >
-        <HStack spacing={4}>
+        <HStack spacing={4} pl={{ base: designTokens.spacing.md, lg: "16px" }}>
           {onMenuToggle && (
             <IconButton
               aria-label="Меню"
@@ -80,7 +75,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMenuToggle }) => {
               display={{ base: "flex", lg: "none" }}
             />
           )}
-
           <Link as={RouterLink} to="/dashboard">
             <HStack spacing={2}>
               <Text
