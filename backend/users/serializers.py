@@ -60,3 +60,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
         return data
+
+
+class UserMinimalSerializer(serializers.ModelSerializer):
+    """Минимальный сериализатор пользователя для отображения базовых данных"""
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'username', 'full_name']

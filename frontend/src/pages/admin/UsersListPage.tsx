@@ -8,7 +8,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
-import { AppLayout } from "../../components/layout/AppLayout";
+import { PageHeader } from "../../components/layout/PageHeader";
 import { useState } from "react";
 import UserTable from "../../components/admin/users/UserTable";
 import DepartmentOverviewPanel from "../../components/admin/users/DepartmentOverviewPanel";
@@ -18,7 +18,8 @@ const UsersListPage = () => {
   const bg = useColorModeValue("white", "gray.700");
 
   return (
-    <AppLayout>
+    <>
+      <PageHeader title="Управление сотрудниками" />
       <Box p={6} maxW="1200px" mx="auto" bg={bg} borderRadius="md">
         <Flex justify="space-between" align="center" mb={4}>
           <Heading size="lg">Управление сотрудниками</Heading>
@@ -32,7 +33,7 @@ const UsersListPage = () => {
         <Divider mb={4} />
         {showDepartments ? <DepartmentOverviewPanel /> : <UserTable />}
       </Box>
-    </AppLayout>
+    </>
   );
 };
 

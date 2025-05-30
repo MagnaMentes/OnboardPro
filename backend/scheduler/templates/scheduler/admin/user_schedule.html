@@ -1,0 +1,271 @@
+{% extends "admin/base_site.html" %} {% load static %} {% block title
+%}Расписание пользователя {{ user.get_full_name|default:user.email }} | Smart
+Scheduler{% endblock %} {% block extrastyle %}
+<link rel="stylesheet" href="{% static 'scheduler/css/calendar.css' %}" />
+<style>
+  .calendar-container {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .calendar-view {
+    height: 600px;
+    overflow-y: auto;
+  }
+
+  .step-item {
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #f5f5f5;
+  }
+
+  .step-item.task {
+    border-left: 4px solid #4caf50;
+  }
+  .step-item.meeting {
+    border-left: 4px solid #2196f3;
+  }
+  .step-item.training {
+    border-left: 4px solid #ff9800;
+  }
+
+  .step-item .step-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+  }
+
+  .step-item .step-time {
+    font-size: 0.9em;
+    color: #666;
+  }
+
+  .step-item .step-status {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+  }
+
+  .step-status.not_started {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+  .step-status.in_progress {
+    background-color: #bbdefb;
+    color: #0d47a1;
+  }
+  .step-status.done {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+  }
+
+  .risk-container {
+    margin: 20px 0;
+  }
+
+  .risk-header {
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+
+  .risk-item {
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+  }
+
+  .risk-high {
+    background-color: #ffcdd2;
+    border-left: 4px solid #f44336;
+  }
+  .risk-medium {
+    background-color: #fff9c4;
+    border-left: 4px solid #ffc107;
+  }
+  .risk-low {
+    background-color: #e0f2f1;
+    border-left: 4px solid #009688;
+  }
+
+  .risk-factors {
+    margin-top: 8px;
+    font-size: 0.9em;
+  }
+
+  .risk-factors ul {
+    margin: 5px 0;
+    padding-left: 20px;
+  }
+
+  .schedule-controls {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #e8f5e9;
+    border-radius: 4px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="module">
+  <h1>Расписание для {{ user.get_full_name|default:user.email }}</h1>
+
+  <div class="schedule-controls">
+    <h2>Управление расписанием</h2>
+    <form
+      id="rescheduleForm"
+      action="{% url 'scheduler-plan' %}"
+      method="post"
+      class="js-ajax-form"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="user_id" value="{{ user.id }}" />
+
+      <button type="submit" class="button">Перепланировать все шаги</button>
+    </form>
+  </div>
+
+  <div class="calendar-container">
+    <div class="calendar-header">
+      <h2>
+        Расписание на {{ schedule.period.start_date|date:"d.m.Y" }} - {{
+        schedule.period.end_date|date:"d.m.Y" }}
+      </h2>
+      <div class="calendar-controls">
+        <button id="prevWeek" class="button">← Предыдущая неделя</button>
+        <button id="today" class="button">Сегодня</button>
+        <button id="nextWeek" class="button">Следующая неделя →</button>
+      </div>
+    </div>
+
+    <div class="calendar-view" id="schedulerCalendarView">
+      <!-- Здесь будет отображение календаря через JavaScript -->
+      <div class="loading">Загрузка календаря...</div>
+    </div>
+  </div>
+
+  <div class="upcoming-steps">
+    <h2>Ближайшие шаги</h2>
+
+    {% for step in schedule.steps|dictsortreversed:"start_time"|slice:":5" %}
+    <div class="step-item {{ step.step_type }}">
+      <div class="step-header">
+        <span>{{ step.step_name }}</span>
+        <span class="step-status {{ step.status }}"
+          >{{ step.status|title }}</span
+        >
+      </div>
+      <div class="step-time">
+        {{ step.start_time|date:"d.m.Y H:i" }} - {{ step.end_time|date:"d.m.Y
+        H:i" }}
+      </div>
+      <div class="step-description">
+        {{ step.step_description|truncatewords:20 }}
+      </div>
+    </div>
+    {% empty %}
+    <p>Нет запланированных шагов на ближайшее время.</p>
+    {% endfor %}
+  </div>
+
+  <div class="risk-container">
+    <h2>Риски задержек</h2>
+
+    {% if delay_risks %} {% for risk in delay_risks %}
+    <div class="risk-item risk-{{ risk.risk_level|lower }}">
+      <div class="risk-header">
+        <span>{{ risk.step_name }}</span>
+        <span>Уровень риска: {{ risk.risk_level }}</span>
+      </div>
+      {% if risk.planned_date_end %}
+      <div class="risk-date">
+        Дедлайн: {{ risk.planned_date_end|date:"d.m.Y H:i" }}
+      </div>
+      {% endif %}
+      <div class="risk-factors">
+        <strong>Факторы риска:</strong>
+        <ul>
+          {% for factor in risk.risk_factors %}
+          <li>{{ factor }}</li>
+          {% empty %}
+          <li>Нет выявленных факторов риска.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endfor %} {% else %}
+    <p>Рисков задержек не выявлено.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} {% block extrajs %}
+<script src="{% static 'scheduler/js/calendar.js' %}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация календаря
+    const calendarView = new SchedulerCalendarView({
+      containerId: 'schedulerCalendarView',
+      steps: {{ schedule.steps|safe }},
+      events: {{ schedule.events|safe }},
+      userId: {{ user.id }}
+    });
+
+    calendarView.render();
+
+    // Управление календарем
+    document.getElementById('prevWeek').addEventListener('click', function() {
+      calendarView.previousWeek();
+    });
+
+    document.getElementById('today').addEventListener('click', function() {
+      calendarView.goToToday();
+    });
+
+    document.getElementById('nextWeek').addEventListener('click', function() {
+      calendarView.nextWeek();
+    });
+
+    // AJAX для форм
+    document.querySelectorAll('.js-ajax-form').forEach(function(form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const url = form.getAttribute('action');
+
+        fetch(url, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            // Перезагрузить страницу для отображения изменений
+            window.location.reload();
+          } else {
+            alert('Ошибка: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Произошла ошибка при выполнении запроса.');
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}

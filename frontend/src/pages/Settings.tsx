@@ -8,21 +8,16 @@ import {
   FormControl,
   FormLabel,
 } from "@chakra-ui/react";
-import { AppLayout } from "../components/layout/AppLayout";
+import { PageHeader } from "../components/layout/PageHeader";
 
 const SettingsPage: React.FC = () => {
   return (
-    <AppLayout>
+    <>
+      <PageHeader
+        title="Настройки"
+        subtitle="Управление персональными настройками и предпочтениями"
+      />
       <VStack spacing={8} align="stretch">
-        <Box>
-          <Heading size="xl" mb={2} color="brand.700">
-            Настройки
-          </Heading>
-          <Text color="gray.600" fontSize="lg">
-            Управление персональными настройками и предпочтениями
-          </Text>
-        </Box>
-
         <VStack align="stretch" spacing={6}>
           <FormControl display="flex" alignItems="center">
             <FormLabel htmlFor="dark-mode-toggle" mb="0">
@@ -39,7 +34,7 @@ const SettingsPage: React.FC = () => {
           </FormControl>
         </VStack>
       </VStack>
-    </AppLayout>
+    </>
   );
 };
 

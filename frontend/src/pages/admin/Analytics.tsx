@@ -21,7 +21,7 @@ import AssignmentsTable from "../../components/analytics/AssignmentsTable";
 import MoodChart from "../../components/analytics/MoodChart";
 import AIInsightCard from "../../components/analytics/AIInsightCard";
 import AIInsightTable from "../../components/analytics/AIInsightTable";
-import { AppLayout } from "../../components/layout/AppLayout";
+import { PageHeader } from "../../components/layout/PageHeader";
 
 const Analytics: FC = () => {
   // Состояния для хранения данных
@@ -143,15 +143,12 @@ const Analytics: FC = () => {
   const borderColor = useColorModeValue("gray.200", "gray.600");
 
   return (
-    <AppLayout>
+    <>
+      <PageHeader
+        title="Аналитика онбординга"
+        subtitle="Детальная аналитика процесса адаптации новых сотрудников"
+      />
       <Box mb={8}>
-        <Heading size="xl" mb={3} color="brand.700">
-          Аналитика онбординга
-        </Heading>
-        <Text color="gray.600" fontSize="lg" mb={6}>
-          Детальная аналитика процесса адаптации новых сотрудников
-        </Text>
-
         <VStack spacing={8} align="stretch">
           {/* Карточки с ключевыми метриками */}
           <Box
@@ -241,7 +238,7 @@ const Analytics: FC = () => {
           </Box>
         </VStack>
       </Box>
-    </AppLayout>
+    </>
   );
 };
 

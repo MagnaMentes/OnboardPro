@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ChakraProvider } from "@chakra-ui/react";
-import { FeedbackFormBuilder } from "../FeedbackFormBuilder";
+import FeedbackFormBuilder from "../FeedbackFormBuilder";
 import { FeedbackTemplate, QuestionType } from "../../../types/feedback";
 
 // Моковый колбэк для сохранения шаблона

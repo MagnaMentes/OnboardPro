@@ -20,6 +20,9 @@ services:
     command: bash -c "sleep 5 && chmod +x /app/wait-for-db.sh && chmod +x /app/init_django.sh && /app/wait-for-db.sh db 5432 -- /app/init_django.sh"
     networks:
       - onboardpro_network
+    # Добавляем название контейнера чтобы исключить проблемы с DNS
+    container_name: onboardpro-backend
+    hostname: onboardpro-backend
 
   frontend:
     build:
@@ -37,8 +40,10 @@ services:
       - backend
     command: sh -c "chmod +x /app/start-vite.sh && chmod +x /app/frontend/check-dependencies.sh && /app/start-vite.sh"
     environment:
+      - DOCKER_ENV=true
       - CHOKIDAR_USEPOLLING=true
-      - VITE_API_URL=http://localhost:8000
+      # Оставляем VITE_API_URL пустым для использования proxy через /api
+      - VITE_API_URL=
       - VITE_API_PREFIX=/api
       - WATCHPACK_POLLING=true
       - FAST_REFRESH=true
@@ -71,3 +76,6 @@ volumes:
 networks:
   onboardpro_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

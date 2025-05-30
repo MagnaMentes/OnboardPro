@@ -151,6 +151,48 @@ const buttonSize = componentSizes.button[size];
 />
 ```
 
+## Layout приложения
+
+Для расположения элементов шапки, контента и футера используйте Flex-контейнер в колонну и константы высот из designTokens.layout:
+
+```tsx
+import designTokens from "../../theme/designTokens";
+import { Box, Flex } from "@chakra-ui/react";
+
+<Flex direction="column" minHeight="100vh">
+  {/* Шапка приложения */}
+  <Box
+    as="header"
+    height={designTokens.layout.header.height}
+    position="sticky"
+    top="0"
+    zIndex={zIndex.sticky}
+  >
+    {/* ...header content... */}
+  </Box>
+
+  {/* Основной контент */}
+  <Flex
+    flex="1"
+    pt={designTokens.layout.header.height}
+    pb={designTokens.layout.footer.height}
+  >
+    {/* ...page content... */}
+  </Flex>
+
+  {/* Футер приложения */}
+  <Box
+    as="footer"
+    height={designTokens.layout.footer.height}
+    position="sticky"
+    bottom="0"
+    zIndex={zIndex.sticky}
+  >
+    {/* ...footer content, например "created by magna_mentes"... */}
+  </Box>
+</Flex>;
+```
+
 ## Рекомендации по использованию
 
 1. **Всегда используйте константы** вместо хардкодинга значений позиционирования

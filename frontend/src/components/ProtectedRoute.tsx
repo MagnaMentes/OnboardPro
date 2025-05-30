@@ -1,4 +1,5 @@
-import { Navigate, Outlet } from "react-router-dom";
+import React, { PropsWithChildren } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { Flex, Spinner, Text, VStack } from "@chakra-ui/react";
 
@@ -6,11 +7,10 @@ interface ProtectedRouteProps {
   requiredRole?: string[];
 }
 
-/**
- * Компонент для защиты маршрутов, требующих аутентификации
- * и определенных ролей пользователя
- */
-const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
+const ProtectedRoute = ({
+  requiredRole,
+  children,
+}: PropsWithChildren<ProtectedRouteProps>) => {
   const { isAuthenticated, user } = useAuthStore();
 
   // Если пользователь не аутентифицирован, перенаправляем на страницу входа
@@ -24,7 +24,7 @@ const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
   }
 
   // Если все проверки пройдены, рендерим дочерние компоненты
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

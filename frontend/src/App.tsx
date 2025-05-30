@@ -6,6 +6,7 @@ import {
   Navigate,
   Route,
   Routes,
+  Outlet, // Импортируем Outlet
 } from "react-router-dom";
 
 import authApi from "./api/auth";
@@ -27,6 +28,7 @@ import FeedbackTemplatesPage from "./pages/admin/FeedbackTemplatesPage";
 import FeedbackResultsPage from "./pages/admin/FeedbackResultsPage";
 import FeedbackUserDetailPage from "./pages/admin/FeedbackUserDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AppLayout } from "./components/layout/AppLayout"; // Импортируем AppLayout
 import {
   useAuthStore,
   ACCESS_TOKEN_KEY,
@@ -107,8 +109,17 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* Защищенные маршруты */}
-          <Route element={<ProtectedRoute />}>
+          {/* Защищенные маршруты оборачиваем в AppLayout */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Outlet />{" "}
+                  {/* Используем Outlet для рендеринга дочерних маршрутов */}
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          >
             {/* пользовательские страницы */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/rewards" element={<RewardsPage />} />

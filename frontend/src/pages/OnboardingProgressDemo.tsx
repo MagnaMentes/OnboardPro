@@ -22,7 +22,6 @@ import StepCard from "../components/StepCard";
 import GamificationBlock from "../components/gamification/GamificationBlock";
 import { gamificationApi, UserLevel, UserReward } from "../api/gamificationApi";
 import toast from "react-hot-toast";
-import { AppLayout } from "../components/layout/AppLayout";
 import { Button, Card } from "../components/common";
 import {
   FiCalendar,
@@ -30,6 +29,7 @@ import {
   FiClock,
   FiAlertTriangle,
 } from "react-icons/fi";
+import { PageHeader } from "../components/layout/PageHeader";
 
 // Моковые данные для демонстрации функционала
 const mockStepsProgress = [
@@ -126,17 +126,12 @@ const OnboardingProgressDemo: React.FC = () => {
   }, []);
 
   return (
-    <AppLayout>
+    <>
+      <PageHeader
+        title="Прогресс онбординга"
+        subtitle="Программа: Онбординг для новых разработчиков"
+      />
       <VStack spacing={8} align="stretch">
-        <Box>
-          <Heading size="xl" mb={2} color="brand.700">
-            Прогресс онбординга
-          </Heading>
-          <Text color="gray.600" fontSize="lg">
-            Программа: Онбординг для новых разработчиков
-          </Text>
-        </Box>
-
         {/* Блок статистики */}
         <Card variant="outline">
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} p={6}>
@@ -307,7 +302,7 @@ const OnboardingProgressDemo: React.FC = () => {
           </Alert>
         )}
       </VStack>
-    </AppLayout>
+    </>
   );
 };
 

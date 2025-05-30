@@ -34,9 +34,11 @@ urlpatterns = [
     path('api/', include('gamification.urls')),
     path('api/', include('solomia.urls')),
     path('api/feedback/', include('feedback.urls')),
+    path('api/scheduler/', include('scheduler.urls')),
 
     # Admin Dashboard API
     path('api/admin/', include('config.admin_urls')),
+    path('api/admin/scheduler/', include('scheduler.admin_urls')),
 
     # Swagger/OpenAPI
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

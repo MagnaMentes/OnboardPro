@@ -26,7 +26,7 @@ import bookingApi, {
 } from "../../api/bookingApi";
 import MeetingCard from "../../components/booking/MeetingCard";
 import { format, isAfter } from "date-fns";
-import { AppLayout } from "../../components/layout/AppLayout";
+import { PageHeader } from "../../components/layout/PageHeader";
 import { Card, Button } from "../../components/common";
 
 const MyMeetingsPage: React.FC = () => {
@@ -129,17 +129,12 @@ const MyMeetingsPage: React.FC = () => {
   };
 
   return (
-    <AppLayout>
+    <>
+      <PageHeader
+        title="Мои встречи"
+        subtitle="Управляйте вашими запланированными встречами и мероприятиями"
+      />
       <VStack spacing={8} align="stretch">
-        <Box>
-          <Heading size="xl" mb={2} color="brand.700">
-            Мои встречи
-          </Heading>
-          <Text color="gray.600" fontSize="lg">
-            Управляйте вашими запланированными встречами и мероприятиями
-          </Text>
-        </Box>
-
         {/* Панель фильтров */}
         <Card>
           <HStack spacing={4} alignItems="flex-end" flexWrap="wrap">
@@ -258,7 +253,7 @@ const MyMeetingsPage: React.FC = () => {
           </>
         )}
       </VStack>
-    </AppLayout>
+    </>
   );
 };
 

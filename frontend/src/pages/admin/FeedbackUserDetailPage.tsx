@@ -37,8 +37,8 @@ import {
   FiCheckCircle,
   FiAlertCircle,
 } from "react-icons/fi";
-import { FeedbackAnswerCard } from "../../components/feedback/FeedbackAnswerCard";
-import { FeedbackAIInsightsPanel } from "../../components/feedback/FeedbackAIInsightsPanel";
+import FeedbackAnswerCard from "../../components/feedback/FeedbackAnswerCard";
+import FeedbackAIInsightsPanel from "../../components/feedback/FeedbackAIInsightsPanel";
 import {
   UserFeedback,
   FeedbackAnswer,

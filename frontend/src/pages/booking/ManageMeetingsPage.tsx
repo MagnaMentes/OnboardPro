@@ -41,7 +41,7 @@ import MeetingCard from "../../components/booking/MeetingCard";
 import MeetingSchedulerForm from "../../components/booking/MeetingSchedulerForm";
 import { User, OnboardingStep } from "../../types/apiTypes";
 import { useRef } from "react";
-import { AppLayout } from "../../components/layout/AppLayout";
+import { PageHeader } from "../../components/layout/PageHeader";
 
 // Моки для пользователей и шагов (в реальном приложении должны загружаться из API)
 const mockUsers: User[] = [
@@ -177,32 +177,23 @@ const ManageMeetingsPage: React.FC = () => {
   };
 
   return (
-    <AppLayout>
+    <>
+      <PageHeader
+        title="Управление виртуальными встречами"
+        actions={
+          <Button
+            as={RouterLink}
+            to="/dashboard"
+            leftIcon={<FiArrowLeft />}
+            variant="outline"
+            colorScheme="brand"
+          >
+            Назад
+          </Button>
+        }
+      />
+
       <VStack align="stretch" spacing={6}>
-        <Box mb={4}>
-          <HStack justifyContent="space-between">
-            <Button
-              as={RouterLink}
-              to="/dashboard"
-              leftIcon={<FiArrowLeft />}
-              variant="outline"
-              colorScheme="brand"
-            >
-              Назад
-            </Button>
-            <Box></Box>
-          </HStack>
-        </Box>
-
-        <Box>
-          <Heading size="xl" mb={3} color="brand.700">
-            Управление виртуальными встречами
-          </Heading>
-          <Text color="gray.600" fontSize="lg" mb={5}>
-            Планирование и управление онлайн-встречами с сотрудниками
-          </Text>
-        </Box>
-
         {/* Статистические карточки */}
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
           <Box
@@ -385,7 +376,7 @@ const ManageMeetingsPage: React.FC = () => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </AppLayout>
+    </>
   );
 };
 

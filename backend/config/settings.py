@@ -34,7 +34,8 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=False)
 
-ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=[])
+ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=[
+                         'backend', 'localhost', '127.0.0.1'])
 
 
 # Application definition
@@ -64,6 +65,7 @@ INSTALLED_APPS = [
     'ai_insights',
     'solomia',
     'feedback',
+    'scheduler',  # Smart Scheduler
 ]
 
 MIDDLEWARE = [
@@ -84,9 +86,27 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite dev server
     "http://127.0.0.1:5173",  # Альтернативный адрес Vite
     "http://host.docker.internal:5173",  # Docker DNS
+    "http://frontend:5173",  # Имя сервиса в Docker
+    "http://onboardpro-frontend:5173",  # Контейнер фронтенда
+    "http://0.0.0.0:5173",    # Любой IP в Docker
 ]
 
+# Разрешаем все заголовки и источники
+CORS_ALLOW_ALL_ORIGINS = True  # Для отладки, в продакшене установить False
+# Дополнительное разрешение всех источников для отладки
+CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-requested-with',
+    'x-csrftoken',
+]
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',

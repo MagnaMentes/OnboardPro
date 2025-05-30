@@ -1,0 +1,230 @@
+{% extends "admin/base_site.html" %} {% load static %} {% block title
+%}Конфликты расписания | Smart Scheduler{% endblock %} {% block extrastyle %}
+<link rel="stylesheet" href="{% static 'scheduler/css/conflicts.css' %}" />
+<style>
+  .conflicts-container {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .conflicts-header {
+    margin-bottom: 20px;
+  }
+
+  .conflicts-filters {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+  }
+
+  .conflicts-list {
+    margin-top: 20px;
+  }
+
+  .user-conflicts {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .user-conflicts-header {
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+
+  .conflict-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #fff8e1;
+    border-left: 4px solid #ff9800;
+    border-radius: 4px;
+  }
+
+  .conflict-steps {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 10px;
+  }
+
+  .conflict-step {
+    flex: 1;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+  }
+
+  .conflict-overlap {
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #ffcdd2;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+
+  .conflict-actions {
+    margin-top: 15px;
+    text-align: right;
+  }
+
+  .no-conflicts {
+    padding: 20px;
+    background-color: #e8f5e9;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    color: #2e7d32;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="module">
+  <h1>Конфликты расписания</h1>
+
+  <div class="conflicts-filters">
+    <h2>Фильтры</h2>
+    <form id="conflictFiltersForm" method="get">
+      <div class="form-row">
+        <label for="user_filter">Пользователь:</label>
+        <select name="user_id" id="user_filter">
+          <option value="">Все пользователи</option>
+          <!-- Опции будут добавлены через JavaScript -->
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="date_range">Диапазон дат:</label>
+        <select name="date_range" id="date_range">
+          <option value="7">Ближайшая неделя</option>
+          <option value="14">2 недели</option>
+          <option value="30" selected>30 дней</option>
+          <option value="60">60 дней</option>
+        </select>
+      </div>
+
+      <button type="submit" class="button">Применить фильтры</button>
+    </form>
+  </div>
+
+  <div class="conflicts-container">
+    <div class="conflicts-header">
+      <h2>Обнаруженные конфликты</h2>
+    </div>
+
+    <div class="conflicts-list" id="conflictsList">
+      {% if conflicts %} {% for user_conflict in conflicts %}
+      <div class="user-conflicts">
+        <div class="user-conflicts-header">
+          <h3>{{ user_conflict.user_name }}</h3>
+          <p>Количество конфликтов: {{ user_conflict.conflicts|length }}</p>
+        </div>
+
+        {% for conflict in user_conflict.conflicts %}
+        <div class="conflict-item" data-conflict-id="{{ forloop.counter }}">
+          <div class="conflict-steps">
+            <div class="conflict-step">
+              <h4>{{ conflict.step1.name }}</h4>
+              <div class="step-time">
+                {{ conflict.step1.start_time|date:"d.m.Y H:i" }} - {{
+                conflict.step1.end_time|date:"d.m.Y H:i" }}
+              </div>
+            </div>
+
+            <div class="conflict-step">
+              <h4>{{ conflict.step2.name }}</h4>
+              <div class="step-time">
+                {{ conflict.step2.start_time|date:"d.m.Y H:i" }} - {{
+                conflict.step2.end_time|date:"d.m.Y H:i" }}
+              </div>
+            </div>
+          </div>
+
+          <div class="conflict-overlap">
+            <span
+              >Пересечение: {{ conflict.overlap_start|date:"d.m.Y H:i" }} - {{
+              conflict.overlap_end|date:"d.m.Y H:i" }}</span
+            >
+            <span
+              >({{ conflict.overlap_end|timeuntil:conflict.overlap_start
+              }})</span
+            >
+          </div>
+
+          <div class="conflict-actions">
+            <button
+              class="button resolve-conflict"
+              data-step1-id="{{ conflict.step1.id }}"
+              data-step2-id="{{ conflict.step2.id }}"
+            >
+              Разрешить конфликт
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %} {% else %}
+      <div class="no-conflicts">
+        <p>Конфликтов не обнаружено</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для разрешения конфликтов -->
+<div id="conflictResolverModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Разрешение конфликта</h2>
+    <div class="conflict-resolver-content">
+      <!-- Содержимое будет заполнено через JavaScript -->
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extrajs %}
+<script src="{% static 'scheduler/js/conflicts.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Инициализация обработчика конфликтов
+    const conflictResolver = new SchedulerConflictResolver({
+      modalId: "conflictResolverModal",
+      apiBase: '{% url "scheduler-override" %}',
+    });
+
+    // Загрузка списка пользователей
+    fetch('{% url "api-users" %}')
+      .then((response) => response.json())
+      .then((data) => {
+        const userSelect = document.getElementById("user_filter");
+        data.forEach((user) => {
+          const option = document.createElement("option");
+          option.value = user.id;
+          option.textContent = user.full_name || user.email;
+          userSelect.appendChild(option);
+        });
+
+        // Установка выбранного пользователя из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get("user_id");
+        if (userId) {
+          userSelect.value = userId;
+        }
+      });
+
+    // Обработчики кнопок разрешения конфликтов
+    document.querySelectorAll(".resolve-conflict").forEach((button) => {
+      button.addEventListener("click", function () {
+        const step1Id = this.getAttribute("data-step1-id");
+        const step2Id = this.getAttribute("data-step2-id");
+
+        conflictResolver.openResolver(step1Id, step2Id);
+      });
+    });
+  });
+</script>
+{% endblock %}

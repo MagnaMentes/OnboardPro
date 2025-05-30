@@ -20,9 +20,9 @@ import RewardCard from "../components/gamification/RewardCard";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
-import { AppLayout } from "../components/layout/AppLayout";
 import { Button, Input, Card } from "../components/common";
 import { FiFilter, FiSearch } from "react-icons/fi";
+import { PageHeader } from "../components/layout/PageHeader";
 
 const RewardsPage: React.FC = () => {
   const [rewards, setRewards] = useState<UserReward[]>([]);
@@ -98,16 +98,12 @@ const RewardsPage: React.FC = () => {
   };
 
   return (
-    <AppLayout>
+    <>
       <VStack spacing={8} align="stretch">
-        <Box>
-          <Heading size="xl" mb={2} color="brand.700">
-            Награды
-          </Heading>
-          <Text color="gray.600" fontSize="lg">
-            Просмотрите ваши достижения и награды в системе OnboardPro
-          </Text>
-        </Box>
+        <PageHeader
+          title="Награды"
+          subtitle="Просмотрите ваши достижения и награды в системе OnboardPro"
+        />
 
         {/* Панель фильтрации */}
         <Card variant="outline" p={{ base: 4, md: 6 }}>
@@ -189,7 +185,7 @@ const RewardsPage: React.FC = () => {
           </Card>
         )}
       </VStack>
-    </AppLayout>
+    </>
   );
 };
 

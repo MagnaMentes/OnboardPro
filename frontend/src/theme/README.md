@@ -216,8 +216,6 @@ import designTokens, {
 
 Для получения подробной информации о константах позиционирования, пожалуйста, ознакомьтесь с `PositioningGuide.md` в директории `theme`.
 
-```
-
 ## Развитие дизайн-системы
 
 При добавлении новых компонентов или модификации существующих, убедитесь, что они:
@@ -230,4 +228,53 @@ import designTokens, {
 ## Контакты
 
 При возникновении вопросов по дизайн-системе обращайтесь к [команде разработки].
+
+## Layout приложения
+
+Для создания страницы с закрепленными шапкой и футером и контентом на весь оставшийся экран используйте Flex-контейнер и токены из `designTokens.layout`:
+
+```tsx
+import designTokens from "../theme/designTokens";
+import { Box, Flex } from "@chakra-ui/react";
+
+<Flex direction="column" minHeight="100vh">
+  {/* Шапка приложения */}
+  <Box
+    as="header"
+    bg="white"
+    boxShadow="sm"
+    borderBottomWidth="1px"
+    height={designTokens.layout.header.height}
+    position="sticky"
+    top="0"
+    zIndex={designTokens.zIndex.sticky}
+  >
+    {/* ...header content... */}
+  </Box>
+
+  {/* Основной контент */}
+  <Box
+    flex="1"
+    pt={designTokens.layout.header.height}
+    pb={designTokens.layout.footer.height}
+    overflowY="auto"
+  >
+    {/* ...page content... */}
+  </Box>
+
+  {/* Футер приложения */}
+  <Box
+    as="footer"
+    bg="gray.100"
+    textAlign="center"
+    height={designTokens.layout.footer.height}
+    position="sticky"
+    bottom="0"
+    zIndex={designTokens.zIndex.sticky}
+  >
+    <Text fontSize="sm" color="gray.600">
+      created by magna_mentes
+    </Text>
+  </Box>
+</Flex>;
 ```

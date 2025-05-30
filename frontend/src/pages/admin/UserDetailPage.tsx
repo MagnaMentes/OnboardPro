@@ -10,7 +10,7 @@ import {
   VStack,
   Flex,
 } from "@chakra-ui/react";
-import { AppLayout } from "../../components/layout/AppLayout";
+import { PageHeader } from "../../components/layout/PageHeader";
 
 const UserDetailPage = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -21,13 +21,15 @@ const UserDetailPage = () => {
   };
 
   return (
-    <AppLayout>
-      <Box p={6}>
-        <Heading mb={4}>Детальная страница сотрудника {userId}</Heading>
-        <Button onClick={handleBack}>Вернуться к списку</Button>
-        <Text mt={4}>Аналитика пользователя временно недоступна.</Text>
+    <>
+      <PageHeader
+        title={`Сотрудник #${userId}`}
+        actions={<Button onClick={handleBack}>Вернуться к списку</Button>}
+      />
+      <Box maxW="1200px" mx="auto" px={4} py={6}>
+        <Text>Аналитика пользователя временно недоступна.</Text>
       </Box>
-    </AppLayout>
+    </>
   );
 };
 

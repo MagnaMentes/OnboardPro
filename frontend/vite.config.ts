@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -20,16 +20,30 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "http://backend:8000",
+        // Используем разные имена для запросов внутри Docker с именем контейнера
+        target:
+          process.env.DOCKER_ENV === "true"
+            ? "http://onboardpro-backend:8000"
+            : "http://localhost:8000",
         changeOrigin: true,
         secure: false,
         ws: true,
+        rewrite: (path) => path, // Сохраняем полные пути без изменений
+        // Добавляем отладочную информацию для каждого запроса
+        onProxyReq: (proxyReq, req) => {
+          console.log(
+            `Прокси запрос на: ${req.method} ${req.url} -> ${proxyReq.path}`
+          );
+        },
+        // Не удаляем префикс /api, так как он используется на бэкенде
         configure: (proxy, _options) => {
           proxy.on("error", (err, _req, _res) => {
             console.log("proxy error", err);
           });
           proxy.on("proxyReq", (proxyReq, req, _res) => {
             console.log("Sending Request to the Target:", req.method, req.url);
+            // Не меняем заголовок Host, чтобы избежать конфликтов с CORS
+            console.log("Original Host header:", req.headers.host);
           });
           proxy.on("proxyRes", (proxyRes, req, _res) => {
             console.log(

@@ -26,8 +26,8 @@ import {
 } from "@chakra-ui/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FiDownload, FiFilter, FiRefreshCw } from "react-icons/fi";
-import { FeedbackResultTable } from "../../components/feedback/FeedbackResultTable";
-import { FeedbackAIInsightsPanel } from "../../components/feedback/FeedbackAIInsightsPanel";
+import FeedbackResultTable from "../../components/feedback/FeedbackResultTable";
+import FeedbackAIInsightsPanel from "../../components/feedback/FeedbackAIInsightsPanel";
 import {
   UserFeedback,
   FeedbackInsight,

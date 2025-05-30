@@ -2,6 +2,8 @@ import React, { ReactNode } from "react";
 import { Box, Flex, useBreakpointValue, useDisclosure } from "@chakra-ui/react";
 import { AppHeader } from "./AppHeader";
 import { AppSidebar } from "./AppSidebar";
+import AppFooter from "./AppFooter"; // Импортируем футер
+import designTokens from "../../theme/designTokens";
 
 export interface AppLayoutProps {
   children: ReactNode;
@@ -31,22 +33,24 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <AppHeader
         onMenuToggle={isMobile ? (isOpen ? onClose : onOpen) : undefined}
       />
-
       {/* Обертка для сайдбара и контента с ограничением ширины и центрированием */}
       <Flex
         flex={1}
-        mx="auto" // Центрируем эту Flex-обертку
-        width="100%" // Занимаем всю доступную ширину до maxWidth
-        maxWidth={{ base: "100%", xl: "1400px" }} // Ограничиваем максимальную ширину на xl и больше
+        width="100%"
+        pt={designTokens.layout.header.height}
+        pb={designTokens.layout.footer.height}
+        bg="gray.50"
       >
         <AppSidebar
           isOpen={isOpen}
           onClose={onClose}
           display={{ base: "none", lg: "block" }}
-          position={{ base: "fixed", lg: "sticky" }} // lg: "sticky" чтобы прилипал при прокрутке
-          top={{ base: undefined, lg: "64px" }} // Отступ сверху, равный высоте хедера
-          height={{ base: "100vh", lg: "calc(100vh - 64px)" }} // Высота с учетом хедера
-          zIndex={{ base: "modal", lg: "docked" }} // zIndex, чтобы был под модальными окнами, но над контентом
+          position="fixed"
+          top={designTokens.layout.header.height}
+          bottom={designTokens.layout.footer.height}
+          zIndex={{ base: "modal", lg: "docked" }}
+          width={designTokens.layout.sidebar.width}
+          height={`calc(100vh - ${designTokens.layout.header.height} - ${designTokens.layout.footer.height})`}
         />
 
         {isOpen && isMobile && (
@@ -64,19 +68,24 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
         <Box
           flex={1}
-          p={{ base: 4, md: 6, lg: 6 }}
-          // ml убираем, так как сайдбар теперь часть этого же Flex-контейнера
-          // или устанавливаем его в 0, если сайдбар не отображается
-          ml={{ base: 0, lg: isOpen && !isMobile ? "250px" : 0 }} // Отступ слева, если сайдбар открыт и это не мобильная версия
+          ml={{ base: 0, lg: designTokens.layout.sidebar.width }}
           bg="gray.50"
-          transition="margin-left 0.2s"
-          minHeight="calc(100vh - 64px)"
           overflowY="auto"
-          // maxWidth убираем отсюда, так как родительский Flex теперь управляет общей шириной
         >
-          {children}
+          <Box
+            p={{
+              base: designTokens.spacing.md,
+              md: designTokens.spacing.lg,
+              lg: designTokens.spacing.lg,
+            }}
+            maxW={designTokens.grid.containerMaxWidth}
+            mx="auto"
+          >
+            {children}
+          </Box>
         </Box>
       </Flex>
+      <AppFooter />
     </Flex>
   );
 };

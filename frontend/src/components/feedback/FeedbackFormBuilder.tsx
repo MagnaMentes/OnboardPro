@@ -22,7 +22,7 @@ import {
   FormHelperText,
   Tooltip,
 } from "@chakra-ui/react";
-import { FiPlus, FiTrash2, FiMoveUp, FiMoveDown } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { FeedbackTemplate, FeedbackQuestion } from "../../types/feedback";
 
 interface FeedbackFormBuilderProps {
@@ -383,7 +383,7 @@ const FeedbackFormBuilder: React.FC<FeedbackFormBuilderProps> = ({
                       <Tooltip label="Переместить вверх">
                         <IconButton
                           aria-label="Переместить вверх"
-                          icon={<FiMoveUp />}
+                          icon={<FiChevronUp />}
                           size="sm"
                           onClick={() => moveQuestion(index, "up")}
                           isDisabled={index === 0}
@@ -392,7 +392,7 @@ const FeedbackFormBuilder: React.FC<FeedbackFormBuilderProps> = ({
                       <Tooltip label="Переместить вниз">
                         <IconButton
                           aria-label="Переместить вниз"
-                          icon={<FiMoveDown />}
+                          icon={<FiChevronDown />}
                           size="sm"
                           onClick={() => moveQuestion(index, "down")}
                           isDisabled={index === template.questions.length - 1}

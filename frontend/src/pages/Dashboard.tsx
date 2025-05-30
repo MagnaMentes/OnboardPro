@@ -18,7 +18,6 @@ import RewardCard from "../components/gamification/RewardCard";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../store/authStore";
-import { AppLayout } from "../components/layout/AppLayout";
 import { Button, Card } from "../components/common";
 import {
   FiCalendar,
@@ -27,6 +26,7 @@ import {
   FiUsers,
   FiAward,
 } from "react-icons/fi";
+import { PageHeader } from "../components/layout/PageHeader";
 
 function Dashboard() {
   const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
@@ -107,17 +107,12 @@ function Dashboard() {
   }
 
   return (
-    <AppLayout>
-      {/* Секция приветствия и общий обзор */}
+    <>
       <VStack spacing={8} align="stretch">
-        <Box>
-          <Heading size="xl" mb={2} color="brand.700">
-            Добро пожаловать, {authUser?.full_name || "Пользователь"}
-          </Heading>
-          <Text color="gray.600" fontSize="lg">
-            Ваш персональный портал для успешной адаптации в компании
-          </Text>
-        </Box>
+        <PageHeader
+          title={`Добро пожаловать, ${authUser?.full_name || "Пользователь"}`}
+          subtitle="Ваш персональный портал для успешной адаптации в компании"
+        />
 
         {/* Секция с краткой статистикой */}
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>
@@ -391,7 +386,7 @@ function Dashboard() {
           </Grid>
         </Card>
       </VStack>
-    </AppLayout>
+    </>
   );
 }
 

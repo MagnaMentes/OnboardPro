@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Heading,
-  Text,
   Button,
   VStack,
   HStack,
@@ -17,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { FiSettings, FiCheckCircle } from "react-icons/fi";
 
-import { AppLayout } from "../components/layout/AppLayout";
+import { PageHeader } from "../components/layout/PageHeader";
 import notificationApi, {
   Notification,
   NotificationFilters,
@@ -188,42 +186,17 @@ const NotificationCenterPage: React.FC = () => {
   );
 
   return (
-    <AppLayout>
+    <>
+      <PageHeader
+        title="Центр уведомлений"
+        subtitle="Управление уведомлениями системы"
+        actions={
+          <Button leftIcon={<FiSettings />} onClick={onOpen} variant="outline">
+            Настройки уведомлений
+          </Button>
+        }
+      />
       <Box maxW="1200px" mx="auto" px={4}>
-        <Flex
-          direction={{ base: "column", md: "row" }}
-          justify="space-between"
-          align={{ base: "flex-start", md: "center" }}
-          mb={6}
-        >
-          <Box mb={{ base: 4, md: 0 }}>
-            <Heading size="xl" mb={2} color="brand.700">
-              Центр уведомлений
-            </Heading>
-            <Text color="gray.600" fontSize="lg">
-              Просмотр и управление всеми уведомлениями
-            </Text>
-          </Box>
-          <HStack>
-            <Button
-              leftIcon={<FiSettings />}
-              onClick={onOpen}
-              variant="outline"
-              colorScheme="blue"
-            >
-              Настройки
-            </Button>
-            <Button
-              leftIcon={<FiCheckCircle />}
-              onClick={handleMarkAllAsRead}
-              colorScheme="green"
-              isDisabled={unreadNotifications.length === 0}
-            >
-              Прочитать все
-            </Button>
-          </HStack>
-        </Flex>
-
         <NotificationFilterBar
           filters={filters}
           onFilterChange={handleFilterChange}
@@ -287,7 +260,7 @@ const NotificationCenterPage: React.FC = () => {
 
       {/* Модальное окно настроек уведомлений */}
       <NotificationSettingsModal isOpen={isOpen} onClose={onClose} />
-    </AppLayout>
+    </>
   );
 };
 

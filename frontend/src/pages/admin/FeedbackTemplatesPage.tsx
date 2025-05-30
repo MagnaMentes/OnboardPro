@@ -28,7 +28,7 @@ import {
 } from "@chakra-ui/react";
 import { FiPlus, FiEdit, FiTrash2, FiEye, FiCopy } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { FeedbackFormBuilder } from "../../components/feedback/FeedbackFormBuilder";
+import FeedbackFormBuilder from "../../components/feedback/FeedbackFormBuilder";
 import { FeedbackTemplate, TemplateType } from "../../types/feedback";
 import axios from "axios";
 

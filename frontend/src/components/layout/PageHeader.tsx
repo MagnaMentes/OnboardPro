@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import { Box, Heading, Text, Flex, HStack, BoxProps } from "@chakra-ui/react";
 import { Breadcrumbs, BreadcrumbItem } from "./Breadcrumbs";
+import designTokens from "../../theme/designTokens";
 
 export interface PageHeaderProps extends BoxProps {
   title: string;
@@ -35,7 +36,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   ...rest
 }) => {
   return (
-    <Box mb={8} {...rest}>
+    <Box as="section" mb={8} {...rest}>
       {breadcrumbItems && breadcrumbItems.length > 0 && (
         <Breadcrumbs items={breadcrumbItems} mb={4} />
       )}
@@ -46,12 +47,12 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         align={{ base: "flex-start", md: "center" }}
       >
         <Box>
-          <Heading as="h1" size="xl" mb={subtitle ? 2 : 0}>
+          <Heading as="h1" size="lg" mb={subtitle ? 1 : 0}>
             {title}
           </Heading>
 
           {subtitle && (
-            <Text color="gray.600" fontSize="lg">
+            <Text color="gray.600" fontSize="md" mt={1}>
               {subtitle}
             </Text>
           )}

@@ -29,8 +29,21 @@ type UserResponse = User;
 const authApi = {
   // Логин пользователя
   login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>("auth/login/", data);
-    return response.data;
+    // Добавляем логирование для отладки
+    console.log("Отправляем запрос на логин с данными:", data);
+    try {
+      const response = await apiClient.post<LoginResponse>("auth/login/", data);
+      console.log("Получен успешный ответ:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Ошибка при авторизации:", error);
+      if (axios.isAxiosError(error)) {
+        console.error("Данные ошибки:", error.response?.data);
+        console.error("Статус ошибки:", error.response?.status);
+        console.error("Конфигурация запроса:", error.config);
+      }
+      throw error;
+    }
   },
 
   // Обновление токена доступа

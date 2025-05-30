@@ -18,7 +18,7 @@ import AssignmentsOverview from "../../components/admin/AssignmentsOverview";
 import LatestFeedbacks from "../../components/admin/LatestFeedbacks";
 import RiskInsightsPanel from "../../components/admin/RiskInsightsPanel";
 import ReportsExport from "../../components/admin/ReportsExport";
-import { AppLayout } from "../../components/layout/AppLayout";
+import { PageHeader } from "../../components/layout/PageHeader";
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuthStore();
@@ -42,7 +42,7 @@ const AdminDashboard: React.FC = () => {
   // Если у пользователя нет нужных прав
   if (!["admin", "hr"].includes(user.role.toLowerCase())) {
     return (
-      <AppLayout>
+      <>
         <Alert
           status="error"
           variant="solid"
@@ -63,23 +63,17 @@ const AdminDashboard: React.FC = () => {
             только для администраторов и HR-специалистов.
           </AlertDescription>
         </Alert>
-      </AppLayout>
+      </>
     );
   }
 
   return (
-    <AppLayout>
+    <>
+      <PageHeader
+        title="Административная панель"
+        subtitle="Обзор сотрудников, заданий, обратной связи и инсайтов для HR и администраторов"
+      />
       <VStack align="start" spacing={8} mb={10}>
-        <Box w="100%">
-          <Heading size="xl" mb={2} color="brand.700">
-            Административная панель
-          </Heading>
-          <Text color="gray.600" fontSize="lg">
-            Обзор сотрудников, заданий, обратной связи и инсайтов для HR и
-            администраторов
-          </Text>
-        </Box>
-
         {/* Секция 1: Таблица сотрудников */}
         <Box
           w="100%"
@@ -143,7 +137,7 @@ const AdminDashboard: React.FC = () => {
           <ReportsExport />
         </Box>
       </VStack>
-    </AppLayout>
+    </>
   );
 };
 

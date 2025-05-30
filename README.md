@@ -52,6 +52,157 @@
   </table>
 </div>
 
+## 🐳 Запуск проекта в Docker
+
+Проект полностью контейнеризирован и готов к запуску с помощью Docker. Для запуска выполните:
+
+```bash
+# Клонирование репозитория
+git clone https://github.com/yourusername/onboardpro.git
+cd onboardpro
+
+# Запуск проекта в Docker
+docker-compose up -d
+```
+
+После запуска:
+
+- Frontend будет доступен по адресу: http://localhost:5173
+- Backend API: http://localhost:8000/api/
+- Документация API (Swagger): http://localhost:8000/api/docs/
+
+### Docker-инфраструктура проекта
+
+OnboardPro использует многоконтейнерную архитектуру, где каждый компонент системы запускается в отдельном контейнере:
+
+| Контейнер             | Сервис     | Описание                           |
+| --------------------- | ---------- | ---------------------------------- |
+| `onboardpro-backend`  | Django API | Бэкенд с REST API и бизнес-логикой |
+| `onboardpro-frontend` | Vite/React | Фронтенд приложение                |
+| `onboardpro-db`       | PostgreSQL | База данных                        |
+
+#### Структура docker-compose.yml
+
+```yaml
+services:
+  backend:
+    container_name: onboardpro-backend
+    hostname: onboardpro-backend
+    # ... другие настройки
+
+  frontend:
+    container_name: onboardpro-frontend
+    hostname: onboardpro-frontend
+    # ... другие настройки
+
+  db:
+    container_name: onboardpro-db
+    # ... другие настройки
+```
+
+### Устранение проблем с Docker
+
+#### Проблемы с сетевыми соединениями
+
+##### ERR_CONNECTION_REFUSED или ERR_CONNECTION_RESET при загрузке приложения:
+
+1. **Проверьте DNS-имена и сетевую конфигурацию контейнеров**:
+
+```bash
+# Проверка сети Docker
+docker network inspect onboardpro_default
+
+# Проверка DNS между контейнерами
+docker exec -it onboardpro-backend ping -c 3 onboardpro-frontend
+docker exec -it onboardpro-frontend ping -c 3 onboardpro-backend
+```
+
+2. **Проверьте, что все контейнеры запущены**:
+
+```bash
+docker-compose ps
+```
+
+3. **Проверьте логи на наличие ошибок**:
+
+```bash
+docker-compose logs backend
+docker-compose logs frontend
+```
+
+4. **Правильная настройка proxy в Vite**:
+
+В файле `vite.config.ts` должен быть правильно настроен прокси:
+
+```javascript
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://onboardpro-backend:8000',
+      changeOrigin: true,
+      rewrite: (path) => path
+    }
+  }
+}
+```
+
+#### Проблемы с CORS
+
+Если в консоли браузера появляются ошибки CORS:
+
+1. **Убедитесь, что в `settings.py` правильно настроены все возможные источники**:
+
+```python
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://frontend:5173",
+    "http://onboardpro-frontend:5173"
+]
+
+# Имена хостов, с которых разрешены запросы
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "onboardpro-backend",
+    "backend"
+]
+```
+
+2. **Для диагностики временно включите полный доступ CORS**:
+
+```python
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ORIGIN_ALLOW_ALL = True
+```
+
+#### Проблемы с миграциями и базой данных
+
+Если приложение не загружается из-за ошибок БД:
+
+```bash
+# Проверить статус миграций
+docker-compose exec backend python backend/manage.py showmigrations
+
+# Применить отсутствующие миграции
+docker-compose exec backend python backend/manage.py makemigrations
+docker-compose exec backend python backend/manage.py migrate
+```
+
+#### Проблемы с переменными окружения
+
+1. **Проверьте наличие всех необходимых файлов окружения**:
+
+   - `.env.dev` - для разработки
+   - `frontend/.env.development` - для фронтенда
+
+2. **Проверьте, как переменные окружения передаются в контейнеры**:
+
+```bash
+docker-compose exec backend env | grep API
+docker-compose exec frontend env | grep API
+```
+
 ## ✨ Ключевые возможности
 
 ### 🧠 AI-Driven решения
@@ -475,7 +626,7 @@ docker-compose exec backend python backend/manage.py createsuperuser
   </tr>
   <tr>
     <td><strong>🏷️ Текущая версия:</strong></td>
-    <td>0.26.0</td>
+    <td>0.27.0</td>
   </tr>
   <tr>
     <td><strong>⏱️ Следующее обновление:</strong></td>
