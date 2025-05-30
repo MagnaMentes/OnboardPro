@@ -20,6 +20,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { HamburgerIcon, MoonIcon, SunIcon, BellIcon } from "@chakra-ui/icons";
 import NotificationCounter from "../notifications/NotificationCounter";
 import { useAuthStore } from "../../store/authStore";
+import designTokens from "../../theme/designTokens";
 
 export interface AppHeaderProps {
   onMenuToggle?: () => void;
@@ -61,8 +62,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onMenuToggle }) => {
         h="100%"
         align="center"
         justify="space-between"
-        px={{ base: 4, md: 6 }}
-        maxW="1400px"
+        px={{
+          base: designTokens.spacing.md,
+          md: designTokens.spacing.lg,
+          lg: designTokens.spacing.lg,
+        }}
+        maxW={designTokens.grid.containerMaxWidth}
         mx="auto"
       >
         <HStack spacing={4}>
