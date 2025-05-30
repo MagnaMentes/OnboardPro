@@ -261,9 +261,16 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL',
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
@@ -272,11 +279,16 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
-        'ai_insights': {
+        'django.security': {
             'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': True,
         },
+        'users': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        }
     },
     'root': {
         'handlers': ['console'],

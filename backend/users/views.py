@@ -33,4 +33,11 @@ class CurrentUserView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
 
     def get_object(self):
-        return self.request.user
+        # Добавляем логирование
+        logger.debug(
+            f"Getting current user info for user_id: {self.request.user.id}")
+        try:
+            return self.request.user
+        except Exception as e:
+            logger.error(f"Error getting current user: {str(e)}")
+            raise
