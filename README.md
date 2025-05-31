@@ -1,9 +1,7 @@
 <div align="center">
-  <img src="frontend/public/logo.png" alt="OnboardPro Logo" width="250"/>
+  <h1>OnboardPro</h1>
   
-  # ✨ OnboardPro ✨
-  
-  <p><strong>Революция в онбординге сотрудников с помощью искусственного интеллекта</strong></p>
+  <p><strong>AI-driven onboarding</strong></p>
 
   <a href="https://www.docker.com/" target="_blank">
     <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready"/>
