@@ -378,6 +378,7 @@ OnboardPro построен на современном стеке технол�
 - [BI-аналитика (Frontend)](KnowledgeStorage/frontend_bi_analytics.md)
 - [Система отчетов (Backend)](KnowledgeStorage/backend_reports.md)
 - [Система отчетов (Frontend)](KnowledgeStorage/frontend_reports.md)
+- [Smart Feedback Dashboard и AI Trends](Reports/Sprint_0.29_FeedbackDashboard.md)
 
 ### Обучение и геймификация
 
