@@ -15,4 +15,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path(
         'send/', UserFeedbackViewSet.as_view({'post': 'create'}), name='feedback-send'),
+    path('dashboard/', include('feedback.dashboard_urls')),
 ]

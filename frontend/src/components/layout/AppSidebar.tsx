@@ -19,6 +19,7 @@ import {
   FiUsers,
   FiBarChart2,
   FiSettings,
+  FiMessageSquare,
 } from "react-icons/fi";
 
 export interface NavItemProps {
@@ -172,10 +173,24 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             />
 
             <NavItem
+              icon={FiMessageSquare}
+              label="Аналитика отзывов"
+              to="/admin/feedback/dashboard"
+              isActive={location.pathname === "/admin/feedback/dashboard"}
+            />
+
+            <NavItem
               icon={FiCalendar}
               label="Управление встречами"
               to="/admin/booking/manage"
               isActive={location.pathname === "/admin/booking/manage"}
+            />
+
+            <NavItem
+              icon={FiMessageSquare}
+              label="Обратная связь"
+              to="/admin/feedback"
+              isActive={location.pathname === "/admin/feedback"}
             />
           </>
         )}

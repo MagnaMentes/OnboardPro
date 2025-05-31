@@ -40,6 +40,9 @@ urlpatterns = [
     path('api/admin/', include('config.admin_urls')),
     path('api/admin/scheduler/', include('scheduler.admin_urls')),
 
+    # HR Dashboard API
+    path('api/hr/dashboard/', include('core.urls.hr_dashboard')),
+
     # Swagger/OpenAPI
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'),

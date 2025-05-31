@@ -27,6 +27,7 @@ import FeedbackPage from "./pages/admin/FeedbackPage";
 import FeedbackTemplatesPage from "./pages/admin/FeedbackTemplatesPage";
 import FeedbackResultsPage from "./pages/admin/FeedbackResultsPage";
 import FeedbackUserDetailPage from "./pages/admin/FeedbackUserDetailPage";
+import FeedbackDashboardPage from "./pages/admin/FeedbackDashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AppLayout } from "./components/layout/AppLayout"; // Импортируем AppLayout
 import {
@@ -161,6 +162,10 @@ function App() {
             <Route
               path="/admin/feedback/user/:userId"
               element={<FeedbackUserDetailPage />}
+            />
+            <Route
+              path="/admin/feedback/dashboard"
+              element={<FeedbackDashboardPage />}
             />
           </Route>
         </Routes>
