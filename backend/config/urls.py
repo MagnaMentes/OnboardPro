@@ -25,6 +25,9 @@ urlpatterns = [
     path('api/ai/', include('ai_insights.urls')),
     path('apiai/', include('ai_insights.urls')),
 
+    # AI Insights Hub and Recommendations v2
+    path('api/v2/ai/', include('ai_insights.urls_v2')),
+
     # API URLs
     path('api/', include('core.urls')),
     path('api/', include('users.urls')),
@@ -35,6 +38,7 @@ urlpatterns = [
     path('api/', include('solomia.urls')),
     path('api/feedback/', include('feedback.urls')),
     path('api/scheduler/', include('scheduler.urls')),
+    path('api/intelligence/', include('onboarding_intelligence.urls')),
 
     # Admin Dashboard API
     path('api/admin/', include('config.admin_urls')),

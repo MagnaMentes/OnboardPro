@@ -8,22 +8,33 @@ import {
 } from "../store/authStore";
 
 // Получаем переменные окружения
-const API_URL = import.meta.env.VITE_API_URL || "";
 const API_PREFIX = import.meta.env.VITE_API_PREFIX || "/api";
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || "10000");
+const DOCKER_ENV = import.meta.env.VITE_DOCKER_ENV === "true";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
-// Если API_URL задан, добавляем API_PREFIX, иначе используем только префикс (для работы с Vite proxy)
-const baseURL = API_URL
-  ? `${API_URL}${API_PREFIX.startsWith("/") ? API_PREFIX : `/${API_PREFIX}`}`
-  : API_PREFIX;
+// Определяем базовый URL в зависимости от среды
+// ВАЖНО: Всегда используем относительный URL в режиме разработки
+// для корректной работы прокси Vite
+let baseURL = "";
+
+// В режиме разработки (включая Docker) всегда используем API_PREFIX для проксирования через Vite
+// Это устраняет проблемы с DNS-разрешением имени "backend" в браузере
+if (import.meta.env.DEV) {
+  baseURL = API_PREFIX; // Относительный путь для проксирования через Vite
+} else {
+  // В production используем полный URL, если он указан
+  baseURL = API_URL ? `${API_URL}${API_PREFIX}` : API_PREFIX;
+}
 
 // Выводим конфигурацию для отладки
 console.log("API Configuration:", {
-  API_URL,
   API_PREFIX,
   API_TIMEOUT,
   baseURL,
-  DOCKER_ENV: import.meta.env.DOCKER_ENV,
+  isDev: import.meta.env.DEV,
+  DOCKER_ENV,
+  API_URL,
 });
 
 // Создаем экземпляр axios с базовыми настройками

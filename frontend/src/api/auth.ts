@@ -1,5 +1,5 @@
 // API сервис для работы с аутентификацией
-import apiClient from "./apiClient"; // Используем единый apiClient для всех запросов
+import axiosInstance from "./client"; // Используем унифицированный клиент
 import axios from "axios";
 import { ACCESS_TOKEN_KEY, User } from "../store/authStore";
 
@@ -32,7 +32,10 @@ const authApi = {
     // Добавляем логирование для отладки
     console.log("Отправляем запрос на логин с данными:", data);
     try {
-      const response = await apiClient.post<LoginResponse>("auth/login/", data);
+      const response = await axiosInstance.post<LoginResponse>(
+        "/auth/login/",
+        data
+      );
       console.log("Получен успешный ответ:", response.data);
       return response.data;
     } catch (error) {
@@ -48,8 +51,8 @@ const authApi = {
 
   // Обновление токена доступа
   refreshToken: async (refreshToken: string): Promise<TokenRefreshResponse> => {
-    const response = await apiClient.post<TokenRefreshResponse>(
-      "auth/refresh/",
+    const response = await axiosInstance.post<TokenRefreshResponse>(
+      "/auth/refresh/",
       { refresh: refreshToken }
     );
     return response.data;
@@ -69,7 +72,7 @@ const authApi = {
       );
 
       // Устанавливаем заголовок Authorization вручную для этого запроса
-      const response = await apiClient.get<UserResponse>("/users/me/", {
+      const response = await axiosInstance.get<UserResponse>("/users/me/", {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 

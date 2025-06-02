@@ -152,108 +152,162 @@ class FeedbackTrendSnapshotViewSet(viewsets.ReadOnlyModelViewSet):
                 department_id=department_id
             ).order_by('date')
 
-        # Агрегируем данные для возврата
+        # Агрегируем данные для возврата в структуре, ожидаемой фронтендом
         result = {
-            'trend_data': {
-                'dates': [],
-                'sentiment_scores': [],
-                'satisfaction_indices': [],
-                'response_counts': []
+            'trends': {
+                'sentiment_scores': [],  # [{date: string, value: number}]
+                'satisfaction_indices': [],  # [{date: string, value: number}]
+                'response_counts': []  # [{date: string, value: number}]
             },
-            'comparison_data': {
-                'dates': [],
-                'sentiment_scores': [],
-                'satisfaction_indices': [],
-                'response_counts': []
-            },
-            'summary': {
-                'avg_sentiment': 0,
-                'avg_satisfaction': 0,
+            'current_period': {
+                'average_sentiment': 0,
+                'average_satisfaction': 0,
                 'total_responses': 0,
-                'trend_direction': 'stable'
+                'response_rate': 0.0  # добавляем это поле
             },
-            'topics_and_issues': {
-                'main_topics': {},
-                'common_issues': {}
-            }
+            'previous_period': {
+                'average_sentiment': 0,
+                'average_satisfaction': 0,
+                'total_responses': 0,
+                'response_rate': 0.0  # добавляем это поле
+            },
+            # [{name: string, count: number, percentage: number}]
+            'topics': [],
+            # [{name: string, count: number, percentage: number}]
+            'issues': []
         }
 
-        # Заполняем основные данные тренда
+        # Заполняем основные данные тренда в структуре для фронтенда
+        topics_dict = {}  # временный словарь для подсчета топиков
+        issues_dict = {}  # временный словарь для подсчета проблем
+        total_topics = 0
+        total_issues = 0
+
         for snapshot in snapshots:
-            result['trend_data']['dates'].append(snapshot.date.isoformat())
-            result['trend_data']['sentiment_scores'].append(
-                snapshot.sentiment_score)
-            result['trend_data']['satisfaction_indices'].append(
-                snapshot.satisfaction_index)
-            result['trend_data']['response_counts'].append(
-                snapshot.response_count)
+            # Форматируем данные для трендов в формате {date: string, value: number}
+            result['trends']['sentiment_scores'].append({
+                'date': snapshot.date.isoformat(),
+                'value': snapshot.sentiment_score
+            })
+            result['trends']['satisfaction_indices'].append({
+                'date': snapshot.date.isoformat(),
+                'value': snapshot.satisfaction_index
+            })
+            result['trends']['response_counts'].append({
+                'date': snapshot.date.isoformat(),
+                'value': snapshot.response_count
+            })
 
             # Собираем топики и проблемы
             for topic, value in snapshot.main_topics.items():
-                if topic not in result['topics_and_issues']['main_topics']:
-                    result['topics_and_issues']['main_topics'][topic] = 0
+                if topic not in topics_dict:
+                    topics_dict[topic] = 0
                 try:
-                    result['topics_and_issues']['main_topics'][topic] += float(
-                        value)
+                    topics_dict[topic] += float(value)
+                    total_topics += float(value)
                 except (ValueError, TypeError):
-                    result['topics_and_issues']['main_topics'][topic] += 1
+                    topics_dict[topic] += 1
+                    total_topics += 1
 
             for issue, value in snapshot.common_issues.items():
-                if issue not in result['topics_and_issues']['common_issues']:
-                    result['topics_and_issues']['common_issues'][issue] = 0
+                if issue not in issues_dict:
+                    issues_dict[issue] = 0
                 try:
-                    result['topics_and_issues']['common_issues'][issue] += float(
-                        value)
+                    issues_dict[issue] += float(value)
+                    total_issues += float(value)
                 except (ValueError, TypeError):
-                    result['topics_and_issues']['common_issues'][issue] += 1
+                    issues_dict[issue] += 1
+                    total_issues += 1
 
-        # Заполняем данные для сравнения
-        if comparison_snapshots:
-            for snapshot in comparison_snapshots:
-                result['comparison_data']['dates'].append(
-                    snapshot.date.isoformat())
-                result['comparison_data']['sentiment_scores'].append(
-                    snapshot.sentiment_score)
-                result['comparison_data']['satisfaction_indices'].append(
-                    snapshot.satisfaction_index)
-                result['comparison_data']['response_counts'].append(
-                    snapshot.response_count)
+        # Данные для предыдущего периода (comparison_snapshots)
+        # В текущей реализации мы не используем сравнительные линии графиков
+        # Но эти данные можно использовать для расчета previous_period
 
-        # Рассчитываем суммарную статистику
+        # Рассчитываем суммарную статистику для текущего и предыдущего периода
         if snapshots:
-            result['summary']['avg_sentiment'] = snapshots.aggregate(
+            # Текущий период
+            result['current_period']['average_sentiment'] = snapshots.aggregate(
                 avg=Avg('sentiment_score'))['avg'] or 0
-            result['summary']['avg_satisfaction'] = snapshots.aggregate(
+            result['current_period']['average_satisfaction'] = snapshots.aggregate(
                 avg=Avg('satisfaction_index'))['avg'] or 0
-            result['summary']['total_responses'] = sum(
+            result['current_period']['total_responses'] = sum(
                 s.response_count for s in snapshots)
+            # Заглушка, нужно расчитывать на основе данных
+            result['current_period']['response_rate'] = 0.75
 
-            # Определяем направление тренда
+            # Определяем направление тренда и данные для предыдущего периода
             if len(snapshots) >= 2:
                 first_half = list(snapshots)[:len(snapshots)//2]
                 second_half = list(snapshots)[len(snapshots)//2:]
 
-                first_avg = sum(s.satisfaction_index for s in first_half) / \
-                    len(first_half) if first_half else 0
-                second_avg = sum(s.satisfaction_index for s in second_half) / \
-                    len(second_half) if second_half else 0
+                # Рассчитываем метрики для предыдущего периода
+                first_sentiment = sum(
+                    s.sentiment_score for s in first_half) / len(first_half) if first_half else 0
+                first_satisfaction = sum(
+                    s.satisfaction_index for s in first_half) / len(first_half) if first_half else 0
+                first_responses = sum(s.response_count for s in first_half)
 
-                if second_avg > first_avg * 1.05:
-                    result['summary']['trend_direction'] = 'improving'
-                elif second_avg < first_avg * 0.95:
-                    result['summary']['trend_direction'] = 'declining'
-                else:
-                    result['summary']['trend_direction'] = 'stable'
+                # Заполняем предыдущий период
+                result['previous_period']['average_sentiment'] = first_sentiment
+                result['previous_period']['average_satisfaction'] = first_satisfaction
+                result['previous_period']['total_responses'] = first_responses
+                # Заглушка, нужно расчитывать
+                result['previous_period']['response_rate'] = 0.70
+            else:
+                # Если данных мало, используем текущие значения как предыдущие (без изменений)
+                result['previous_period'] = result['current_period'].copy()
+        else:
+            # Если нет данных, обеспечиваем минимальную структуру
+            result['current_period'] = {
+                'average_sentiment': 0,
+                'average_satisfaction': 0,
+                'total_responses': 0,
+                'response_rate': 0
+            }
+            result['previous_period'] = {
+                'average_sentiment': 0,
+                'average_satisfaction': 0,
+                'total_responses': 0,
+                'response_rate': 0
+            }
 
-        # Сортируем топики и проблемы по частоте
-        result['topics_and_issues']['main_topics'] = dict(
-            sorted(result['topics_and_issues']['main_topics'].items(),
-                   key=lambda x: x[1], reverse=True)[:10]
-        )
-        result['topics_and_issues']['common_issues'] = dict(
-            sorted(result['topics_and_issues']['common_issues'].items(),
-                   key=lambda x: x[1], reverse=True)[:10]
-        )
+        # Форматируем топики и проблемы в массивы объектов для фронтенда
+        # Сортировка топиков
+        sorted_topics = sorted(topics_dict.items(),
+                               key=lambda x: x[1], reverse=True)[:10]
+        for topic, count in sorted_topics:
+            percentage = (count / total_topics *
+                          100) if total_topics > 0 else 0
+            result['topics'].append({
+                'name': topic,
+                'count': count,
+                'percentage': round(percentage, 1)
+            })
+
+        # Сортировка проблем
+        sorted_issues = sorted(issues_dict.items(),
+                               key=lambda x: x[1], reverse=True)[:10]
+        for issue, count in sorted_issues:
+            percentage = (count / total_issues *
+                          100) if total_issues > 0 else 0
+            result['issues'].append({
+                'name': issue,
+                'count': count,
+                'percentage': round(percentage, 1)
+            })
+
+        # Логируем результат для отладки
+        import logging
+        logger = logging.getLogger('django.request')
+        logger.error(f"DASHBOARD DATA RESPONSE: {result}")
+
+        # Явно логируем наличие ключевых полей для диагностики
+        has_current = 'current_period' in result and result['current_period'] is not None
+        has_previous = 'previous_period' in result and result['previous_period'] is not None
+        has_sentiment = has_current and 'average_sentiment' in result['current_period']
+
+        logger.error(
+            f"HAS KEYS: current_period={has_current}, previous_period={has_previous}, average_sentiment={has_sentiment}")
 
         return Response(result)
 

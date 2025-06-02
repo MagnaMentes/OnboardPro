@@ -66,9 +66,12 @@ INSTALLED_APPS = [
     'solomia',
     'feedback',
     'scheduler',  # Smart Scheduler
+    'onboarding_intelligence',  # AI Onboarding Intelligence Dashboard
 ]
 
 MIDDLEWARE = [
+    # Закомментируем middleware для отладки, который вызывает ошибку
+    # 'backend.print_response.ResponseDebugMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     # CORS middleware должен быть перед Common middleware

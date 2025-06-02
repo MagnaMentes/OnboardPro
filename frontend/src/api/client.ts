@@ -16,16 +16,27 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || "";
 const API_PREFIX = import.meta.env.VITE_API_PREFIX || "/api";
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || "10000");
+const DOCKER_ENV = import.meta.env.VITE_DOCKER_ENV === "true";
 
-// Формируем базовый URL на основе переменных окружения
-// Убедимся, что между базовым URL и префиксом API есть слэш
-const baseURL = API_URL
-  ? `${API_URL.endsWith("/") ? API_URL.slice(0, -1) : API_URL}${
-      API_PREFIX.startsWith("/") ? API_PREFIX : `/${API_PREFIX}`
-    }`
-  : API_PREFIX;
+// Определяем базовый URL в зависимости от среды
+// В режиме разработки всегда используем относительный URL,
+// что позволяет Vite правильно проксировать запросы
+let baseURL;
+// Всегда в режиме разработки используем только API_PREFIX для проксирования через Vite
+// Это работает и в Docker, и в локальной разработке
+if (import.meta.env.DEV) {
+  baseURL = API_PREFIX;
+} else {
+  // В продакшне используем полный URL, если он указан
+  baseURL = API_URL ? `${API_URL}${API_PREFIX}` : API_PREFIX;
+}
 
-console.log("Базовый URL API:", baseURL);
+console.log("Базовый URL API:", baseURL, {
+  isDev: import.meta.env.DEV,
+  DOCKER_ENV,
+  API_URL,
+  API_PREFIX,
+});
 
 // Создание экземпляра Axios с базовым URL
 const axiosInstance: AxiosInstance = axios.create({

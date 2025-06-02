@@ -24,7 +24,27 @@ const UserDetailPage = () => {
     <>
       <PageHeader
         title={`Сотрудник #${userId}`}
-        actions={<Button onClick={handleBack}>Вернуться к списку</Button>}
+        actions={
+          <Flex gap={2}>
+            <Button
+              as={RouterLink}
+              to={`/admin/ai/user/${userId}`}
+              colorScheme="blue"
+              variant="outline"
+            >
+              AI-инсайты и рекомендации
+            </Button>
+            <Button
+              as={RouterLink}
+              to={`/admin/intelligence/user/${userId}`}
+              colorScheme="teal"
+              variant="outline"
+            >
+              Intelligence Dashboard
+            </Button>
+            <Button onClick={handleBack}>Вернуться к списку</Button>
+          </Flex>
+        }
       />
       <Box maxW="1200px" mx="auto" px={4} py={6}>
         <Text>Аналитика пользователя временно недоступна.</Text>

@@ -1,15 +1,16 @@
 import React from "react";
-import { Box, Text, Badge, Flex, Icon, Tooltip } from "@chakra-ui/react";
+import { Box, Text, Badge, Flex, Tooltip } from "@chakra-ui/react";
 import { StepFeedback } from "../../api/feedback";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
-  FaSmileBeam,
-  FaSmile,
-  FaMeh,
-  FaFrown,
-  FaSadTear,
+  FaSmileBeam as SmileBeamIcon,
+  FaSmile as SmileIcon,
+  FaMeh as MehIcon,
+  FaFrown as FrownIcon,
+  FaSadTear as SadIcon,
 } from "react-icons/fa";
+import FeedbackIcon from "../ui/FeedbackIcon";
 
 interface StepFeedbackCardProps {
   feedback: StepFeedback;
@@ -37,19 +38,23 @@ const getTagColor = (tag?: string): string => {
 // Функция для получения иконки в зависимости от sentiment_score
 const getSentimentIcon = (score?: number) => {
   if (score === undefined) {
-    return { icon: FaMeh, color: "gray.400", label: "Не указано" };
+    return { icon: MehIcon, color: "gray.400", label: "Не указано" };
   }
 
   if (score >= 0.6) {
-    return { icon: FaSmileBeam, color: "green.500", label: "Очень позитивный" };
+    return {
+      icon: SmileBeamIcon,
+      color: "green.500",
+      label: "Очень позитивный",
+    };
   } else if (score >= 0.2) {
-    return { icon: FaSmile, color: "green.300", label: "Позитивный" };
+    return { icon: SmileIcon, color: "green.300", label: "Позитивный" };
   } else if (score >= -0.2) {
-    return { icon: FaMeh, color: "gray.500", label: "Нейтральный" };
+    return { icon: MehIcon, color: "gray.500", label: "Нейтральный" };
   } else if (score >= -0.6) {
-    return { icon: FaFrown, color: "red.300", label: "Негативный" };
+    return { icon: FrownIcon, color: "red.300", label: "Негативный" };
   } else {
-    return { icon: FaSadTear, color: "red.500", label: "Очень негативный" };
+    return { icon: SadIcon, color: "red.500", label: "Очень негативный" };
   }
 };
 
@@ -77,12 +82,14 @@ const StepFeedbackCard: React.FC<StepFeedbackCardProps> = ({ feedback }) => {
 
       <Flex alignItems="center" mb={3}>
         <Tooltip label={sentiment.label}>
-          <Icon
-            as={sentiment.icon}
-            color={sentiment.color}
-            mr={2}
-            boxSize={5}
-          />
+          <span>
+            <FeedbackIcon
+              icon={sentiment.icon}
+              color={sentiment.color}
+              size="20px"
+              marginRight="0.5rem"
+            />
+          </span>
         </Tooltip>
         {feedback.auto_tag && (
           <Badge colorScheme={getTagColor(feedback.auto_tag)} mr={2}>

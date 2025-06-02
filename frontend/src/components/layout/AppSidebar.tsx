@@ -192,6 +192,20 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               to="/admin/feedback"
               isActive={location.pathname === "/admin/feedback"}
             />
+
+            <NavItem
+              icon={FiBarChart2}
+              label="Smart Insights Hub"
+              to="/admin/ai/hub"
+              isActive={location.pathname.startsWith("/admin/ai/")}
+            />
+
+            <NavItem
+              icon={FiBarChart2}
+              label="Intelligence Dashboard"
+              to="/admin/intelligence/dashboard"
+              isActive={location.pathname.startsWith("/admin/intelligence/")}
+            />
           </>
         )}
       </VStack>

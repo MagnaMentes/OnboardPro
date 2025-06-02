@@ -96,7 +96,28 @@ const FeedbackDashboardPage: React.FC = () => {
       if (selectedTemplateId) params.template_id = selectedTemplateId;
       if (selectedDepartmentId) params.department_id = selectedDepartmentId;
 
+      // getDashboardData теперь возвращает данные напрямую, а не response
       const data = await dashboardApi.getDashboardData(params);
+      // Проверяем и логируем структуру данных
+      console.log("API DASHBOARD DATA:", data);
+
+      // Проверяем наличие необходимых полей
+      if (!data.current_period || !data.previous_period) {
+        console.error("API response does not have required structure:", data);
+
+        // Если в полученных данных нет нужных полей, показываем предупреждение
+        // но все равно используем данные, т.к. в getDashboardData уже есть fallback
+        toast({
+          title: "Некорректный формат данных",
+          description:
+            "Получены данные в неправильном формате. Используем заглушку.",
+          status: "warning",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+
+      // Используем данные из ответа API
       setDashboardData(data);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -114,8 +135,8 @@ const FeedbackDashboardPage: React.FC = () => {
 
   const fetchRules = async () => {
     try {
-      const data = await dashboardApi.getTrendRules();
-      setRules(data);
+      const rules = await dashboardApi.getTrendRules();
+      setRules(Array.isArray(rules) ? rules : []);
     } catch (error) {
       console.error("Error fetching rules:", error);
       toast({
@@ -125,13 +146,31 @@ const FeedbackDashboardPage: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+      setRules([]);
     }
+  };
+
+  // Адаптер для преобразования типов FeedbackTrendAlert в формат, ожидаемый компонентом FeedbackAlertsList
+  const adaptAlertsToComponentFormat = (alerts: FeedbackTrendAlert[]) => {
+    return alerts.map((alert) => ({
+      id: alert.id,
+      title: alert.title,
+      description: alert.description,
+      severity: alert.severity,
+      created_at: alert.created_at,
+      is_resolved: alert.is_resolved,
+      rule_type: alert.rule?.rule_type || "unknown", // Добавляем rule_type, которого не хватает
+      percentage_change: alert.percentage_change,
+      template_name: alert.template?.name,
+      department_name: alert.department?.name,
+    }));
   };
 
   const fetchAlerts = async () => {
     try {
-      const data = await dashboardApi.getTrendAlerts();
-      setAlerts(data);
+      const alerts = await dashboardApi.getTrendAlerts();
+      // Проверяем, что alerts - это массив, иначе устанавливаем пустой массив
+      setAlerts(Array.isArray(alerts) ? alerts : []);
     } catch (error) {
       console.error("Error fetching alerts:", error);
       toast({
@@ -141,6 +180,8 @@ const FeedbackDashboardPage: React.FC = () => {
         duration: 5000,
         isClosable: true,
       });
+      // В случае ошибки устанавливаем пустой массив
+      setAlerts([]);
     }
   };
 
@@ -182,10 +223,10 @@ const FeedbackDashboardPage: React.FC = () => {
     try {
       const result = await dashboardApi.generateTrendSnapshots();
 
-      if (result.success) {
+      if (result && result.success) {
         toast({
           title: "Снимки трендов созданы",
-          description: result.message,
+          description: result.message || "Снимки трендов успешно созданы",
           status: "success",
           duration: 5000,
           isClosable: true,
@@ -223,7 +264,10 @@ const FeedbackDashboardPage: React.FC = () => {
 
       toast({
         title: "Правила проверены",
-        description: result.message,
+        description:
+          result && result.message
+            ? result.message
+            : "Правила успешно проверены",
         status: "success",
         duration: 5000,
         isClosable: true,
@@ -517,7 +561,7 @@ const FeedbackDashboardPage: React.FC = () => {
           {/* Вкладка алертов */}
           <TabPanel px={0}>
             <FeedbackAlertsList
-              alerts={alerts}
+              alerts={adaptAlertsToComponentFormat(alerts)}
               isLoading={isLoading}
               onResolveAlert={handleResolveAlert}
             />

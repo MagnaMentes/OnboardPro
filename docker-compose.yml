@@ -21,8 +21,9 @@ services:
     networks:
       - onboardpro_network
     # Добавляем название контейнера чтобы исключить проблемы с DNS
-    container_name: onboardpro-backend
-    hostname: onboardpro-backend
+    container_name: backend
+    hostname: backend
+    # Важно: имя хоста должно совпадать с тем, что указано во frontend конфиге
 
   frontend:
     build:
@@ -39,12 +40,17 @@ services:
     depends_on:
       - backend
     command: sh -c "chmod +x /app/start-vite.sh && chmod +x /app/frontend/check-dependencies.sh && /app/start-vite.sh"
+    # Добавляем название контейнера для корректного DNS-разрешения
+    container_name: onboardpro-frontend
+    hostname: onboardpro-frontend
     environment:
       - DOCKER_ENV=true
+      - VITE_DOCKER_ENV=true
       - CHOKIDAR_USEPOLLING=true
-      # Оставляем VITE_API_URL пустым для использования proxy через /api
+      # Для использования прокси через Vite оставляем VITE_API_URL пустым
       - VITE_API_URL=
       - VITE_API_PREFIX=/api
+      # Переменные для HMR
       - WATCHPACK_POLLING=true
       - FAST_REFRESH=true
       - VITE_HMR_PROTOCOL=ws

@@ -1,27 +1,26 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { 
-  HRMetrics, 
-  DepartmentMetrics, 
-  HRAlert, 
-  HRAlertRule, 
-  HRMetricSnapshot 
-} from '../types/hr-dashboard';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import {
+  HRMetrics,
+  DepartmentMetrics,
+  HRAlert,
+  HRAlertRule,
+  HRMetricSnapshot,
+} from "../types/hr-dashboard";
 
-const API_BASE = '/api/hr/dashboard';
+const API_BASE = "/api/hr/dashboard";
 
 // Хуки для получения данных
 export const useHRDashboardOverview = () => {
-  return useQuery<HRMetrics>(['hr-dashboard', 'overview'], 
-    async () => {
-      const { data } = await axios.get(`${API_BASE}/overview/`);
-      return data;
-    }
-  );
+  return useQuery<HRMetrics>(["hr-dashboard", "overview"], async () => {
+    const { data } = await axios.get(`${API_BASE}/overview/`);
+    return data;
+  });
 };
 
 export const useDepartmentMetrics = () => {
-  return useQuery<DepartmentMetrics[]>(['hr-dashboard', 'departments'],
+  return useQuery<DepartmentMetrics[]>(
+    ["hr-dashboard", "departments"],
     async () => {
       const { data } = await axios.get(`${API_BASE}/departments/`);
       return data;
@@ -30,18 +29,21 @@ export const useDepartmentMetrics = () => {
 };
 
 export const useAlerts = (filters?: Record<string, any>) => {
-  return useQuery<HRAlert[]>(['hr-dashboard', 'alerts', filters],
-    async () => {
-      const { data } = await axios.get(`${API_BASE}/alerts/`, { params: filters });
-      return data;
-    }
-  );
+  return useQuery<HRAlert[]>(["hr-dashboard", "alerts", filters], async () => {
+    const { data } = await axios.get(`${API_BASE}/alerts/`, {
+      params: filters,
+    });
+    return data;
+  });
 };
 
 export const useAlertRules = (filters?: Record<string, any>) => {
-  return useQuery<HRAlertRule[]>(['hr-dashboard', 'alert-rules', filters],
+  return useQuery<HRAlertRule[]>(
+    ["hr-dashboard", "alert-rules", filters],
     async () => {
-      const { data } = await axios.get(`${API_BASE}/alert-rules/`, { params: filters });
+      const { data } = await axios.get(`${API_BASE}/alert-rules/`, {
+        params: filters,
+      });
       return data;
     }
   );
@@ -53,14 +55,14 @@ export const useMetricHistory = (
   days: number = 30
 ) => {
   return useQuery<HRMetricSnapshot[]>(
-    ['hr-dashboard', 'metrics', metricKey, departmentId, days],
+    ["hr-dashboard", "metrics", metricKey, departmentId, days],
     async () => {
       const { data } = await axios.get(`${API_BASE}/metrics/`, {
         params: {
           metric_key: metricKey,
           department: departmentId,
-          days
-        }
+          days,
+        },
       });
       return data;
     }
@@ -73,17 +75,16 @@ export const useResolveAlert = () => {
 
   return useMutation<HRAlert, Error, { id: number; notes: string }>(
     async ({ id, notes }) => {
-      const { data } = await axios.post(
-        `${API_BASE}/alerts/${id}/resolve/`,
-        { notes }
-      );
+      const { data } = await axios.post(`${API_BASE}/alerts/${id}/resolve/`, {
+        notes,
+      });
       return data;
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['hr-dashboard', 'alerts']);
-        queryClient.invalidateQueries(['hr-dashboard', 'overview']);
-      }
+        queryClient.invalidateQueries(["hr-dashboard", "alerts"]);
+        queryClient.invalidateQueries(["hr-dashboard", "overview"]);
+      },
     }
   );
 };
@@ -98,8 +99,8 @@ export const useCreateAlertRule = () => {
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['hr-dashboard', 'alert-rules']);
-      }
+        queryClient.invalidateQueries(["hr-dashboard", "alert-rules"]);
+      },
     }
   );
 };
@@ -107,15 +108,22 @@ export const useCreateAlertRule = () => {
 export const useUpdateAlertRule = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<HRAlertRule, Error, { id: number; data: Partial<HRAlertRule> }>(
+  return useMutation<
+    HRAlertRule,
+    Error,
+    { id: number; data: Partial<HRAlertRule> }
+  >(
     async ({ id, data }) => {
-      const response = await axios.patch(`${API_BASE}/alert-rules/${id}/`, data);
+      const response = await axios.patch(
+        `${API_BASE}/alert-rules/${id}/`,
+        data
+      );
       return response.data;
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['hr-dashboard', 'alert-rules']);
-      }
+        queryClient.invalidateQueries(["hr-dashboard", "alert-rules"]);
+      },
     }
   );
 };
@@ -129,7 +137,8 @@ export const useDeleteAlertRule = () => {
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['hr-dashboard', 'alert-rules']);
-      }
+        queryClient.invalidateQueries(["hr-dashboard", "alert-rules"]);
+      },
     }
   );
+};

@@ -1,0 +1,15 @@
+{
+  "mode": "development",
+  "env": {
+    "VITE_API_URL": "",
+    "VITE_API_PREFIX": "/api",
+    "VITE_DOCKER_ENV": "true"
+  },
+  "process_env": {
+    "DOCKER_ENV": "true"
+  },
+  "useDocker": true,
+  "apiUrl": "http://localhost:8000",
+  "apiPrefix": "/api",
+  "proxyTarget": "http://backend:8000"
+}

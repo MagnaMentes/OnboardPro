@@ -5,8 +5,8 @@ from rest_framework import serializers
 from ..dashboard_models import FeedbackTrendSnapshot, FeedbackTrendRule, FeedbackTrendAlert
 from ..models import FeedbackTemplate
 from departments.models import Department
-from departments.serializers import DepartmentListSerializer
-from users.serializers import UserMiniSerializer
+from departments.serializers import DepartmentSerializer as DepartmentListSerializer
+from users.serializers import UserMinimalSerializer as UserMiniSerializer
 
 
 class FeedbackTemplateMinSerializer(serializers.ModelSerializer):
